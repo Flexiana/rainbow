@@ -7,7 +7,8 @@
             [rainbow.math.rational.signed.unit-laws :as units]
             [rainbow.math.rational.signed.multiply-associative :as associative]
             [rainbow.math.rational.signed.order-respects :as respects]
-            [rainbow.math.rational.signed.limit-uniqueness :as antisymmetric]))
+            [rainbow.math.rational.signed.limit-uniqueness :as antisymmetric]
+            [rainbow.module :as module]))
 
 (def matrix (f/arrow nat family))
 
@@ -145,14 +146,17 @@
 
 (def theorem-specs [upper-spec column-lower-spec swap-spec lower-spec value-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      s/extend-environment
-      units/extend-environment
-      associative/extend-environment
-      respects/extend-environment
-      antisymmetric/extend-environment
-      (support/extend-with :expr-sum-game-value theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env s/extend-environment units/extend-environment associative/extend-environment respects/extend-environment antisymmetric/extend-environment (support/extend-with :expr-sum-game-value theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.game-value))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

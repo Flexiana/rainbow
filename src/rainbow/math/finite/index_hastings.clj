@@ -23,7 +23,8 @@
   no coverage hypothesis.  Everything the caller once certified is now proved
   from the structure of `Index`.  Still Level 3 and stated so: nothing here
   samples, and no executable claim is made.  Native and axiom-free on D63."
-  (:require [rainbow.math.finite.index :as index]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.index :as index]
             [rainbow.math.finite.markov-hastings-flow :as hastings]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -159,11 +160,16 @@
    certified-exhaustive-carrier-spec
    index-canonical-kernel-stationary-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      hastings/extend-environment
-      index/extend-environment
-      (support/extend-with :finite-index-hastings theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-hastings-flow rainbow.math.finite.index])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-index-hastings theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.index-hastings))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

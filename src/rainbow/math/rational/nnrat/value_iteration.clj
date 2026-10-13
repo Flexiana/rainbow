@@ -17,7 +17,8 @@
   The bridge reduces to the nat identity 2*(p+1) = (p+p)+2, proved here via
   multiply-successor-right + multiply-one-right.
   Native and axiom-free; chains nnrat-geometric-convergence and nnrat-multiply-monotone."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.geometric-convergence :as gc]
             [rainbow.math.rational.nnrat.multiply-monotone :as mm]))
@@ -178,12 +179,17 @@
 (def theorem-specs [two-times-spec two-times-succ-spec geom-halving-spec
                     error-below-geometric-spec contraction-converges-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.geometric-convergence rainbow.math.rational.nnrat.multiply-monotone])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-value-iteration (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      gc/extend-environment
-      mm/extend-environment
-      (support/extend-with :nnrat-value-iteration
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.value-iteration))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

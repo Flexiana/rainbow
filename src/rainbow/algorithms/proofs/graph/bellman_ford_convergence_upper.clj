@@ -22,7 +22,8 @@
   L(r+1, .) <= L(r, .) closes it. If k = r + 1, the prefix walk of r arcs gives
   L(r, x r) <= L(0, x 0) + walk-length(x, r), and round r's arc bound at (x r, x (r+1)) adds the
   last arc. walk-length(x, r+1) is walk-length(x, r) + W(x r, x (r+1)) by definition."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.signed.one-hot-selects :as one-hot-selects]
@@ -164,12 +165,16 @@
 
 (def theorem-specs [labels-below-walks-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      one-hot-selects/extend-environment
-      divmod/extend-environment
-      add-associative/extend-environment
-      (support/extend-with :bford-convergence-upper theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.one-hot-selects rainbow.math.nat.divmod rainbow.math.rational.signed.add-associative])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :bford-convergence-upper theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.graph.bellman-ford-convergence-upper))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

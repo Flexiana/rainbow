@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.set-inverse-transport
   "Constructive finiteness and infinitude transport across explicit set inverses."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.sets.inverse-certificates :as inverse]))
@@ -385,10 +386,16 @@
    infinite-equivalent-of-inverse-spec
    finite-nonempty-equivalent-of-inverse-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      inverse/extend-environment
-      (support/extend-with :finite-set-inverse-transport theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sets.inverse-certificates])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-set-inverse-transport theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.set-inverse-transport))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

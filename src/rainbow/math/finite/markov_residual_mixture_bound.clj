@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.markov-residual-mixture-bound
   "Markov-facing interface for the finite residual mixture inequality."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.weighted-sum-scaled-bound :as scaled]))
 
@@ -36,7 +37,15 @@
     (f/app (f/const* 'nnrat/weighted-sum-scaled-at-most [U])
            'S 'weights 'row-distance 'rho 'row-bound 'residual-indexes))})
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.weighted-sum-scaled-bound])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-residual-mixture-bound [spec])))
+
 (defn extend-environment [env]
-  (-> env scaled/extend-environment
-      (support/extend-with :finite-markov-residual-mixture-bound [spec])))
+  (module/install-module env 'rainbow.math.finite.markov-residual-mixture-bound))
 (defn theorem-ids [env] (support/spec-ids env [spec]))

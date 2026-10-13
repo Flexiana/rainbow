@@ -5,7 +5,8 @@
   eliminate its propositional cover into executable data.  This representation
   keeps the enumeration in Type, carries duplicate-freedom in Prop, and projects
   to the extensional representation without changing the kernel."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
@@ -549,15 +550,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (reduce add-spec checked-environment
-          [list-no-duplicates-spec
-           finset-data-type-spec enumeration-spec duplicate-free-spec
-           to-set-spec to-extensional-spec card-spec nat-sum-spec sum-nat-spec
-           member-range-below-spec nat-range-no-duplicates-spec
-           range-spec enumeration-sound-spec enumeration-complete-spec
-           sum-nat-enumeration-spec card-range-spec]))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-spec checked-environment [list-no-duplicates-spec finset-data-type-spec enumeration-spec duplicate-free-spec to-set-spec to-extensional-spec card-spec nat-sum-spec sum-nat-spec member-range-below-spec nat-range-no-duplicates-spec range-spec enumeration-sound-spec enumeration-complete-spec sum-nat-enumeration-spec card-range-spec]))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.finset.data))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

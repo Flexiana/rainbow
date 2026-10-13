@@ -16,7 +16,8 @@
     3. transport the denominators back on the other side.
 
   Native and axiom-free; chains rainbow.math.nat.ring and nonnegative-rational (d63)."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.nat.ring :as ring]))
 
@@ -105,10 +106,18 @@
 (def definition-specs [])
 (def theorem-specs [multiply-distributes-add-right-spec multiply-one-left-spec])
 
+;; shared: nnrat/multiply-one-left is also installed by nnrat-identities
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with-shared checked-environment :nnrat-distributive (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  ;; shared: nnrat/multiply-one-left is also installed by nnrat-identities
-  (support/extend-with-shared checked-environment :nnrat-distributive
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.distributive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

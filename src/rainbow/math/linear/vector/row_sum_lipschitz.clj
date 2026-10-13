@@ -12,7 +12,8 @@
   for the actual dot products.  Equal input shape is explicit because dot and
   sup distance both truncate lists.  Native, kernel-checked, and axiom-free on
   D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance-multiply-nonnegative :as weighted]
             [rainbow.math.rational.signed.distributive :as distributive]
@@ -487,18 +488,16 @@
    dot-distance-sum-bounded-by-row-sum-spec
    dot-distance-bounded-by-row-sum-spec])
 
-(defn extend-environment [env]
-  (-> env
-      signed-sum/extend-environment
-      pointwise/extend-environment
-      weighted/extend-environment
-      multiply-monotone/extend-environment
-      multiply-order/extend-environment
-      distributive/extend-environment
-      sup/extend-environment
-      dot-bound/extend-environment
-      (support/extend-with :vector-row-sum-lipschitz
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.list-sum rainbow.math.linear.vector.pointwise-order rainbow.math.rational.signed.distance-multiply-nonnegative rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.distributive rainbow.math.rational.signed.vector-sup-distance rainbow.math.linear.vector.dot-distance-bound])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :vector-row-sum-lipschitz (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.vector.row-sum-lipschitz))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

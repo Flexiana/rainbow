@@ -12,7 +12,8 @@
   1/(k+1) of its next Bellman image and is packaged as an existential witness.
   No exact fixed point is assumed or constructed.  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-approximate-optimality
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-approximate-optimality
              :as abstract]
             [rainbow.math.finite.bellman-signed-value-iteration-general-converges
              :as general-convergence]
@@ -270,11 +271,16 @@
    approximate-optimality-fixed-point-general-rate-spec
    approximate-optimality-fixed-point-exists-general-rate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      abstract/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-approximate-optimality-generic theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-approximate-optimality])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-approximate-optimality-generic theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-approximate-optimality-generic))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

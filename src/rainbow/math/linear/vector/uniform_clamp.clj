@@ -13,7 +13,8 @@
   already used by Rainbow's optimization algorithms.  It is the reusable core
   of uniform box constraints and projected first-order methods.  Native and
   axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.clamp :as signed-clamp]
             [rainbow.math.linear.vector.equivalence :as vector-equivalence]))
@@ -377,13 +378,17 @@
    uniform-clamp-preserves-in-band-spec
    uniform-clamp-idempotent-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      signed-clamp/extend-environment
-      vector-equivalence/extend-environment
-      (support/extend-with :vector-uniform-clamp
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.clamp rainbow.math.linear.vector.equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-uniform-clamp (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.uniform-clamp))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

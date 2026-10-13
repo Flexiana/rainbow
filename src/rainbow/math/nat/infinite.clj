@@ -1,6 +1,7 @@
 (ns rainbow.math.nat.infinite
   "Axiom-free Nat constructor discrimination, list bounds, and infinitude."
-  (:require [rainbow.algebra.finite :as finite-algebra]
+  (:require [rainbow.module :as module]
+            [rainbow.algebra.finite :as finite-algebra]
             [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
@@ -460,10 +461,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (reduce add-spec (extend-arithmetic checked-environment)
-          (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-spec (extend-arithmetic checked-environment) (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.infinite))
 (defn arithmetic-ids [checked-environment]
   (into (sorted-map)
         (map (fn [name]

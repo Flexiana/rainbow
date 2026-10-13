@@ -11,7 +11,8 @@
   Reuses nnrat-minmax (monotone backup, bracket via transitivity) and nnrat/wsum2 +
   convex-at-most-max (interpolation / expectation).
   Native and axiom-free; chains nnrat-convex on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.convex :as convex]))
 
@@ -113,11 +114,17 @@
   [perseus-improves-spec despot-bracket-spec freudenthal-within-corners-spec
    controller-node-value-example-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.convex])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-pomdp-online (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex/extend-environment
-      (support/extend-with :ahof-pomdp-online
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.pomdp-online))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

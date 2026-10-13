@@ -3,6 +3,28 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-10-13
+
+### Changed
+- **Declarative module dependencies.** A proof module declares the modules it builds
+  on as data (`deps`) and adds only its own declarations (`install`);
+  `rainbow.module/install-module` installs the dependency graph once, in dependency
+  order. Installing a module deep in the corpus went from over an hour (shared
+  dependencies were re-installed once per path) to minutes, and every declaration id
+  is unchanged. See `doc/modules.md`.
+- **Every proof module is under a test.** The coverage gate re-checks every proof
+  module that no other test reaches; nothing is pending.
+
+### Verified
+- Full test suite in 24 chunks: 1,875 tests, 17,953 assertions. The release gate,
+  load checks for every source and test namespace, and the 15 coverage-gate
+  namespaces are part of it. The coverage gate re-checks every proof module no other
+  test reaches; its only axioms are the named classical ones in `set-boundary` and
+  `set-union` (excluded middle, proposition extensionality), asserted per theorem.
+- `lein verify --bundle` on four external proof bundles: all OK. Two tampered
+  controls are rejected, one with the kernel's reason and one for schema version.
+- `lein reproduce rainbow.milestones.ahof-bisection`: SAME.
+
 ## [1.0.0-rc.2] - 2026-10-13
 
 ### Changed

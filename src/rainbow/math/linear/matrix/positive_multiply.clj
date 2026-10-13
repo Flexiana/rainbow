@@ -7,7 +7,8 @@
   its right factor when the fixed left factor is nonnegative, and jointly
   monotone under the exact source/destination positivity premises needed by
   the two-step order path.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.transpose-order :as transpose-order]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.transpose-order :as transpose-order]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -281,10 +282,16 @@
    multiply-monotone-right-spec
    multiply-monotone-spec])
 
-(defn extend-environment [env]
-  (-> env
-      transpose-order/extend-environment
-      (support/extend-with :finite-matrix-positive-multiply theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-positive-multiply theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.positive-multiply))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

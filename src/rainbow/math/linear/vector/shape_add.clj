@@ -5,7 +5,8 @@
   same position.  A native two-list induction proves that the result has both
   input shapes.  Subtraction follows by composing negation shape preservation
   with the addition theorem.  Native and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.shape-map :as shape-map]))
 
@@ -281,11 +282,17 @@
    add-preserves-right-shape-spec
    subtract-preserves-shape-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      shape-map/extend-environment
-      (support/extend-with :vector-shape-add theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.shape-map])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-shape-add theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.shape-add))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -5,7 +5,8 @@
 
   The two Grothendieck components differ only by nnrat multiplication
   association.  The verified nnrat ring normalizer emits the proof term."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
@@ -53,12 +54,17 @@
     (support/extend-with checked-environment :temporal-difference
                          [temporal-difference/scale-spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      extend-scale-if-missing
-      ring/extend-environment
-      (support/extend-with :signed-scale-composition theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-scale-if-missing ring/extend-environment (support/extend-with :signed-scale-composition theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.scale-composition))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

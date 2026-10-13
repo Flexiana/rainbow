@@ -10,7 +10,8 @@
   under composition, normalized masses remain normalized after every step,
   and a mass stationary for each factor is stationary for their composition.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-stationarity :as stationarity]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -550,20 +551,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      stationarity/extend-environment
-      (extend-spec-if-missing
-       'nnrat/map-sum-swap :nnrat-fubini fubini/map-sum-swap-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-associative :nnrat-product-reassociation
-       reassociation/multiply-associative-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-swap-right :nnrat-product-reassociation
-       reassociation/multiply-swap-right-spec)
-      (support/extend-with
-       :finite-markov-kernel-composition
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-stationarity])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nnrat/map-sum-swap :nnrat-fubini fubini/map-sum-swap-spec) (extend-spec-if-missing 'nnrat/multiply-associative :nnrat-product-reassociation reassociation/multiply-associative-spec) (extend-spec-if-missing 'nnrat/multiply-swap-right :nnrat-product-reassociation reassociation/multiply-swap-right-spec) (support/extend-with :finite-markov-kernel-composition (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-kernel-composition))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -1,6 +1,7 @@
 (ns rainbow.math.rational.nnrat.weighted-term-bound
   "Scalar weighted-term monotonicity for the finite mixture proof."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.multiply-monotone :as monotone]))
 (defn- c [n] (f/const* n []))
@@ -19,7 +20,15 @@
           (f/app (c 'nnrat/multiply-monotone) 'weight 'distance 'rho 'h))})
 (def definition-specs [])
 (def theorem-specs [spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.multiply-monotone])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-weighted-term-bound theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env monotone/extend-environment
-      (support/extend-with :nnrat-weighted-term-bound theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.nnrat.weighted-term-bound))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

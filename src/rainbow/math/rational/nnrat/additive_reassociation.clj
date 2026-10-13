@@ -6,7 +6,8 @@
   laws are then assembled from associativity, commutativity, congruence, symmetry,
   and transitivity at the nnrat equivalence layer."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.ring :as ring]))
 
@@ -176,9 +177,16 @@
 (def theorem-specs
   [add-associative-spec add-swap-right-spec add-four-reorder-spec])
 
-(defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :nnrat-additive-reassociation
-                       theorem-specs))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :nnrat-additive-reassociation theorem-specs))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.additive-reassociation))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

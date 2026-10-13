@@ -17,7 +17,8 @@
   nat/multiply-distributes-add, nat/multiply-zero-right, nat/multiply-one-right
   (d63 + nat-add-order + half-monotone + geometric-sequence + nat-power +
   nat-distributive)."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -120,8 +121,16 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (support/extend-with checked-environment :geometric-denominator theorem-specs))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.analysis.geometric-denominator))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

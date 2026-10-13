@@ -7,7 +7,8 @@
   then packages a rate-null convergence certificate for every canonical
   positive rational discount (a+1)/(a+g+2). No fixed point is constructed.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-transition-operator
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-transition-operator
              :as operator-interface]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -333,12 +334,16 @@
    signed-contractive-operator-iterate-fixed-point-radius-spec
    signed-contractive-operator-fixed-point-converges-general-rate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      operator-interface/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-operator-fixed-point-convergence
-       theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-transition-operator])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-operator-fixed-point-convergence theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-operator-fixed-point-convergence))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

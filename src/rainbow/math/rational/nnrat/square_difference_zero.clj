@@ -5,7 +5,8 @@
   form; the ring identity (m+N)^2 + N^2 ~ ((m+N)N + N(m+N)) + m*m then exhibits m*m as the
   gap, and cancelling it (add-cancel-to-zero) gives m*m ~ 0, hence m ~ 0 (nnrat/square-zero),
   hence P ~ N. The unordered version wraps this with at-most-total."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.square-zero :as sqz]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -94,15 +95,16 @@
 
 (def theorem-specs [square-difference-zero-ordered-spec square-difference-zero-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      sqz/extend-environment
-      identities/extend-environment
-      nnrat-monus/extend-environment
-      add-cancel/extend-environment
-      order-total/extend-environment
-      ring/extend-environment
-      (support/extend-with :nnrat-square-difference-zero theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.square-zero rainbow.math.rational.nnrat.identities rainbow.math.rational.nnrat.monus rainbow.math.rational.nnrat.add-cancel-zero rainbow.math.rational.nnrat.order-total rainbow.math.rational.nnrat.ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-square-difference-zero theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.square-difference-zero))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

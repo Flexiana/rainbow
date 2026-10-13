@@ -2,7 +2,8 @@
   "Explicit positive unit fractions and their proper complements.
   Kernel-checked and axiom-free on D63. All identities use
   rational equivalence, not structural equality of raw representatives."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.semiring :as semiring]
@@ -72,9 +73,15 @@
 
 (def theorem-specs [unit-fraction-at-most-positive-spec unit-fraction-positive-spec
                     unit-fraction-complement-spec unit-fraction-complement-proper-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.positive])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (let [env env env (if (environment/resolve-id env 'nat/multiply-one-right) env (support/extend-with env :nnrat-unit-fraction-support [semiring/multiply-one-right-spec]))] (support/extend-with env :nnrat-unit-fraction theorem-specs)))
+
 (defn extend-environment [env]
-  (let [env (positive/extend-environment env)
-        env (if (environment/resolve-id env 'nat/multiply-one-right) env
-                (support/extend-with env :nnrat-unit-fraction-support [semiring/multiply-one-right-spec]))]
-    (support/extend-with env :nnrat-unit-fraction theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.nnrat.unit-fraction))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

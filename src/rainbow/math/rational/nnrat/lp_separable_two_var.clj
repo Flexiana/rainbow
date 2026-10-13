@@ -4,7 +4,8 @@
   Each coordinate uses the canonical witnesses x_i=b_i/a_i and y_i=c_i/a_i
   from lp-single-positive-constraint-strong-duality.  Adding the two scalar
   zero-gap equivalences proves equality of the summed objectives."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.lp-strong-duality-general :as general]))
@@ -159,11 +160,17 @@
 (def definition-specs [])
 (def theorem-specs [separable-two-var-zero-gap-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      general/extend-environment
-      (support/extend-with :nnrat-lp-separable-two-var theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.lp-strong-duality-general])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-separable-two-var theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-separable-two-var))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

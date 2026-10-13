@@ -7,7 +7,8 @@
     + intro, implies-at-most, irreflexive, asymmetric, transitive, and the two <=/< mixing lemmas.
 
   Direct port of the signed strict order onto the nnrat order primitives. Wall-free."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.metric-separation :as metric]
             [rainbow.algorithms.proofs.decision-guarantee-audit :as order]
@@ -104,12 +105,16 @@
    less-than-irreflexive-spec less-than-asymmetric-spec less-than-transitive-spec
    less-than-of-at-most-of-less-than-spec less-than-of-less-than-of-at-most-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      metric/extend-environment
-      order/extend-environment
-      respects/extend-environment
-      (support/extend-with :nnrat-strict-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.metric-separation rainbow.algorithms.proofs.decision-guarantee-audit rainbow.math.finite.policy-iteration])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-strict-order theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.strict-order))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

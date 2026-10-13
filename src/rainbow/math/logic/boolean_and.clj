@@ -14,7 +14,8 @@
   (lo<=x AND x<=hi, a1.x<=b1 AND a2.x<=b2, ...) that returns true genuinely entails both
   clauses. Case-split on the first operand via data/Bool.rec; the false branch is
   discharged by bool/false-not-true + proposition/explode. Native and axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -103,9 +104,17 @@
 (def theorem-specs
   [and-implies-left-spec and-implies-right-spec and-sound-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :boolean-and (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :boolean-and
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.logic.boolean-and))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

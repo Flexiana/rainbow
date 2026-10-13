@@ -7,7 +7,8 @@
   this produces an exact positive value below every input—the quantitative
   finite-minimum ingredient for Markov minorization and mixing bounds.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.farkas-elim-list :as farkas]
             [rainbow.math.rational.nnrat.positive :as positive]
@@ -307,12 +308,16 @@
   [min-ub-positive-spec min-ub-positive-lower-bound-spec
    le-all-member-spec min-ub-below-member-spec])
 
-(defn extend-environment [env]
-  (-> env
-      farkas/extend-environment
-      positive/extend-environment
-      (support/extend-with
-       :nnrat-finite-min-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-elim-list rainbow.math.rational.nnrat.positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-finite-min-positive theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.finite-min-positive))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

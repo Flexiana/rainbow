@@ -10,7 +10,8 @@
   is definitionally nnrat/positive (mag .), so B6c applies directly. Called in the assembly
   with a = |L|/2 and b = |s n| to get 1 <= num(mag(s n * s n)), enabling reciprocal-difference/
   antitone/absolute-reciprocal on s n. Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.square-monotone :as square-monotone]
             [rainbow.math.rational.signed.magnitude-monotone :as magnitude-monotone]
@@ -49,13 +50,16 @@
 
 (def theorem-specs [square-numerator-positive-of-lower-bound-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      square-monotone/extend-environment
-      magnitude-monotone/extend-environment
-      positive-monotone/extend-environment
-      norm-nonneg/extend-environment
-      (support/extend-with :signed-square-numerator-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.square-monotone rainbow.math.rational.signed.magnitude-monotone rainbow.math.rational.nnrat.positive-monotone rainbow.math.linear.vector.norm-nonnegative])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-square-numerator-positive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.square-numerator-positive))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

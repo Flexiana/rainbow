@@ -28,7 +28,8 @@
   ADDITIVE: installs into a bin-rational-order-extended environment; trusted checker
   untouched. Reuses bin/decide-rat-matches-audit, bin/decide-rat-sound,
   bin/decide-rat-false-reverse, bin/to-nat-rat-add-num, bin/to-nat-rat-add-den."
-  (:require [rainbow.kernel :as kernel]
+  (:require [rainbow.module :as module]
+            [rainbow.kernel :as kernel]
             [rainbow.elaborate :as elaborate]
             [rainbow.term :as term]
             [rainbow.math.logic.function :as function]))
@@ -183,14 +184,21 @@
                         {:error/category :bin-signed/definition-rejected :name name :result result})))
       (:environment result))))
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-definition checked-environment definition-specs))
+
 (defn extend-environment
   "Install the Bin signed-order bridge. Requires signed/decide-at-most etc. from
   rainbow.math.rational.signed.decide-order AND the brick-5b lemmas: chain
     base -> signed-decide-order -> data.binary -> bin-rational-order -> bin-signed-order.
-  Additive; trusted checker untouched."
-  [checked-environment]
-  (reduce add-definition checked-environment definition-specs))
-
+  Additive; trusted checker untouched." [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.binary.signed-order))
 (defn block-aliases []
   '#{bin/decide-signed-matches bin/decide-signed-sound bin/decide-signed-false-reverse
      bin/decide-signed-sound-from-parts})

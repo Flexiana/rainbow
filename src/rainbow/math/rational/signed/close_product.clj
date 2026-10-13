@@ -8,7 +8,8 @@
   analysis/distance-product gives d(x*y,L*M) <= |x|*d(y,M) + |M|*d(x,L); product
   monotonicity (|x|<=B, distances/absolutes nonnegative) bounds that by B*et + |M|*es;
   then convert d(x*y,L*M) <= bound back to a close-band. Axiom-free; additive."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance-product :as distance-product]
             [rainbow.math.rational.signed.additive-distance :as additive-distance]
@@ -98,13 +99,16 @@
 
 (def theorem-specs [close-product-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      distance-product/extend-environment
-      additive-distance/extend-environment
-      multiply-monotone/extend-environment
-      convergence/extend-environment
-      (support/extend-with :signed-close-product theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distance-product rainbow.math.rational.signed.additive-distance rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.convergence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-close-product theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.close-product))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

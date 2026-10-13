@@ -8,7 +8,8 @@
 
   Combining this with stationarity proves E_mu[K f] ~ E_mu[f] for every
   observable.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-expectation-invariance :as invariance]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-expectation-invariance :as invariance]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -315,12 +316,16 @@
   [expectation-after-kernel-step-spec
    stationary-kernel-observable-expectation-spec])
 
-(defn extend-environment [env]
-  (-> env
-      invariance/extend-environment
-      (support/extend-with
-       :finite-markov-expectation-tower
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-expectation-invariance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-expectation-tower (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-expectation-tower))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

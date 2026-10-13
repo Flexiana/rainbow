@@ -15,7 +15,8 @@
 
   This is the gate to signed min/max/abs and the epsilon-N convergence predicate.
   Native and axiom-free; chains nnrat-add-monotone, nnrat-add-cancellation, and nnrat-additive-reassociation on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.add-monotone :as am]
             [rainbow.math.rational.nnrat.add-cancellation :as ac]
@@ -93,13 +94,17 @@
 (def definition-specs [])
 (def theorem-specs [at-most-transitive-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.add-cancellation rainbow.math.rational.nnrat.additive-reassociation])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-order-transitivity (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      am/extend-environment
-      ac/extend-environment
-      rr/extend-environment
-      (support/extend-with :signed-order-transitivity
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.signed.order-transitivity))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

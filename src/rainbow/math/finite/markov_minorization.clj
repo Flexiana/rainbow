@@ -2,7 +2,8 @@
   "Finite shared lower-mass certificates for Dobrushin bounds.
   A minorizing mass may vanish on some columns, so this does not require
   full positivity of the kernel. Statements concern the listed support."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-dobrushin-kernel :as coefficient]
             [rainbow.math.finite.markov-overlap :as overlap]
@@ -95,8 +96,16 @@
 (def definition-specs [minorizes-spec])
 (def theorem-specs [common-total-at-least-minorizing-mass-spec coefficient-at-most-of-minorization-spec
                     coefficient-at-most-of-positive-minorization-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-overlap rainbow.math.rational.nnrat.unit-fraction])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-minorization (concat definition-specs theorem-specs))))
+
 (defn extend-environment [env]
-  (-> env overlap/extend-environment unit/extend-environment
-      (support/extend-with :finite-markov-minorization (concat definition-specs theorem-specs))))
+  (module/install-module env 'rainbow.math.finite.markov-minorization))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

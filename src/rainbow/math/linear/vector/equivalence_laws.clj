@@ -7,7 +7,8 @@
   mapped over a list.  Vector negation congruence is then a specialization of
   that general theorem, while involutivity maps the corresponding scalar law
   over one list."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.order :as signed-order]))
@@ -420,10 +421,16 @@
     (support/extend-with checked-environment :signed-order
                          [signed-order/negate-involutive-spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      extend-signed-negate-involutive-if-missing
-      (support/extend-with :vector-equivalence-laws theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-signed-negate-involutive-if-missing (support/extend-with :vector-equivalence-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.equivalence-laws))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

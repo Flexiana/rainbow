@@ -17,7 +17,8 @@
   Scope (measured by the kernel): this module has 2 worked instances (statements about specific values) and 1 definitional unfoldings (true by unfolding a definition).
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.hypergradient`
   prints this classification."
-  (:require [rainbow.algorithms.proofs.inner-product :as dep-inner-product]
+  (:require [rainbow.module :as module]
+            [rainbow.algorithms.proofs.inner-product :as dep-inner-product]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
@@ -140,10 +141,17 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
-  (support/extend-with (dep-inner-product/extend-environment checked-environment) :hypergradient
-                       (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.inner-product])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :hypergradient (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.hypergradient))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

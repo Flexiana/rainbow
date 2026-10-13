@@ -12,7 +12,8 @@
   x (from-nnrat q) reduces to (positive x + 0) ~ (q + negative x), the property is
   (magnitude x + negative x) ~ positive x [nnrat/monus-add-cancel] chained through
   (positive x + 0) ~ positive x [nnrat/add-zero-right]. Axiom-free; additive."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.monus :as nnrat-monus]
             [rainbow.math.rational.nnrat.identities :as nnrat-identities]))
@@ -63,11 +64,16 @@
 
 (def theorem-specs [magnitude-spec from-nnrat-magnitude-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nnrat-monus/extend-environment
-      nnrat-identities/extend-environment
-      (support/extend-with :signed-magnitude theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.monus rainbow.math.rational.nnrat.identities])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-magnitude theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.magnitude))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

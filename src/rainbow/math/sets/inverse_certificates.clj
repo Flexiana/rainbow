@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.inverse-certificates
   "Constructive injectivity, surjectivity, and bijectivity from set inverses."
-  (:require [rainbow.math.finite.set :as finite-set]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.set :as finite-set]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -417,10 +418,16 @@
    inverse-on-symmetric-spec
    inverse-on-compose-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      finite-set/extend-environment
-      (support/extend-with :set-inverse-certificates theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.set])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-inverse-certificates theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.inverse-certificates))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

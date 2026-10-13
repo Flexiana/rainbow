@@ -6,7 +6,8 @@
   complete matrix shape; same-shaped subtraction preserves both operand shapes.
   Matrix addition has shaped identities and inverses, including self-subtraction
   to the shaped zero matrix.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.add-algebra :as algebra]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.add-algebra :as algebra]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -328,12 +329,17 @@
    add-negate-left-spec
    subtract-self-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      algebra/extend-environment
-      (support/extend-with :finite-matrix-additive-group
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.add-algebra])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-additive-group (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.additive-group))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

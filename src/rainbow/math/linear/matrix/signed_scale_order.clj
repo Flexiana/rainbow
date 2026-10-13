@@ -5,7 +5,8 @@
   must be pointwise ordered vectors and row counts must agree.  A nonnegative
   signed factor preserves scalar scale-difference order, and structural lifts
   preserve vector and matrix pointwise order.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as rmodule]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.signed-scale-subtract :as module]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -438,24 +439,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      module/extend-environment
-      (extend-spec-if-missing
-       'vector/at-most :vector-pointwise-order
-       vector-order/vector-at-most-spec)
-      (extend-spec-if-missing
-       'vector/at-most-reflexive :vector-pointwise-order
-       vector-order/at-most-reflexive-spec)
-      (extend-spec-if-missing
-       'signed/multiply-left-monotone :signed-multiply-monotone
-       multiply-monotone/multiply-left-monotone-spec)
-      (extend-spec-if-missing
-       'signed/at-most-respects-equivalence :signed-order-respects
-       order-respects/at-most-respects-equivalence-spec)
-      (support/extend-with :finite-matrix-signed-scale-order
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-subtract])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'vector/at-most :vector-pointwise-order vector-order/vector-at-most-spec) (extend-spec-if-missing 'vector/at-most-reflexive :vector-pointwise-order vector-order/at-most-reflexive-spec) (extend-spec-if-missing 'signed/multiply-left-monotone :signed-multiply-monotone multiply-monotone/multiply-left-monotone-spec) (extend-spec-if-missing 'signed/at-most-respects-equivalence :signed-order-respects order-respects/at-most-respects-equivalence-spec) (support/extend-with :finite-matrix-signed-scale-order (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (rmodule/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

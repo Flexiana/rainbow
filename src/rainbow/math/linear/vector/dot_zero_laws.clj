@@ -10,7 +10,8 @@
   component by signed zero.  A native List induction proves its dot product is
   zero against arbitrary weights; commutativity supplies the other side.  The
   squared-norm and exact-zero-witness laws are immediate corollaries."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distributive :as distributive]
@@ -182,15 +183,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      subtract/extend-environment
-      norm/extend-environment
-      (extend-spec-if-missing
-       'signed/multiply-zero-left :signed-distributive
-       distributive/multiply-zero-left-spec)
-      (support/extend-with :vector-dot-zero-laws theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.dot-subtract rainbow.math.linear.vector.norm])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/multiply-zero-left :signed-distributive distributive/multiply-zero-left-spec) (support/extend-with :vector-dot-zero-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.dot-zero-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

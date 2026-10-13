@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.markov-column-exact-contraction
   "Exact column-minimum coefficient and its positive-total properness."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.complement-proper :as proper]
             [rainbow.math.finite.markov-minorization-complement :as exact]
@@ -147,8 +148,15 @@
                     column-exact-factor-proper-spec column-exact-contraction-spec
                     column-exact-geometric-decay-spec column-exact-stationary-uniqueness-spec
                     column-exact-geometric-convergence-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-ergodic-uniqueness rainbow.math.finite.markov-geometric-convergence rainbow.math.finite.markov-geometric-decay rainbow.math.finite.markov-dobrushin-contraction rainbow.math.finite.markov-column-minorization rainbow.math.finite.markov-minorization-complement rainbow.math.rational.nnrat.complement-proper])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-column-exact-contraction theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env uniqueness/extend-environment convergence/extend-environment
-      decay/extend-environment contraction/extend-environment column/extend-environment exact/extend-environment proper/extend-environment
-      (support/extend-with :finite-markov-column-exact-contraction theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-column-exact-contraction))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -22,7 +22,8 @@
   Nothing about the mathematics changes; the quantifier does.
 
   Native and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.lp-duality :as lp]
             [rainbow.math.rational.signed.pointwise-order :as pointwise]))
@@ -253,12 +254,17 @@
 (def theorem-specs
   [double-counting-spec weak-duality-spec optimality-certificate-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      lp/extend-environment
-      pointwise/extend-environment
-      (support/extend-with :signed-lp-duality-on theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.lp-duality rainbow.math.rational.signed.pointwise-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-lp-duality-on theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.lp-duality-on))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

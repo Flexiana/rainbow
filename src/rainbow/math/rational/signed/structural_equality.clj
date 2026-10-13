@@ -17,7 +17,8 @@
   on top of it is honest in both outcomes.
 
   Native and axiom-free."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.boolean-and :as boolean-and]
             [rainbow.math.linear.matrix.row-length-decider :as nat-decider]
             [rainbow.math.logic.function :as function]
@@ -257,14 +258,17 @@
     (throw (ex-info "product/eta is absent; chain the module that installs it"
                     {:missing 'product/eta}))))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      boolean-and/extend-environment
-      nat-decider/extend-environment
-      extend-with-product-eta-if-missing
-      (support/extend-with :signed-structural-equality
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.logic.boolean-and rainbow.math.linear.matrix.row-length-decider])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-with-product-eta-if-missing (support/extend-with :signed-structural-equality (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.structural-equality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

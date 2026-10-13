@@ -5,7 +5,8 @@
   L1(pK,qK) <= sum_i sum_j J(i,j)*L1(K(i,-),K(j,-)).
   No stochastic normalization is needed. The marginal hypotheses are
   algebraic identities, not the desired distance bound."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-residual-coupling :as coupling]
@@ -206,9 +207,15 @@
 
 (def theorem-specs [coupling-distance-bound-spec positive-residual-coupling-bound-spec
                     residual-coupling-total-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-residual-coupling rainbow.math.rational.nnrat.weighted-map-sum-distance])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env ((fn [e] (if (environment/resolve-id e 'nnrat/map-sum-swap) e (support/add-spec e :finite-markov-coupling-distance-support fubini/map-sum-swap-spec)))) (support/extend-with :finite-markov-coupling-distance theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env coupling/extend-environment weighted/extend-environment
-      ((fn [e] (if (environment/resolve-id e 'nnrat/map-sum-swap) e
-                 (support/add-spec e :finite-markov-coupling-distance-support fubini/map-sum-swap-spec))))
-      (support/extend-with :finite-markov-coupling-distance theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-coupling-distance))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -111,10 +111,11 @@ cross-multiplication):
 ```
 
 The `:type` is the statement and the `:value` is the proof; both are ordinary
-Clojure data. A module lists its specs in `theorem-specs`, and its
-`extend-environment` installs them through the kernel, which type-checks each
-`:value` against its `:type`. The installed declaration is named by the hash of
-its content. [`doc/tour.md`](doc/tour.md) reads a module end to end.
+Clojure data. A module lists its specs in `theorem-specs`, declares the modules it
+builds on in `deps`, and installs its specs through the kernel, which type-checks
+each `:value` against its `:type`. The installed declaration is named by the hash
+of its content. [`doc/tour.md`](doc/tour.md) reads a module end to end;
+[`doc/modules.md`](doc/modules.md) explains the module format.
 
 ## What is in the box
 
@@ -127,7 +128,7 @@ its content. [`doc/tour.md`](doc/tour.md) reads a module end to end.
 | `src/rainbow/history/` | the bootstrap chronology: the first direct-term corpus, the first tactic, the Lean round trip, the Mathlib experiments |
 | `src/rainbow/foreign/`, `foreign/lean/` | the Lean 4 bridge: export, import, a verified round trip |
 | `artifacts/` | checkpoints and reports; declarations stored once in `artifacts/store/` |
-| `doc/` | maturity levels, trusted base, tour, corpus index |
+| `doc/` | maturity levels, what a theorem claims, trusted base, module format, tour, corpus index |
 
 ## Rainbow Pro
 

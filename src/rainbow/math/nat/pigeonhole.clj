@@ -15,7 +15,8 @@
   decisions, f a = f b follows directly or the mixed case would make f a or f b equal to c.
   Consumer: the Bellman-Ford cycle-removal lemma (a walk of >= n arcs over n nodes repeats a
   node)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.nat.divmod :as divmod]
@@ -307,11 +308,16 @@
 
 (def theorem-specs [trichotomy-spec bounded-search-spec pigeonhole-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      divmod/extend-environment
-      decide-completeness/extend-environment
-      (support/extend-with :nat-pigeonhole theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.divmod rainbow.math.rational.signed.decide-completeness])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-pigeonhole theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.pigeonhole))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -11,7 +11,8 @@
   coefficient `w0+w1` to `s`, then use the forward directions of the positive
   coefficient normalization equivalences from nnrat-order-scale.  Native,
   non-vacuous, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.convex-two-point :as convex-two-point]
             [rainbow.math.rational.nnrat.minmax :as minmax]
@@ -196,12 +197,17 @@
       scale/extend-rate-null-prerequisites
       (support/extend-with :nnrat-order-scale scale/theorem-specs)))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex-two-point/extend-environment
-      extend-order-scale-after-convex
-      (support/extend-with :nnrat-convex-normalized theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.convex-two-point])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-order-scale-after-convex (support/extend-with :nnrat-convex-normalized theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.convex-normalized))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

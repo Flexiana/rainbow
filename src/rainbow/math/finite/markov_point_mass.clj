@@ -6,7 +6,8 @@
   mass through one kernel step is equivalent to the selected source row.  This
   is the exact bridge from the mass-based iteration API to finite-step
   reachability.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-iteration :as iteration]
             [rainbow.math.finite.markov-positive-step :as positive-step]
             [rainbow.math.finite.markov-stationarity :as stationarity]
@@ -436,41 +437,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      spike/extend-environment
-      (extend-spec-if-missing
-       'nnrat/map-sum-respects-equivalence
-       :finite-markov-point-mass-support
-       map-respects/map-sum-respects-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-step
-       :finite-markov-point-mass-support
-       stationarity/kernel-step-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-iterate
-       :finite-markov-point-mass-support
-       iteration/kernel-iterate-spec)
-      positive/extend-environment
-      (extend-spec-if-missing
-       'nnrat/map-sum-positive-of-member
-       :finite-markov-point-mass-support
-       positive-sum/map-sum-positive-of-member-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-step-positive-of-member
-       :finite-markov-point-mass-support
-       positive-step/kernel-step-positive-of-member-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-iterate-positive-successor-of-member
-       :finite-markov-point-mass-support
-       positive-step/kernel-iterate-positive-successor-of-member-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-iterate-positive-along-trajectory
-       :finite-markov-point-mass-support
-       positive-step/kernel-iterate-positive-along-trajectory-spec)
-      (support/extend-with
-       :finite-markov-point-mass
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.diagonal-spike])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nnrat/map-sum-respects-equivalence :finite-markov-point-mass-support map-respects/map-sum-respects-spec) (extend-spec-if-missing 'markov/nnrat-kernel-step :finite-markov-point-mass-support stationarity/kernel-step-spec) (extend-spec-if-missing 'markov/nnrat-kernel-iterate :finite-markov-point-mass-support iteration/kernel-iterate-spec) positive/extend-environment (extend-spec-if-missing 'nnrat/map-sum-positive-of-member :finite-markov-point-mass-support positive-sum/map-sum-positive-of-member-spec) (extend-spec-if-missing 'markov/nnrat-kernel-step-positive-of-member :finite-markov-point-mass-support positive-step/kernel-step-positive-of-member-spec) (extend-spec-if-missing 'markov/nnrat-kernel-iterate-positive-successor-of-member :finite-markov-point-mass-support positive-step/kernel-iterate-positive-successor-of-member-spec) (extend-spec-if-missing 'markov/nnrat-kernel-iterate-positive-along-trajectory :finite-markov-point-mass-support positive-step/kernel-iterate-positive-along-trajectory-spec) (support/extend-with :finite-markov-point-mass (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-point-mass))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

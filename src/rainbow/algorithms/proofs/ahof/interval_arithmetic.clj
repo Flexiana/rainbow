@@ -11,7 +11,8 @@
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.interval-arithmetic`
   prints this classification."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.algorithms.proofs.interval-membership :as dep-interval-membership]
+  (:require [rainbow.module :as module]
+            [rainbow.algorithms.proofs.interval-membership :as dep-interval-membership]
             [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
@@ -164,10 +165,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (reduce add-spec (dep-interval-membership/extend-environment checked-environment)
-          (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.interval-membership])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-spec checked-environment (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.interval-arithmetic))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

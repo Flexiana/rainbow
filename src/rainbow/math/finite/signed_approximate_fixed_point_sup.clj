@@ -9,7 +9,8 @@
   the input already quantifies over every state, while the output deliberately
   measures only the declared finite source.  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-approximate-optimality-generic
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-approximate-optimality-generic
              :as approximate]
             [rainbow.math.finite.signed-sup-distance :as finite-sup]
             [rainbow.math.logic.function :as function]
@@ -185,13 +186,16 @@
    pointwise-approximate-fixed-point-sup-certificate-spec
    pointwise-existence-gives-sup-existence-spec])
 
-(defn extend-environment [env]
-  (-> env
-      approximate/extend-environment
-      finite-sup/extend-environment
-      additive-distance/extend-environment
-      (support/extend-with
-       :finite-signed-approximate-fixed-point-sup theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-approximate-optimality-generic rainbow.math.finite.signed-sup-distance rainbow.math.rational.signed.additive-distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-signed-approximate-fixed-point-sup theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.signed-approximate-fixed-point-sup))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

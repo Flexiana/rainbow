@@ -15,7 +15,8 @@
   termwise domination is nnrat/multiply-monotone (nonneg weight preserves <=).
   Polymorphic in the index type A.  Native and axiom-free; chains
   nnrat-list-sum and nnrat-multiply-monotone on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.list-sum :as ls]
             [rainbow.math.rational.nnrat.multiply-monotone :as mm]))
@@ -82,12 +83,17 @@
 (def definition-specs [weighted-sum-spec])
 (def theorem-specs [weighted-sum-monotone-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.list-sum rainbow.math.rational.nnrat.multiply-monotone])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-weighted-dot (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ls/extend-environment
-      mm/extend-environment
-      (support/extend-with :nnrat-weighted-dot
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.weighted-dot))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

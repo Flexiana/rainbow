@@ -10,7 +10,8 @@
   Dimension mismatch is handled constructively: vector/at-most reduces to
   proposition/falsity when exactly one list is empty, and those impossible
   witnesses eliminate the mismatch branches.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -623,15 +624,17 @@
     (support/extend-with checked-environment :signed-unit-laws
                          [signed-units/equivalent-to-at-most-spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      finite-vector/extend-environment
-      pointwise/extend-environment
-      extend-signed-negate-order-if-missing
-      extend-signed-symmetry-if-missing
-      extend-signed-equivalent-order-if-missing
-      (support/extend-with :vector-pointwise-order-laws theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.vector rainbow.math.linear.vector.pointwise-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-signed-negate-order-if-missing extend-signed-symmetry-if-missing extend-signed-equivalent-order-if-missing (support/extend-with :vector-pointwise-order-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.pointwise-order-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -9,7 +9,8 @@
   with coverage of every ambient state, so downstream kernels need one coherent
   finite-state certificate rather than two unrelated premises.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -814,23 +815,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      list-sum/extend-environment
-      (extend-spec-if-missing
-       'nnrat/add-zero-right :nnrat-diagonal-spike-support
-       identities/add-zero-right-spec)
-      (extend-spec-if-missing
-       'nnrat/add-zero-left :nnrat-diagonal-spike-support
-       identities/add-zero-left-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-zero-left :nnrat-diagonal-spike-support
-       identities/multiply-zero-left-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-one-left :nnrat-diagonal-spike-support
-       identities/multiply-one-left-spec)
-      (support/extend-with :nnrat-diagonal-spike
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.list-sum])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nnrat/add-zero-right :nnrat-diagonal-spike-support identities/add-zero-right-spec) (extend-spec-if-missing 'nnrat/add-zero-left :nnrat-diagonal-spike-support identities/add-zero-left-spec) (extend-spec-if-missing 'nnrat/multiply-zero-left :nnrat-diagonal-spike-support identities/multiply-zero-left-spec) (extend-spec-if-missing 'nnrat/multiply-one-left :nnrat-diagonal-spike-support identities/multiply-one-left-spec) (support/extend-with :nnrat-diagonal-spike (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.diagonal-spike))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

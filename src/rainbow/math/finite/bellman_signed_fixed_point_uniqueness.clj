@@ -9,7 +9,8 @@
 
   This proves uniqueness, not existence.  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-signed-greedy-policy :as greedy]
             [rainbow.math.finite.signed-sup-separation :as separation]
             [rainbow.math.logic.function :as function]
@@ -206,13 +207,16 @@
       (support/extend-with env producer missing)
       env)))
 
-(defn extend-environment [env]
-  (-> env
-      greedy/extend-environment
-      (extend-specs-if-missing
-       :finite-signed-sup-separation separation/theorem-specs)
-      (support/extend-with
-       :finite-bellman-signed-fixed-point-uniqueness theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-greedy-policy])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :finite-signed-sup-separation separation/theorem-specs) (support/extend-with :finite-bellman-signed-fixed-point-uniqueness theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-fixed-point-uniqueness))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

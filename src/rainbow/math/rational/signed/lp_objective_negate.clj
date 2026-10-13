@@ -2,7 +2,8 @@
   "Generic finite-sum negation and formal LP minimization sense transport.
   Covers arbitrary carriers and finite lists, including empty/repeated indices.
   Does not identify a host mapv-negation with the formal mapping without evidence."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.map-sum-algebra :as sums]
             [rainbow.math.rational.nnrat.ring :as ring]
@@ -94,10 +95,15 @@
              (app 'signed/negate-involutive obj) reversed)))}))
 
 (def theorem-specs [map-sum-negate-spec lp-objective-negate-spec negated-objective-bound-to-lower-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.map-sum-algebra rainbow.math.rational.nnrat.ring rainbow.math.rational.signed.equivalence-laws rainbow.math.rational.signed.negate-additive rainbow.math.rational.signed.deviation-rows rainbow.math.rational.signed.order-respects])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/add-spec-shared :vector-dot-negate scalar/negate-zero-spec) (support/add-spec-shared :vector-dot-negate scalar/multiply-negate-left-spec) (support/extend-with :signed-lp-objective-negate theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env sums/extend-environment ring/extend-environment equivalence/extend-environment
-      additive/extend-environment order/extend-environment respects/extend-environment
-      (support/add-spec-shared :vector-dot-negate scalar/negate-zero-spec)
-      (support/add-spec-shared :vector-dot-negate scalar/multiply-negate-left-spec)
-      (support/extend-with :signed-lp-objective-negate theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.lp-objective-negate))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

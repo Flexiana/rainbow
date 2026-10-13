@@ -9,7 +9,8 @@
 
   since distinct p and q would give 1 + 1 <= sum ~ 1. Consumer: the Floyd-Warshall chain bridge.
   A chain names its pivots P t, and uniqueness identifies the reading's existential pivot with them."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.signed.one-hot-selects :as selects]
@@ -172,12 +173,16 @@
 
 (def theorem-specs [term-below-spec two-below-spec unique-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      selects/extend-environment
-      pigeonhole/extend-environment
-      algebra/extend-environment
-      (support/extend-with :signed-one-hot-unique theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.one-hot-selects rainbow.math.nat.pigeonhole rainbow.math.sums.value-algebra])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-one-hot-unique theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.one-hot-unique))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

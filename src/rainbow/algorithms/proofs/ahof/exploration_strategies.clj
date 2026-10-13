@@ -10,7 +10,8 @@
 
   Greedy exploitation reuses rainbow.math.rational.nnrat.minmax (max dominates both arms).
   Native and axiom-free; chains nnrat-minmax on the d63 base."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.minmax :as minmax]))
 
@@ -179,11 +180,17 @@
    etc-commits-spec etc-explores-spec
    quantile-optimism-example-spec softmax-probability-example-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.minmax])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-exploration-strategies (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      (support/extend-with :ahof-exploration-strategies
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.exploration-strategies))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

@@ -6,7 +6,8 @@
   `x <= F x` into an ascending trajectory and a supersolution `F x <= x` into
   a descending trajectory.  Theorem-only, kernel-checked, and axiom-free on
   D63."
-  (:require [rainbow.math.linear.matrix.affine-fixed-point-order
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-fixed-point-order
              :as fixed-point-order]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -151,11 +152,16 @@
    affine-iterate-subsolution-ascending-spec
    affine-iterate-supersolution-descending-spec])
 
-(defn extend-environment [env]
-  (-> env
-      fixed-point-order/extend-environment
-      (support/extend-with :finite-matrix-affine-trajectory-order
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-fixed-point-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-trajectory-order theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-trajectory-order))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

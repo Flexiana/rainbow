@@ -20,7 +20,8 @@
 
   The two optimality components instantiate the general primal and dual LP
   optimality certificates.  All evidence is native proof data and axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.lp-optimality :as opt]))
@@ -187,11 +188,17 @@
 (def definition-specs [])
 (def theorem-specs [strong-duality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      opt/extend-environment
-      (support/extend-with :nnrat-lp-strong-duality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.lp-optimality])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-strong-duality theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-strong-duality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

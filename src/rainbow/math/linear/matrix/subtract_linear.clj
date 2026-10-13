@@ -5,7 +5,8 @@
   shape certificate, additive bilinearity and negation linearity compose into
   action, transpose, and two-sided product subtraction laws.  Native and
   axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.negate-linear :as negate-linear]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.negate-linear :as negate-linear]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -206,11 +207,17 @@
    multiply-subtract-left-spec
    multiply-subtract-right-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      negate-linear/extend-environment
-      (support/extend-with :finite-matrix-subtract-linear theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.negate-linear])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-subtract-linear theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.subtract-linear))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

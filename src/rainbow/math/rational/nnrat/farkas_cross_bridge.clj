@@ -23,7 +23,8 @@
   Mapping this over the bilist cross-condition structure is what discharges
   the eliminate-round's `link`, turning the elimination round into a closed
   step of the variable-count induction. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.add-monotone :as add-monotone]
             [rainbow.math.rational.nnrat.additive-reassociation :as add-reassoc]
@@ -127,16 +128,17 @@
 (def definition-specs [])
 (def theorem-specs [cross-to-both-sides-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-monotone/extend-environment
-      add-reassoc/extend-environment
-      distribute/extend-environment
-      multiply-commute/extend-environment
-      product/extend-environment
-      (support/extend-with :nnrat-farkas-cross-bridge
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.additive-reassociation rainbow.math.rational.nnrat.distribute-right rainbow.math.rational.nnrat.multiply-commute rainbow.math.rational.nnrat.product-reassociation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-cross-bridge (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-cross-bridge))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

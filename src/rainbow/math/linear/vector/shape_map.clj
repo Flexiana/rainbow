@@ -5,7 +5,8 @@
   vector negation, uniform scaling, and zero-like construction are reducible
   specializations.  The proof is one List induction whose head obligation is
   signed zero reflexivity.  Native and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.shape-cancellation :as shape]))
 
@@ -124,11 +125,17 @@
    scale-preserves-shape-spec
    zero-like-preserves-shape-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      shape/extend-environment
-      (support/extend-with :vector-shape-map theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.shape-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-shape-map theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.shape-map))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

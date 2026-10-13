@@ -7,7 +7,8 @@
   The proofs normalize subtraction to addition of a negation and compose vector
   congruence, negation involutivity, negation distributivity, commutativity, and
   equivalence transitivity.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.negate-additive :as signed-additive]
@@ -99,20 +100,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      subtract-laws/extend-environment
-      (extend-spec-if-missing
-       'signed/negate-additive :signed-negate-additive
-       signed-additive/negate-additive-spec)
-      (extend-spec-if-missing
-       'vector/negate-additive :vector-negate-additive
-       negate-additive/negate-additive-spec)
-      (extend-spec-if-missing
-       'vector/equivalent-transitive :vector-equivalence-transitivity
-       transitivity/equivalent-transitive-spec)
-      (support/extend-with :vector-subtract-negation theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.subtract-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/negate-additive :signed-negate-additive signed-additive/negate-additive-spec) (extend-spec-if-missing 'vector/negate-additive :vector-negate-additive negate-additive/negate-additive-spec) (extend-spec-if-missing 'vector/equivalent-transitive :vector-equivalence-transitivity transitivity/equivalent-transitive-spec) (support/extend-with :vector-subtract-negation theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.subtract-negation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

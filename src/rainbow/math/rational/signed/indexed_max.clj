@@ -8,7 +8,8 @@
   bound is direct (max-upper-right). The full 'dominates every index below n' is a follow-on needing
   strict-below case analysis. This is the semantic target a future index-aware fold CONSTRUCTOR would
   let a verified program compute -- see the design notes."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.minmax :as minmax]
             [rainbow.math.rational.signed.order-transitivity :as order-trans]))
@@ -77,11 +78,16 @@
 
 (def theorem-specs [indexed-max-from-spec dominates-init-spec upper-of-last-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      order-trans/extend-environment
-      (support/extend-with :signed-indexed-max theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.minmax rainbow.math.rational.signed.order-transitivity])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-indexed-max theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.indexed-max))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

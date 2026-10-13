@@ -15,7 +15,8 @@
   Thus independently implemented solvers and perturbed models receive the
   sharp rational factor without a `q <= 1/2` premise.  Theorem-only,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-general-rate-certificate
              :as general-rate]
             [rainbow.math.logic.function :as function]
@@ -491,15 +492,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      general-rate/extend-environment
-      (extend-spec-if-missing
-       'signed/add-associative
-       :signed-add-associative
-       associative/add-associative-spec)
-      (support/extend-with
-       :finite-matrix-affine-inverse-gap-stability theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-general-rate-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/add-associative :signed-add-associative associative/add-associative-spec) (support/extend-with :finite-matrix-affine-inverse-gap-stability theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-inverse-gap-stability))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

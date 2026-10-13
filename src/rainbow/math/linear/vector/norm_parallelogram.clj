@@ -11,7 +11,8 @@
       ||a+b||^2 + ||a-b||^2  ~  (||a||^2+||a||^2) + (||b||^2+||b||^2)
 
   for same-shaped vectors, without division, square roots, or axioms."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.linear.vector.norm-expansion :as expansion]))
@@ -143,11 +144,17 @@
 (def theorem-specs
   [parallelogram-recombine-spec norm-squared-parallelogram-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      expansion/extend-environment
-      (support/extend-with :vector-norm-parallelogram theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.norm-expansion])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-norm-parallelogram theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.norm-parallelogram))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

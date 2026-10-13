@@ -13,7 +13,8 @@
   aliases (each defined by several modules).  List.rec induction; polymorphic in
   the element type.  Native and axiom-free; chains nnrat-map-sum-additive,
   nnrat-distributive on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.map-sum-additive :as ma]
             [rainbow.math.rational.nnrat.distributive :as dist]))
@@ -81,12 +82,17 @@
 (def definition-specs [])
 (def theorem-specs [map-sum-scale-right-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.map-sum-additive rainbow.math.rational.nnrat.distributive])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-map-sum-scale (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ma/extend-environment
-      dist/extend-environment
-      (support/extend-with :nnrat-map-sum-scale
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.map-sum-scale))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

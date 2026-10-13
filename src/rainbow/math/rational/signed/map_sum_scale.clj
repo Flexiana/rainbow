@@ -3,7 +3,8 @@
   Produces the endpoint equivalences for formal LP D^2/D scaling, including
   empty and repeated-index lists. Host-language input transformation is not
   identified with this formal expression without a separate correspondence."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.rational.signed.map-sum-algebra :as sums]
@@ -136,11 +137,16 @@
 (def definition-specs [])
 (def theorem-specs [map-sum-nnrat-scale-spec multiply-scaled-factors-spec
                     map-sum-biscaled-products-spec lp-objective-cubic-scale-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.map-sum-algebra rainbow.math.rational.signed.scale-additive])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/add-spec-shared :vector-dot-scale dot-scale/scale-zero-spec) (support/extend-with :signed-map-sum-scale theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env
-      sums/extend-environment
-      additive/extend-environment
-      (support/add-spec-shared :vector-dot-scale dot-scale/scale-zero-spec)
-      (support/extend-with :signed-map-sum-scale theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.map-sum-scale))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

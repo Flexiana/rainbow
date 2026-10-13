@@ -6,7 +6,8 @@
   agrees with running `extra + base` steps.  Bellman subsolutions therefore
   stay below every later iterate, while supersolutions stay above every later
   iterate.  Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-trajectory-order
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-trajectory-order
              :as trajectory-order]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -149,11 +150,16 @@
    affine-iterate-subsolution-horizon-spec
    affine-iterate-supersolution-horizon-spec])
 
-(defn extend-environment [env]
-  (-> env
-      trajectory-order/extend-environment
-      (support/extend-with :finite-matrix-affine-horizon-order
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-trajectory-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-horizon-order theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-horizon-order))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

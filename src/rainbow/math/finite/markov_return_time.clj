@@ -7,7 +7,8 @@
   a return at horizon one. A future period definition must explicitly restrict
   to positive horizons; these facts alone do not claim aperiodicity or mixing.
   Native and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-point-mass :as point-mass]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-point-mass :as point-mass]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -129,12 +130,16 @@
 (def theorem-specs
   [return-at-zero-spec return-at-one-of-positive-self-loop-spec])
 
-(defn extend-environment [env]
-  (-> env
-      point-mass/extend-environment
-      (support/extend-with
-       :finite-markov-return-time
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-point-mass])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-return-time (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-return-time))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

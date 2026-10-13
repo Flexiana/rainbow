@@ -13,7 +13,8 @@
   p1=p2=1 -> (5-2)*1 - 1*1 = 2, by signed cross-product reflexivity.
   Chains signed-multiply; native and axiom-free on D63. A proved native
   module; formal ledger crediting is the separate catalog follow-up."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.map-sum-algebra :as signed-algebra]
@@ -122,16 +123,16 @@
 (defn- guard [env alias extend]
   (if (environment/resolve-id env alias) env (extend env)))
 
-(defn extend-environment [env]
-  (-> env
-      signed-multiply/extend-environment
-      (guard 'signed/multiply-zero-right multiply-ring/extend-environment)
-      (guard 'signed/subtract-respects-equivalence
-             subtract-respects/extend-environment)
-      (guard 'signed/subtract-self-equivalent-zero unit-laws/extend-environment)
-      (guard 'signed/equivalent-transitive signed-algebra/extend-environment)
-      (support/extend-with :ahof-stieltjes
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (guard 'signed/multiply-zero-right multiply-ring/extend-environment) (guard 'signed/subtract-respects-equivalence subtract-respects/extend-environment) (guard 'signed/subtract-self-equivalent-zero unit-laws/extend-environment) (guard 'signed/equivalent-transitive signed-algebra/extend-environment) (support/extend-with :ahof-stieltjes (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.algorithms.proofs.ahof.stieltjes))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -17,7 +17,8 @@
   (multiply-successor-right-cancel), and rewrites to a <= b.
 
   Native and axiom-free; chains rainbow.math.nat.ring on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.nat.ring :as ring]))
 
@@ -229,9 +230,17 @@
 (def theorem-specs [add-right-cancel-spec add-left-cancel-order-spec
                     sum-zero-left-spec multiply-right-cancel-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :nat-at-most-cancellation (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :nat-at-most-cancellation
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.nat.at-most-cancellation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

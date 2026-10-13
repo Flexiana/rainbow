@@ -7,7 +7,8 @@
   Opening the residual sums gives a double-sum distance upper bound. These
   laws hold for every finite nonnegative kernel; normalization and equal
   total mass are not needed. The all-pairs Dobrushin estimate is a later step."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.shared-residual-mass :as residual]
             [rainbow.math.rational.nnrat.ring :as ring]
@@ -182,7 +183,15 @@
 (def theorem-specs [left-decomposition-spec right-decomposition-spec
                     residual-cancellation-spec residual-expansion-bound-spec
                     residual-weighted-expansion-bound-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-total-variation-translation rainbow.math.rational.nnrat.shared-residual-mass rainbow.math.rational.nnrat.ring])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-residual-expansion theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env translation/extend-environment residual/extend-environment ring/extend-environment
-      (support/extend-with :finite-markov-residual-expansion theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-residual-expansion))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -14,7 +14,8 @@
   Multiplication by the nonnegative Grothendieck pair (c,0) preserves signed
   order.  The proof reduces the signed comparison to nnrat/multiply-monotone and
   transports through distributivity and the nnrat zero laws."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.distributive :as distributive]
             [rainbow.math.rational.nnrat.multiply-commute :as multiply-commute]
@@ -233,17 +234,19 @@
   [distributive/multiply-distributes-add-right-spec])
 (def theorem-specs [close-scale-nonnegative-spec])
 
-(defn extend-environment [checked-environment]
-  (let [base (-> checked-environment
-                 arithmetic/extend-environment
-                 multiply-monotone/extend-environment
-                 multiply-commute/extend-environment
-                 signed-multiply/extend-environment)]
-    ;; Import only distributivity: the full provider also bundles an older
-    ;; multiply-one-left declaration that conflicts with the arithmetic chain.
-    (support/extend-with base :signed-limit-scale
-                         (concat dependency-specs theorem-specs))))
+;; Import only distributivity: the full provider also bundles an older
+;; multiply-one-left declaration that conflicts with the arithmetic chain.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [base (-> checked-environment arithmetic/extend-environment multiply-monotone/extend-environment multiply-commute/extend-environment signed-multiply/extend-environment)] (support/extend-with base :signed-limit-scale (concat dependency-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-scale))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

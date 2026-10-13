@@ -13,7 +13,8 @@
 
   Requires nat/power, nat/at-most(-reflexive,-transitive), nat/le-add-right,
   algebra/nat-add (d63 checkpoint + nat-add-order)."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -133,8 +134,16 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (support/extend-with checked-environment :nat-power-growth theorem-specs))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.power-growth))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

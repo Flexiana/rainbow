@@ -5,7 +5,8 @@
   shape.  Under those hypotheses a common right or left addend cancels from
   vector equivalence and from vector/at-most.  Proofs compose existing checked
   arithmetic and order laws; there is no new recursion."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.shape-add :as shape-add]))
 
@@ -244,11 +245,17 @@
    at-most-add-right-cancel-spec
    at-most-add-left-cancel-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      shape-add/extend-environment
-      (support/extend-with :vector-add-cancellation theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.shape-add])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-add-cancellation theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.add-cancellation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

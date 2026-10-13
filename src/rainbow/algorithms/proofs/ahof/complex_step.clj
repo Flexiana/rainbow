@@ -13,7 +13,8 @@
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.complex-step`
   prints this classification."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -80,9 +81,17 @@
 
 (def theorem-specs [op-unfold-spec slope-example-is-3-spec flat-example-is-0-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :ahof-complex-step (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :ahof-complex-step
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.complex-step))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

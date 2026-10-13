@@ -10,7 +10,8 @@
   otherwise recover.  The proof lifts transpose/action associativity across
   explicit columns, transports through the certified transpose/product bridge,
   and then maps the row theorem over A.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.transpose-multiply :as transpose-product]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.transpose-multiply :as transpose-product]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -350,11 +351,17 @@
    multiply-row-associative-spec
    multiply-associative-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      transpose-product/extend-environment
-      (support/extend-with :finite-matrix-multiply-associative theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose-multiply])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-multiply-associative theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.multiply-associative))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

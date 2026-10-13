@@ -1,7 +1,8 @@
 (ns rainbow.math.sums.triangular
   "Triangular decomposition for the existing finite sums; prefix completion costs.
   Pure algebra, with no schedule or permutation assumptions."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum add mul eqv refl sym]]
             [rainbow.math.sums.flow-cut :as a]))
@@ -88,9 +89,15 @@
                   (call 'signed/expr-sum-value-scale-right P wk k) (refl (mul pk wk)))))))
         (call 'signed/expr-sum-value-add cols diags n)))))
 (def theorem-specs [square-step-spec decomposition-spec symmetric-spec prefix-cost-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sums.flow-cut])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (reduce (fn [checked spec] (println :triangular :installing (:name spec)) (flush) (support/add-spec-shared checked :expr-sum-triangular spec)) env theorem-specs))
+
 (defn extend-environment [env]
-  (reduce (fn [checked spec]
-            (println :triangular :installing (:name spec)) (flush)
-            (support/add-spec-shared checked :expr-sum-triangular spec))
-          (a/extend-environment env) theorem-specs))
+  (module/install-module env 'rainbow.math.sums.triangular))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -18,7 +18,8 @@
   Env chain: signed-limit-scalar-laws (band + converges/close), signed-limit-arithmetic
   (close-respects-radius-equivalence), signed-multiply-associative, signed-geometric-bridge
   (from-nnrat-multiply + rational division / reciprocal / unit laws)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-scalar-laws :as scalar-laws]
             [rainbow.math.rational.signed.limit-arithmetic :as limit-arithmetic]
@@ -99,13 +100,16 @@
 
 (def theorem-specs [scale-reciprocal-radius-cancel-spec limit-scale-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      scalar-laws/extend-environment
-      limit-arithmetic/extend-environment
-      multiply-associative/extend-environment
-      geometric-bridge/extend-environment
-      (support/extend-with :signed-limit-scale-law theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-scalar-laws rainbow.math.rational.signed.limit-arithmetic rainbow.math.rational.signed.multiply-associative rainbow.math.rational.signed.geometric-bridge])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-limit-scale-law theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-scale-law))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

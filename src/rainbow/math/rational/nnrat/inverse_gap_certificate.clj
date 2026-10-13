@@ -13,7 +13,8 @@
   scalar endpoint needed by finite Bellman residual bounds.  Because every
   NNRAT is nonnegative, scaling monotonicity needs no extra sign premise.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-cancellation :as cancellation]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -147,13 +148,16 @@
 (def definition-specs [])
 (def theorem-specs [inverse-gap-residual-bound-spec])
 
-(defn extend-environment [env]
-  (-> env
-      cancellation/extend-environment
-      multiply-monotone/extend-environment
-      ring/extend-environment
-      identities/extend-environment
-      (support/extend-with :nnrat-inverse-gap-certificate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-cancellation rainbow.math.rational.nnrat.multiply-monotone rainbow.math.rational.nnrat.ring rainbow.math.rational.nnrat.identities])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-inverse-gap-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.inverse-gap-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

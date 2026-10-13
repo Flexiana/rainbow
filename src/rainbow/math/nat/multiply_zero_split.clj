@@ -3,7 +3,8 @@
   disjunct; a=succ p with b=0 gives the right disjunct; a=succ p, b=succ q makes (succ p)*(succ q)
   a successor, so =0 is refuted. The general nat no-zero-divisors -- foundation for the general
   nnrat/signed no-zero-divisors that strict convexity needs (generalizes nat/square-zero-implies-zero)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.infinite :as nat-infinite]
             [rainbow.math.nat.semiring :as nat-semiring]))
@@ -71,11 +72,16 @@
 
 (def theorem-specs [multiply-zero-split-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nat-infinite/extend-environment
-      nat-semiring/extend-environment
-      (support/extend-with :nat-multiply-zero-split theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.infinite rainbow.math.nat.semiring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-multiply-zero-split theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.multiply-zero-split))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

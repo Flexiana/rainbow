@@ -1,7 +1,8 @@
 (ns rainbow.math.sums.wspt-pair-bound
   "Pairwise lower bound for a prefix completion objective, exact for sorted pairs.
   Generic finite sequences only; the permutation bridge is separate."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum add mul le eqv refl sym]]
             [rainbow.math.sums.flow-cut :as a]
@@ -87,9 +88,15 @@
         [(add high high) (s/add-cong low high low high low-high low-high)]
         [(add F F) (s/add-cong high F high F (sym F high Fsame) (sym F high Fsame))]))))
 (def theorem-specs [min-respects-spec components-spec lower-spec attained-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (reduce (fn [checked spec] (println :wspt-pair-bound :installing (:name spec)) (flush) (support/add-spec-shared checked :expr-sum-wspt-pair-bound spec)) (-> env order/extend-environment tr/extend-environment) theorem-specs))
+
 (defn extend-environment [env]
-  (reduce (fn [checked spec]
-            (println :wspt-pair-bound :installing (:name spec)) (flush)
-            (support/add-spec-shared checked :expr-sum-wspt-pair-bound spec))
-          (-> env order/extend-environment tr/extend-environment) theorem-specs))
+  (module/install-module env 'rainbow.math.sums.wspt-pair-bound))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

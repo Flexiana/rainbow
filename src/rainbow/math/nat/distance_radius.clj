@@ -10,7 +10,8 @@
   until one endpoint is zero.  This is the arithmetic interface needed to lift
   computational `nat/distance` through exact-rational cross products.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.at-most-cancellation :as cancellation]
             [rainbow.math.nat.contraction :as contraction]
@@ -211,11 +212,16 @@
    additive-bounds-of-distance-at-most-spec
    distance-at-most-iff-additive-bounds-spec])
 
-(defn extend-environment [env]
-  (-> env
-      contraction/extend-environment
-      cancellation/extend-environment
-      (support/extend-with :nat-distance-radius theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.contraction rainbow.math.nat.at-most-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nat-distance-radius theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.nat.distance-radius))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -1,6 +1,7 @@
 (ns rainbow.math.nat.linear-order
   "Executable decision data, min/max, and three-way comparison for Nat."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
@@ -359,26 +360,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [block (environment/resolve-id checked-environment 'order/Ordering) installed (every? #(environment/resolve-id checked-environment (:name %)) definition-specs)] (cond (and block installed) checked-environment (or block installed) (throw (ex-info "Nat linear-order package is only partially installed" {:ordering-block? (boolean block) :definitions-complete? installed})) :else (let [added (kernel/add-inductive-block checked-environment ordering-spec)] (when-not (= :accepted (:status added)) (throw (ex-info "Ordering inductive block was rejected" {:result added}))) (reduce add-spec (:environment added) definition-specs)))))
+
 (defn extend-environment [checked-environment]
-  (let [block (environment/resolve-id checked-environment 'order/Ordering)
-        installed
-        (every? #(environment/resolve-id checked-environment (:name %))
-                definition-specs)]
-    (cond
-      (and block installed) checked-environment
-
-      (or block installed)
-      (throw (ex-info "Nat linear-order package is only partially installed"
-                      {:ordering-block? (boolean block)
-                       :definitions-complete? installed}))
-
-      :else
-      (let [added (kernel/add-inductive-block checked-environment ordering-spec)]
-        (when-not (= :accepted (:status added))
-          (throw (ex-info "Ordering inductive block was rejected"
-                          {:result added})))
-        (reduce add-spec (:environment added) definition-specs)))))
-
+  (module/install-module checked-environment 'rainbow.math.nat.linear-order))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

@@ -6,7 +6,8 @@
   itself.  Monotonicity then proves that any initial value between those two
   certificates remains trapped between them at every finite step.  Theorem-only,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-horizon-order
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-horizon-order
              :as horizon-order]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -170,11 +171,16 @@
    affine-iterate-below-supersolution-spec
    affine-iterate-invariant-interval-spec])
 
-(defn extend-environment [env]
-  (-> env
-      horizon-order/extend-environment
-      (support/extend-with :finite-matrix-affine-invariant-interval
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-horizon-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-invariant-interval theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-invariant-interval))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -14,7 +14,8 @@
   i.e. recip y <= recip x. Everything is done through `0 <= .` (signed at-most zero),
   since signed/nonnegative-respects-equivalence is absent. Axiom-free; additive; does not
   touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.reciprocal-difference :as recip-diff]
             [rainbow.math.rational.signed.reciprocal-nonnegative :as recip-nn]
@@ -117,17 +118,16 @@
    at-most-of-nonnegative-subtract-spec
    reciprocal-antitone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      recip-diff/extend-environment
-      recip-nn/extend-environment
-      multiply-order/extend-environment
-      order-monotone/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      unit-laws/extend-environment
-      recovery-laws/extend-environment
-      (support/extend-with :signed-reciprocal-antitone theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.reciprocal-difference rainbow.math.rational.signed.reciprocal-nonnegative rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.order-monotone rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects rainbow.math.rational.signed.unit-laws rainbow.math.rational.signed.recovery-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-reciprocal-antitone theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.reciprocal-antitone))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

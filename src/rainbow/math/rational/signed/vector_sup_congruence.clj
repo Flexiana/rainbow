@@ -8,7 +8,8 @@
   right law, and transitivity composes the two-sided law.  No shape hypothesis
   is needed because each vector-equivalence proof already preserves the shape
   of the argument it replaces.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.vector-sup-distance :as sup]
             [rainbow.math.linear.vector.equivalence :as vector-equivalence]))
@@ -253,11 +254,16 @@
    sup-distance-right-respects-equivalence-spec
    sup-distance-respects-equivalence-spec])
 
-(defn extend-environment [env]
-  (-> env
-      sup/extend-environment
-      vector-equivalence/extend-environment
-      (support/extend-with :signed-vector-sup-congruence theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.vector-sup-distance rainbow.math.linear.vector.equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-vector-sup-congruence theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.vector-sup-congruence))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

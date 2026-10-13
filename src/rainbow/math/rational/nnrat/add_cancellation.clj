@@ -17,7 +17,8 @@
 
   Native and axiom-free; chains rainbow.math.rational.nnrat.order-equivalence (-> nat cancellation,
   nat-ring) on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.nat.ring :as ring]
             [rainbow.math.rational.nnrat.order-equivalence :as oe]))
@@ -117,11 +118,17 @@
 (def definition-specs [])
 (def theorem-specs [base-add-cancel-spec add-right-cancel-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.order-equivalence])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-add-cancellation (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      oe/extend-environment
-      (support/extend-with :nnrat-add-cancellation
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.add-cancellation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

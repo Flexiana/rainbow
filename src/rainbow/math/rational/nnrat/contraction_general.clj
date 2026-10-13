@@ -13,7 +13,8 @@
   implies the 1/2-recurrence, and analysis/contraction-converges closes it.  Covers the
   whole strong-contraction regime (rates up to 1/2).
   Native and axiom-free; chains nnrat-value-iteration and nnrat-multiply-right-monotone."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.value-iteration :as vi]
             [rainbow.math.rational.nnrat.multiply-right-monotone :as rm]))
@@ -62,12 +63,17 @@
 (def definition-specs [])
 (def theorem-specs [contraction-converges-general-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.value-iteration rainbow.math.rational.nnrat.multiply-right-monotone])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-contraction-general (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      vi/extend-environment
-      rm/extend-environment
-      (support/extend-with :nnrat-contraction-general
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.contraction-general))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

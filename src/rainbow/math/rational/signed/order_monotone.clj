@@ -13,7 +13,8 @@
 
   A building block for 'L <= L + eps' and the limit laws.  Native and axiom-free; chains
   rainbow.math.rational.signed.order-transitivity (-> nnrat add-monotone, four-reorder) on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.signed.order-transitivity :as st]))
 
@@ -91,11 +92,17 @@
 (def definition-specs [])
 (def theorem-specs [add-right-monotone-spec add-left-monotone-spec add-monotone-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.order-transitivity])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-order-monotone (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      st/extend-environment
-      (support/extend-with :signed-order-monotone
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.signed.order-monotone))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

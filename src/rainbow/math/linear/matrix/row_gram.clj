@@ -7,7 +7,8 @@
   arbitrary signed entries.  The positive-width premise is mathematically exact
   for Rainbow's row-list encoding, which forgets nonempty zero-width matrices
   under transpose.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.gram-kernel :as gram-kernel]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.gram-kernel :as gram-kernel]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -180,10 +181,16 @@
    row-gram-action-dot-self-spec
    row-gram-action-nonnegative-spec])
 
-(defn extend-environment [env]
-  (-> env
-      gram-kernel/extend-environment
-      (support/extend-with :finite-matrix-row-gram theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.gram-kernel])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-row-gram theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.row-gram))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

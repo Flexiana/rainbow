@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.inverse-unique-fiber
   "Two-sided set inverses provide unique witnesses in every target fiber."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.sets.fiber-unique :as fiber-unique]
@@ -264,11 +265,16 @@
    inverse-on-fiber-member-equals-backward-spec
    inverse-on-has-canonical-unique-fibers-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      inverse/extend-environment
-      fiber-unique/extend-environment
-      (support/extend-with :set-inverse-unique-fiber theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sets.inverse-certificates rainbow.math.sets.fiber-unique])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-inverse-unique-fiber theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.inverse-unique-fiber))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

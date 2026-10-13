@@ -2,7 +2,8 @@
   "Finite-sum algebra for the existing signed/expr-sum-value. All regrouping
   uses signed/equivalent (Grothendieck equality), never equality of raw pairs.
   Bounds and congruences require hypotheses only below the finite bound."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.checks :as checker]
             [rainbow.math.rational.signed.map-sum-algebra :as algebra]
@@ -190,10 +191,15 @@
 
 (def theorem-specs [bridge-spec bounds-bridge-spec zero-spec add-spec scale-right-spec monotone-spec respects-spec
                     scale-left-spec weighted-left-spec weighted-right-spec swap-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.checks rainbow.math.rational.signed.map-sum-algebra rainbow.math.rational.signed.distributive rainbow.math.rational.signed.equivalence-laws rainbow.math.rational.signed.fubini rainbow.math.rational.signed.pointwise-order])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/add-spec-shared :finset-range ranges/nat-range-spec) (support/extend-with :expr-sum-value-algebra theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env checker/extend-environment algebra/extend-environment
-      distributive/extend-environment equivalence/extend-environment
-      fubini/extend-environment pointwise/extend-environment
-      (support/add-spec-shared :finset-range ranges/nat-range-spec)
-      (support/extend-with :expr-sum-value-algebra theorem-specs)))
+  (module/install-module env 'rainbow.math.sums.value-algebra))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

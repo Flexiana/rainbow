@@ -11,7 +11,8 @@
   A practical NNRAT gamma <= 1/2 wrapper and a threshold certificate expose the
   result to solver/reward perturbation analyses.  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-residual-certificate
              :as residual]
             [rainbow.math.logic.function :as function]
@@ -323,13 +324,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      residual/extend-environment
-      (extend-specs-if-missing
-       :signed-vector-sup-translation translation/theorem-specs)
-      (support/extend-with
-       :finite-matrix-affine-offset-sensitivity theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-residual-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :signed-vector-sup-translation translation/theorem-specs) (support/extend-with :finite-matrix-affine-offset-sensitivity theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-offset-sensitivity))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

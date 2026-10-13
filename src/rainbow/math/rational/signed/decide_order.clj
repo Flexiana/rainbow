@@ -25,7 +25,8 @@
   is unchanged.
 
   Native and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
 (def type-level [:succ [:zero]])
@@ -88,10 +89,17 @@
 (def theorem-specs
   [decide-at-most-true-sound-spec decide-at-most-false-reverse-spec])
 
-(defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :signed-decide-order
-                       (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :signed-decide-order (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.decide-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

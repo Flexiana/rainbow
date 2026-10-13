@@ -36,7 +36,8 @@
   diagonal-spike route that was explored separately.  The mass certificate
   stays a hypothesis in the capstone for that reason.  Native and axiom-free
   on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-hastings-flow :as hastings]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -328,12 +329,17 @@
     (throw (ex-info "diagonal placement needs an alias the chain lacks"
                     {:missing alias}))))
 
-(defn extend-environment [checked-environment]
-  (let [extended (hastings/extend-environment checked-environment)]
-    (require-alias extended 'bool/false-not-true)
-    (support/extend-with extended :finite-markov-hastings-diagonal
-                         (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-hastings-flow])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [extended checked-environment] (require-alias extended 'bool/false-not-true) (support/extend-with extended :finite-markov-hastings-diagonal (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.markov-hastings-diagonal))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

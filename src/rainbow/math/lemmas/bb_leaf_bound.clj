@@ -6,7 +6,8 @@
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at le below]]
             [rainbow.math.lemmas.lp-duality :as lp]
             [rainbow.math.nat.divmod :as divmod]
-            [rainbow.math.nat.pair-index-inverse :as pairs]))
+            [rainbow.math.nat.pair-index-inverse :as pairs]
+            [rainbow.module :as module]))
 
 (defn nadd [a b] (call 'algebra/nat-add a b))
 
@@ -26,12 +27,17 @@
 
 (def theorem-specs [rectangular-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      lp/extend-environment
-      divmod/extend-environment
-      pairs/extend-environment
-      (support/extend-with :expr-sum-bb-leaf-bound theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.lemmas.lp-duality rainbow.math.nat.infinite rainbow.math.nat.strict-below-split rainbow.math.nat.strict-below-more rainbow.math.nat.at-most-add rainbow.math.rational.nnrat.harmonic-convergence rainbow.math.rational.signed.decide-order rainbow.math.rational.signed.decide-reflexive rainbow.math.nat.at-most-cancellation rainbow.math.rational.nnrat.order-equivalence rainbow.math.rational.nnrat.archimedean rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.add-cancellation rainbow.math.rational.nnrat.additive-reassociation rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.convergence rainbow.math.rational.signed.order-respects rainbow.math.rational.nnrat.identities rainbow.math.rational.signed.limit-uniqueness rainbow.math.logic.boolean-and rainbow.math.rational.signed.decide-equivalence rainbow.math.rational.signed.decide-completeness rainbow.math.nat.divmod rainbow.math.nat.pair-index-inverse rainbow.math.rational.signed.strict-order rainbow.math.rational.signed.multiply rainbow.math.rational.nnrat.multiply-commute rainbow.math.rational.nnrat.product-reassociation rainbow.math.rational.nnrat.distribute-right rainbow.math.rational.nnrat.ring rainbow.math.rational.nnrat.multiply-monotone rainbow.math.rational.nnrat.order-difference rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.equivalence-laws rainbow.math.rational.nnrat.minmax rainbow.math.rational.nnrat.farkas-elim-list rainbow.math.rational.signed.no-zero-divisors rainbow.math.rational.signed.unit-laws rainbow.math.checks rainbow.math.rational.signed.minmax rainbow.math.rational.signed.minmax-algebra rainbow.math.rational.signed.clamp rainbow.math.rational.signed.deviation-rows rainbow.math.rational.signed.absolute rainbow.math.rational.signed.absolute-algebra rainbow.math.rational.signed.distance rainbow.math.nat.linear-order])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :expr-sum-bb-leaf-bound theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.bb-leaf-bound))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

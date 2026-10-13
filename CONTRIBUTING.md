@@ -19,11 +19,13 @@ privately to the maintainers first (see the contact address on
   is pinned at 1,200 lines by a release test. A change there needs a stated
   reason and a review of what it adds to the trusted base.
 - **A new theorem** goes in a module under `src/rainbow/math/` or
-  `src/rainbow/algorithms/proofs/` with `theorem-specs`, `extend-environment` and
-  `theorem-ids`, and a test that re-checks each declaration and asserts its
+  `src/rainbow/algorithms/proofs/` with `theorem-specs`, `deps`, `install`,
+  `extend-environment` and `theorem-ids` (see [`doc/modules.md`](doc/modules.md)),
+  and a test that re-checks each declaration and asserts its
   axiom profile is empty (see any `*_test.clj` next to a module you are
   extending). `lein verify <your.namespace>` should print every theorem as
-  `checked` and `axiom-free`.
+  `checked` and `axiom-free`. The coverage gate (`test/rainbow/coverage/`) fails if
+  a proof module is reached by no test.
 - **Name binders uniquely** in term-building helpers. A helper that binds a
   fixed name such as `'x` captures a caller's variable of the same name, and the
   failure shows up far away as a type mismatch.

@@ -8,7 +8,8 @@
   terms.  The subtraction law retains nested signed subtraction, which is the
   exact Grothendieck-pair form of a^2 - a*b - b*a + b^2.  Both results are
   theorem-only compositions of dot additivity/subtractivity."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.dot-subtract :as dot-subtract]
             [rainbow.math.linear.vector.norm :as norm]))
@@ -121,12 +122,17 @@
 (def theorem-specs
   [norm-squared-add-spec norm-squared-subtract-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      dot-subtract/extend-environment
-      norm/extend-environment
-      (support/extend-with :vector-norm-expansion theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.dot-subtract rainbow.math.linear.vector.norm])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-norm-expansion theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.norm-expansion))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

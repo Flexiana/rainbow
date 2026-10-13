@@ -7,7 +7,8 @@
   collapse certificate used by the generic row-sum fixed-point theorem and
   produces a premise-complete half-rate affine uniqueness result.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.row-sum-fixed-point-uniqueness
              :as generic]
             [rainbow.math.logic.function :as function]
@@ -274,23 +275,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      generic/extend-environment
-      (extend-spec-if-missing
-       'rvalue/half-plus-half :rational-value
-       rational-value/half-plus-half-spec)
-      (extend-spec-if-missing
-       'nnrat/zero-at-most :nnrat-farkas-elim-list
-       nnrat-bounds/zero-at-most-spec)
-      (extend-spec-if-missing
-       'signed/add-monotone :signed-order-monotone
-       monotone/add-monotone-spec)
-      (extend-spec-if-missing
-       'signed/at-most-add-left-cancel :signed-order-cancellation
-       cancellation/add-left-cancel-spec)
-      (support/extend-with
-       :finite-matrix-half-row-sum-fixed-point-uniqueness theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.row-sum-fixed-point-uniqueness])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'rvalue/half-plus-half :rational-value rational-value/half-plus-half-spec) (extend-spec-if-missing 'nnrat/zero-at-most :nnrat-farkas-elim-list nnrat-bounds/zero-at-most-spec) (extend-spec-if-missing 'signed/add-monotone :signed-order-monotone monotone/add-monotone-spec) (extend-spec-if-missing 'signed/at-most-add-left-cancel :signed-order-cancellation cancellation/add-left-cancel-spec) (support/extend-with :finite-matrix-half-row-sum-fixed-point-uniqueness theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.half-row-sum-fixed-point-uniqueness))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

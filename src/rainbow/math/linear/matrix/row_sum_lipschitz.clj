@@ -8,7 +8,8 @@
   lift takes the output maximum.  Common-offset cancellation gives the affine
   theorem with the same rate.  A later strict-rate certificate can use this as
   the contraction premise.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.action-sup-bound :as action-bound]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.action-sup-bound :as action-bound]
             [rainbow.math.linear.matrix.affine-sup-distance :as affine-bound]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -182,15 +183,16 @@
   [vector-multiply-row-sum-lipschitz-spec
    affine-action-row-sum-lipschitz-spec])
 
-(defn extend-environment [env]
-  (-> env
-      row-bound/extend-environment
-      action-bound/extend-environment
-      affine-bound/extend-environment
-      multiply-monotone/extend-environment
-      multiply-order/extend-environment
-      sup/extend-environment
-      (support/extend-with :finite-matrix-row-sum-lipschitz theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.row-sum-lipschitz rainbow.math.linear.matrix.action-sup-bound rainbow.math.linear.matrix.affine-sup-distance rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.vector-sup-distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-row-sum-lipschitz theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.row-sum-lipschitz))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

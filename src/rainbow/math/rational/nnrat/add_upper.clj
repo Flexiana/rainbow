@@ -8,7 +8,8 @@
   exploitation floor, and any acquisition function of the form
   base + nonnegative-bonus -- each of which reduces to one application of
   this lemma. Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-monotone :as add-monotone]
@@ -47,13 +48,16 @@
 (defn- guard [env alias extend]
   (if (environment/resolve-id env alias) env (extend env)))
 
-(defn extend-environment [env]
-  (-> env
-      (guard 'nnrat/add-left-monotone add-monotone/extend-environment)
-      (guard 'nnrat/add-zero-right identities/extend-environment)
-      (guard 'nnrat/zero-at-most nnrat-bounds/extend-environment)
-      (support/extend-with :nnrat-add-upper
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (guard 'nnrat/add-left-monotone add-monotone/extend-environment) (guard 'nnrat/add-zero-right identities/extend-environment) (guard 'nnrat/zero-at-most nnrat-bounds/extend-environment) (support/extend-with :nnrat-add-upper (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.add-upper))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

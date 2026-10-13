@@ -7,7 +7,8 @@
   Reverse the negated order once more, then transport through vector negation
   involutivity.  Equivalence reflection applies that result to both mutual
   bounds.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.order :as signed-order]
@@ -131,17 +132,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      order-laws/extend-environment
-      (extend-spec-if-missing
-       'signed/negate-involutive :signed-order
-       signed-order/negate-involutive-spec)
-      (extend-spec-if-missing
-       'vector/negate-involutive :vector-equivalence-laws
-       equivalence-laws/negate-involutive-spec)
-      (support/extend-with :vector-negate-reflection theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.pointwise-order-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/negate-involutive :signed-order signed-order/negate-involutive-spec) (extend-spec-if-missing 'vector/negate-involutive :vector-equivalence-laws equivalence-laws/negate-involutive-spec) (support/extend-with :vector-negate-reflection theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.negate-reflection))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

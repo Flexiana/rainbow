@@ -5,7 +5,8 @@
   `offset + rows·values`.  Translation preserves pointwise order, so the
   matrix-action monotone, antitone, joint, and interval laws lift to this
   affine map without hidden shape assumptions.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.interval-order :as interval]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -489,12 +490,16 @@
     add-order/add-left-monotone-spec
     add-order/add-monotone-spec]))
 
-(defn extend-environment [env]
-  (-> env
-      interval/extend-environment
-      extend-add-order-if-missing
-      (support/extend-with :finite-matrix-affine-order
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.interval-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env extend-add-order-if-missing (support/extend-with :finite-matrix-affine-order (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-order))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

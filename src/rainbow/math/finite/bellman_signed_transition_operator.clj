@@ -8,7 +8,8 @@
   contraction theorems form the compact proof boundary.  This remains a
   mathematical interface, not an executable solver.  Native, kernel-checked,
   and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-approximate-optimality
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-approximate-optimality
              :as approximate]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -473,12 +474,16 @@
    signed-contractive-operator-approximate-fixed-point-general-rate-spec
    signed-transition-optimality-operator-contractive-spec])
 
-(defn extend-environment [env]
-  (-> env
-      approximate/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-transition-operator
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-approximate-optimality])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-transition-operator (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-transition-operator))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

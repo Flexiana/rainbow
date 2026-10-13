@@ -6,7 +6,8 @@
   antitone second argument.  The proofs reduce subtraction to addition plus
   negation and compose checked shape, addition-cancellation, and negation-
   reflection laws."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.order :as signed-order]
@@ -181,23 +182,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-cancellation/extend-environment
-      (extend-spec-if-missing
-       'signed/negate-involutive :signed-order
-       signed-order/negate-involutive-spec)
-      (extend-spec-if-missing
-       'vector/negate-involutive :vector-equivalence-laws
-       equivalence-laws/negate-involutive-spec)
-      (extend-spec-if-missing
-       'vector/negate-reflects-order :vector-negate-reflection
-       reflection/negate-reflects-order-spec)
-      (extend-spec-if-missing
-       'vector/negate-reflects-equivalence :vector-negate-reflection
-       reflection/negate-reflects-equivalence-spec)
-      (support/extend-with :vector-subtract-cancellation theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.add-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/negate-involutive :signed-order signed-order/negate-involutive-spec) (extend-spec-if-missing 'vector/negate-involutive :vector-equivalence-laws equivalence-laws/negate-involutive-spec) (extend-spec-if-missing 'vector/negate-reflects-order :vector-negate-reflection reflection/negate-reflects-order-spec) (extend-spec-if-missing 'vector/negate-reflects-equivalence :vector-negate-reflection reflection/negate-reflects-equivalence-spec) (support/extend-with :vector-subtract-cancellation theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.subtract-cancellation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

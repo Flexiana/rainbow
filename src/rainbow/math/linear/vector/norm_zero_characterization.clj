@@ -8,7 +8,8 @@
   squared norm equivalent to signed zero, and signed zero is an exact norm
   witness.  These are the forward directions; the converses are proved in
   rainbow.math.linear.vector.norm-zero-reflection."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.multiply-ring :as signed-ring]
@@ -109,17 +110,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      zero-laws/extend-environment
-      (extend-specs-if-missing
-       :signed-multiply-ring signed-ring/theorem-specs)
-      (extend-spec-if-missing
-       'norm/norm-squared-respects-equivalence
-       :vector-norm-congruence
-       congruence/norm-squared-respects-equivalence-spec)
-      (support/extend-with :vector-norm-zero-characterization theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.dot-zero-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-specs-if-missing :signed-multiply-ring signed-ring/theorem-specs) (extend-spec-if-missing 'norm/norm-squared-respects-equivalence :vector-norm-congruence congruence/norm-squared-respects-equivalence-spec) (support/extend-with :vector-norm-zero-characterization theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.norm-zero-characterization))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

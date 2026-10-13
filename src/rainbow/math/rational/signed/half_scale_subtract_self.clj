@@ -9,7 +9,8 @@
   instantiates value = |L|, so convergent-bounded-below at radius (1/2)|L| yields
   (1/2)|L| <= |s n| (a fixed positive lower bound). Axiom-free; additive; does not touch
   the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.matrix.half-row-sum-fixed-point-uniqueness :as half-row]
             [rainbow.math.rational.signed.add-associative :as add-associative]
@@ -59,14 +60,16 @@
 
 (def theorem-specs [half-scale-subtract-self-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      half-row/extend-environment
-      add-associative/extend-environment
-      dot-subtract/extend-environment
-      unit-laws/extend-environment
-      kkt/extend-environment
-      (support/extend-with :signed-half-scale-subtract-self theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.half-row-sum-fixed-point-uniqueness rainbow.math.rational.signed.add-associative rainbow.math.linear.vector.dot-subtract rainbow.math.rational.signed.unit-laws rainbow.math.rational.signed.kkt-sufficiency])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-half-scale-subtract-self theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.half-scale-subtract-self))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

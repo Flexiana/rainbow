@@ -7,7 +7,8 @@
   -nonpositive), |a*b| collapses via absolute-of-nonnegative/-nonpositive, and |a|*|b|
   is rewritten to the same normal form using absolute-of-sign + multiply-negate.
   Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.multiply-order :as multiply-order]
             [rainbow.math.rational.signed.absolute-sign :as absolute-sign]
@@ -133,13 +134,16 @@
 
 (def theorem-specs [absolute-multiply-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply-order/extend-environment
-      absolute-sign/extend-environment
-      multiply-ring/extend-environment
-      dot-negate/extend-environment
-      (support/extend-with :signed-absolute-multiply theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.absolute-sign rainbow.math.rational.signed.multiply-ring rainbow.math.linear.vector.dot-negate])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-absolute-multiply theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.absolute-multiply))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

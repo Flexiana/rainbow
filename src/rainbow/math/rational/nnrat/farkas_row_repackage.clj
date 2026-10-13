@@ -19,7 +19,8 @@
   per-row content (no row types, no list) -- the reusable heart that
   brick 5c maps over a row list to chain the two-variable elimination.
   Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.add-monotone :as add-monotone]
@@ -82,13 +83,17 @@
 (def definition-specs [])
 (def theorem-specs [repackage-iff-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-monotone/extend-environment
-      reassoc/extend-environment
-      (support/extend-with :nnrat-farkas-row-repackage
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.additive-reassociation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-row-repackage (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-row-repackage))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -24,7 +24,8 @@
   and stationary-distribution uniqueness, and it is unproved. The reduction is
   the point: uniqueness now rests on exactly one named open inequality rather
   than on a theory that did not exist. Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-stationarity :as stationarity]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -367,20 +368,17 @@
     checked-environment
     (extend checked-environment)))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      stationarity/extend-environment
-      (extend-if-missing 'nnrat/add-zero-split-left
-                         add-zero-split/extend-environment)
-      (extend-if-missing 'nnrat/map-sum-respects-equivalence
-                         map-sum-respects/extend-environment)
-      (extend-if-missing 'nnrat/distance-zero-iff-equivalent
-                         metric-separation/extend-environment)
-      (require-alias 'nnrat/map-sum-zero)
-      (require-alias 'nnrat/equivalent-transitive)
-      (support/extend-with :finite-markov-total-variation
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-stationarity])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-if-missing 'nnrat/add-zero-split-left add-zero-split/extend-environment) (extend-if-missing 'nnrat/map-sum-respects-equivalence map-sum-respects/extend-environment) (extend-if-missing 'nnrat/distance-zero-iff-equivalent metric-separation/extend-environment) (require-alias 'nnrat/map-sum-zero) (require-alias 'nnrat/equivalent-transitive) (support/extend-with :finite-markov-total-variation (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.markov-total-variation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

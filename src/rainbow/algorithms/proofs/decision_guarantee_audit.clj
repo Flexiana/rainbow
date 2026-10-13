@@ -5,7 +5,8 @@
   kernel claims that the underlying proposition is false; they state that the
   declared proof route is unavailable without the required evidence."
   (:refer-clojure :exclude [bound denominator numerator])
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
@@ -783,26 +784,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (let [block (environment/resolve-id checked-environment 'audit/AuditResult)
-        installed
-        (every? #(environment/resolve-id checked-environment (:name %))
-                (concat definition-specs theorem-specs))]
-    (cond
-      (and block installed) checked-environment
-      (or block installed)
-      (throw (ex-info "Decision-guarantee package is partially installed"
-                      {:result-block? (boolean block)
-                       :declarations-complete? installed}))
-      :else
-      (let [added (kernel/add-inductive-block checked-environment
-                                               audit-result-spec)]
-        (when-not (= :accepted (:status added))
-          (throw (ex-info "AuditResult inductive block rejected"
-                          {:result added})))
-        (reduce add-spec (:environment added)
-                (concat definition-specs theorem-specs))))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [block (environment/resolve-id checked-environment 'audit/AuditResult) installed (every? #(environment/resolve-id checked-environment (:name %)) (concat definition-specs theorem-specs))] (cond (and block installed) checked-environment (or block installed) (throw (ex-info "Decision-guarantee package is partially installed" {:result-block? (boolean block) :declarations-complete? installed})) :else (let [added (kernel/add-inductive-block checked-environment audit-result-spec)] (when-not (= :accepted (:status added)) (throw (ex-info "AuditResult inductive block rejected" {:result added}))) (reduce add-spec (:environment added) (concat definition-specs theorem-specs))))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.decision-guarantee-audit))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

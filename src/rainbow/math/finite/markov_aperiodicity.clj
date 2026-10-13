@@ -7,7 +7,8 @@
   when every state is. A return at horizon one discharges the common-divisor
   condition directly. No convergence rate or mixing theorem is claimed.
   Native and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-return-time :as return-time]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-return-time :as return-time]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.divisibility :as divisibility]))
@@ -158,13 +159,16 @@
   [aperiodic-at-of-return-at-one-spec
    aperiodic-of-all-return-at-one-spec])
 
-(defn extend-environment [env]
-  (-> env
-      return-time/extend-environment
-      divisibility/extend-environment
-      (support/extend-with
-       :finite-markov-aperiodicity
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-return-time rainbow.math.nat.divisibility])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-aperiodicity (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-aperiodicity))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

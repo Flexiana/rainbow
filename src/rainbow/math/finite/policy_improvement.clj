@@ -16,7 +16,8 @@
   current s)) this reads V^pi(s) <= score(s, improved s) = T_{pi'} V^pi(s), the
   entry point of the policy-improvement value dominance V^pi <= V^{pi'}.
   Native and axiom-free; chains finite-policy-iteration on the d21 checkpoint."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
@@ -100,9 +101,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.policy-iteration])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-spec checked-environment (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (reduce add-spec (pi/extend-environment checked-environment)
-          (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.finite.policy-improvement))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec] [(:name spec)

@@ -45,7 +45,8 @@
   `nnrat-distributive`, so that consumers of this tactic remain compatible with
   `nnrat-identities` (the two full modules both declare
   `nnrat/multiply-one-left`, and chaining both is an alias conflict)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.add-monotone :as add-monotone]
             [rainbow.math.rational.nnrat.additive-reassociation :as add-reassoc]
             [rainbow.math.rational.nnrat.distribute-right :as dist]
@@ -348,10 +349,14 @@
 ;; nnrat-multiply-commute and nnrat-additive-reassociation cite while building
 ;; their own specs, and nnrat-multiply-commute must precede
 ;; nnrat-product-reassociation, which cites `nnrat/multiply-commutative`.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.multiply-commute rainbow.math.rational.nnrat.product-reassociation rainbow.math.rational.nnrat.additive-reassociation rainbow.math.rational.nnrat.distribute-right])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  checked-environment)
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-monotone/extend-environment
-      mul-commute/extend-environment
-      mul-reassoc/extend-environment
-      add-reassoc/extend-environment
-      dist/extend-environment))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.ring))

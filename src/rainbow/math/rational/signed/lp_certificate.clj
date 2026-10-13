@@ -36,7 +36,8 @@
 
   Native and axiom-free on D63; chains the signed LP duality theorems and the
   decidable signed order."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.decide-order :as decide]
             [rainbow.math.rational.signed.lp-duality :as lp]))
@@ -234,12 +235,17 @@
 (def definition-specs [])
 (def theorem-specs [worked-bound-spec worked-value-spec worked-optimal-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      lp/extend-environment
-      decide/extend-environment
-      (support/extend-with :signed-lp-certificate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.lp-duality rainbow.math.rational.signed.decide-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-lp-certificate theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.lp-certificate))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -9,7 +9,8 @@
   boundaries so the small kernel need not normalize transpose, column
   insertion, dot, and nested List recursors simultaneously.  Native and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.action-prepend :as prepend]
             [rainbow.math.linear.matrix.shape :as matrix-shape]
             [rainbow.math.logic.function :as function]
@@ -488,14 +489,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      prepend/extend-environment
-      (extend-spec-if-missing
-       'matrix/compatible-tail :finite-matrix-shape
-       matrix-shape/compatible-tail-spec)
-      (support/extend-with :finite-matrix-action-associative theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.action-prepend])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'matrix/compatible-tail :finite-matrix-shape matrix-shape/compatible-tail-spec) (support/extend-with :finite-matrix-action-associative theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.action-associative))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

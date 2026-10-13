@@ -6,7 +6,8 @@
   total transpose even for ragged and empty matrices.  Together these facts
   prove unrestricted homogeneity in the right factor of matrix multiplication.
   Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.signed-scale :as signed-scale]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.signed-scale :as signed-scale]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -333,11 +334,17 @@
    transpose-signed-scale-spec
    multiply-signed-scale-right-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      signed-scale/extend-environment
-      (support/extend-with :finite-matrix-signed-scale-right theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-signed-scale-right theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-right))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -13,7 +13,8 @@
   applying nnrat/farkas-cross-vectors per upper. The full n-variable round
   maps this over the lower list too (a second List.rec); this is the
   one-lower core. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-cross-vectors :as cross]))
@@ -171,12 +172,17 @@
 
 (def theorem-specs [cross-vectors-list-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      cross/extend-environment
-      (support/extend-with :nnrat-farkas-cross-vectors-list
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-cross-vectors])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-cross-vectors-list (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-cross-vectors-list))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

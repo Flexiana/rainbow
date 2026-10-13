@@ -1,7 +1,8 @@
 (ns rainbow.math.finite.set-lattice
   "Finite-set closure facts for complements, intersections, and suprema."
   (:refer-clojure :exclude [complement])
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.set :as finite-set]
@@ -349,16 +350,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (doseq [required ['set/finite-union-preserved
-                    'set/finite-subset-preserved
-                    'logic/classical-cases]]
-    (when-not (environment/resolve-id checked-environment required)
-      (throw (ex-info "Finite-set lattice dependency is unavailable"
-                      {:error/category :finite-set/lattice-dependency-missing
-                       :required required}))))
-  (reduce add-theorem checked-environment theorem-specs))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (doseq [required ['set/finite-union-preserved 'set/finite-subset-preserved 'logic/classical-cases]] (when-not (environment/resolve-id checked-environment required) (throw (ex-info "Finite-set lattice dependency is unavailable" {:error/category :finite-set/lattice-dependency-missing :required required})))) (reduce add-theorem checked-environment theorem-specs))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.set-lattice))
 (defn theorem-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

@@ -14,7 +14,8 @@
   add-zero-split (right then left) peel off (f e).  Polymorphic in the element
   type.  Native and axiom-free; chains nnrat-map-sum-append and
   nnrat-add-zero-split on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.map-sum-append :as ap]
             [rainbow.math.rational.nnrat.add-zero-split :as zs]))
@@ -71,12 +72,17 @@
 (def definition-specs [])
 (def theorem-specs [map-sum-zero-at-split-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.map-sum-append rainbow.math.rational.nnrat.add-zero-split])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-map-sum-zero (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ap/extend-environment
-      zs/extend-environment
-      (support/extend-with :nnrat-map-sum-zero
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.map-sum-zero))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

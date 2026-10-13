@@ -22,7 +22,8 @@
   lemmas proved en route that fill genuine corpus gaps (a subtract-then-
   add recovery law and reciprocal-scale cancellation); those two are
   general enough to promote to a core signed module later."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.division :as rational-division]
             [rainbow.math.rational.signed.recovery-laws :as recovery-laws]))
@@ -129,12 +130,16 @@
 (def theorem-specs [gauss-seidel-step-worked-spec
                     gauss-seidel-step-exact-spec])
 
-(defn extend-environment [env]
-  (-> env
-      rational-division/extend-environment
-      recovery-laws/extend-environment
-      (support/extend-with :ahof-gauss-seidel
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.division rainbow.math.rational.signed.recovery-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :ahof-gauss-seidel (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.algorithms.proofs.ahof.gauss-seidel))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

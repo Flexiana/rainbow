@@ -8,7 +8,8 @@
   upper bound on the sum to the dot distance.  The shape premise is essential:
   truncating dot products can otherwise consume different weight prefixes.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.algorithms.proofs.inner-product :as inner-product]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance-additive :as additive]
@@ -336,14 +337,16 @@
   [dot-distance-below-sum-spec
    dot-distance-bounded-spec])
 
-(defn extend-environment [env]
-  (-> env
-      multiply-ring/extend-environment
-      inner-product/extend-environment
-      additive/extend-environment
-      shape/extend-environment
-      (support/extend-with :vector-dot-distance-bound
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply-ring rainbow.algorithms.proofs.inner-product rainbow.math.rational.signed.distance-additive rainbow.math.linear.vector.shape-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :vector-dot-distance-bound (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.vector.dot-distance-bound))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

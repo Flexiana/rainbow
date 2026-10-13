@@ -10,7 +10,8 @@
   nvc lists. Proof: List.rec on rows -- nil is reflexivity (both 0), cons is one
   succ-congruence (repr's cons and length's cons both prepend one). Native proof
   data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-vector-unit-column :as unit-column]))
 
@@ -68,12 +69,17 @@
 (def definition-specs [])
 (def theorem-specs [repr-length-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      unit-column/extend-environment
-      (support/extend-with :nnrat-farkas-vector-unit-repr-length
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-vector-unit-column])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-vector-unit-repr-length (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-vector-unit-repr-length))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

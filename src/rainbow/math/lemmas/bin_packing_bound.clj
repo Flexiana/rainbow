@@ -7,7 +7,8 @@
             [rainbow.math.sums.flow-cut :as a]
             [rainbow.math.rational.signed.order-monotone :as monotone]
             [rainbow.math.rational.signed.unit-laws :as units]
-            [rainbow.math.rational.signed.strict-order :as strict]))
+            [rainbow.math.rational.signed.strict-order :as strict]
+            [rainbow.module :as module]))
 
 (def type-level [:succ [:zero]])
 
@@ -80,14 +81,17 @@
 
 (def theorem-specs [volume-bound-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      s/extend-environment
-      a/extend-environment
-      monotone/extend-environment
-      units/extend-environment
-      strict/extend-environment
-      (support/extend-with :expr-sum-bin-packing-bound theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env s/extend-environment a/extend-environment monotone/extend-environment units/extend-environment strict/extend-environment (support/extend-with :expr-sum-bin-packing-bound theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.bin-packing-bound))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

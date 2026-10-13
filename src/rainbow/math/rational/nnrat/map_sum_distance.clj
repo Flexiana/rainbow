@@ -5,7 +5,8 @@
   over addition up to rational equivalence, and recover the distance bound.
   This needs neither a triangle axiom nor a signed-distance bridge. The list
   may be empty or contain duplicates; no normalization is required."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.distance :as distance]
             [rainbow.math.rational.nnrat.map-sum-additive :as additive]))
@@ -83,7 +84,15 @@
 (defn extend-unweighted-environment [env]
   (-> env distance/extend-environment additive/extend-environment
       (support/extend-with :nnrat-map-sum-distance [map-sum-distance-bound-by-spec])))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env extend-unweighted-environment (support/extend-with :nnrat-map-sum-distance [map-sum-distance-bound-spec])))
+
 (defn extend-environment [env]
-  (-> env extend-unweighted-environment
-      (support/extend-with :nnrat-map-sum-distance [map-sum-distance-bound-spec])))
+  (module/install-module env 'rainbow.math.rational.nnrat.map-sum-distance))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -1,6 +1,7 @@
 (ns rainbow.math.prelude
   "Native, data-oriented concepts selected from corpus nativeization failures."
-  (:require [rainbow.data.inductive :as inductive]
+  (:require [rainbow.module :as module]
+            [rainbow.data.inductive :as inductive]
             [rainbow.data.list :as list-data]
             [rainbow.elaborate :as elaborate]
             [rainbow.kernel :as kernel]
@@ -2222,5 +2223,14 @@
    checked-environment
    (conj (vec inductive/initial-specs) list-data/list-spec)))
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (-> checked-environment extend-concepts extend-data))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.prelude))

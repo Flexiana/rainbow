@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.image-preimage-adjunction
   "The constructive image/preimage Galois connection for set inclusion."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.sets.image-certificates :as image-certificates]))
@@ -143,10 +144,16 @@
    source-subset-preimage-of-image-subset-spec
    image-subset-equivalent-source-subset-preimage-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      image-certificates/extend-environment
-      (support/extend-with :set-image-preimage-adjunction theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sets.image-certificates])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-image-preimage-adjunction theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.image-preimage-adjunction))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

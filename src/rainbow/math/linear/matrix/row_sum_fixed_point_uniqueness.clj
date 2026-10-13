@@ -8,7 +8,8 @@
   then identifies the two vectors.  Keeping collapse explicit cleanly separates
   matrix geometry from the chosen strict-rate arithmetic.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.row-sum-lipschitz :as lipschitz]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -162,21 +163,16 @@
       current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      lipschitz/extend-environment
-      (extend-spec-if-missing
-       'signed/at-most-respects-equivalence
-       :signed-order-respects
-       order-respects/at-most-respects-equivalence-spec)
-      (extend-specs-if-missing
-       :signed-vector-sup-congruence congruence/theorem-specs)
-      (extend-spec-if-missing
-       'vector/equivalent-of-sup-distance-zero
-       :signed-vector-sup-separation
-       separation/equivalent-of-sup-distance-zero-spec)
-      (support/extend-with
-       :finite-matrix-row-sum-fixed-point-uniqueness theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.row-sum-lipschitz])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/at-most-respects-equivalence :signed-order-respects order-respects/at-most-respects-equivalence-spec) (extend-specs-if-missing :signed-vector-sup-congruence congruence/theorem-specs) (extend-spec-if-missing 'vector/equivalent-of-sup-distance-zero :signed-vector-sup-separation separation/equivalent-of-sup-distance-zero-spec) (support/extend-with :finite-matrix-row-sum-fixed-point-uniqueness theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.row-sum-fixed-point-uniqueness))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

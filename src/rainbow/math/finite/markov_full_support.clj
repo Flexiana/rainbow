@@ -21,7 +21,8 @@
   The decision is deliberately naive -- a fold of numerator-positivity over
   enumerations, quadratic in states -- because its job is to be READ and to be
   sound, not to be fast. Native and axiom-free on D63."
-  (:require [rainbow.math.logic.boolean-and :as boolean-and]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.boolean-and :as boolean-and]
             [rainbow.math.finite.index-hastings :as index-hastings]
             [rainbow.math.finite.markov-point-mass :as point-mass]
             [rainbow.math.finite.markov-hastings-positive :as positive]
@@ -525,15 +526,17 @@
    index-kernel-positive-spec
    index-one-step-reachable-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      boolean-and/extend-environment
-      index-hastings/extend-environment
-      point-mass/extend-environment
-      positive/extend-environment
-      (support/extend-with :finite-markov-full-support
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.logic.boolean-and rainbow.math.finite.index-hastings rainbow.math.finite.markov-point-mass rainbow.math.finite.markov-hastings-positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-markov-full-support (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.markov-full-support))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

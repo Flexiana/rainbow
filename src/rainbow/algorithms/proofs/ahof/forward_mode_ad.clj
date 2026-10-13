@@ -8,7 +8,8 @@
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.forward-mode-ad`
   prints this classification."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.signed.multiply :as signed-multiply]))
 
@@ -77,9 +78,17 @@
 (def theorem-specs [op-unfold-spec chain-example-is-6-spec identity-inner-is-3-spec])
 
 ;; installs signed/multiply, which these specs use, so the module installs on any base
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :ahof-forward-mode-ad (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with (signed-multiply/extend-environment checked-environment) :ahof-forward-mode-ad
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.forward-mode-ad))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

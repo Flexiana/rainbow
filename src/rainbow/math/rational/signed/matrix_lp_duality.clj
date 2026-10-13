@@ -5,7 +5,8 @@
   matrix/transpose.  It is Level-3 mathematical infrastructure: it verifies
   the bound under explicit feasibility, nonnegativity, and shape assumptions;
   it does not connect a Clojure LP implementation to those assumptions."
-  (:require [rainbow.math.linear.matrix.action-associative :as associative]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.action-associative :as associative]
             [rainbow.math.linear.matrix.positive-action :as positive-action]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -113,11 +114,16 @@
 
 (def theorem-specs [weak-duality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      associative/extend-environment
-      positive-action/extend-environment
-      (support/extend-with :signed-matrix-lp-duality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.action-associative rainbow.math.linear.matrix.positive-action])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-matrix-lp-duality theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.matrix-lp-duality))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

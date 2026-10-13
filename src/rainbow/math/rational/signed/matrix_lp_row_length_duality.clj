@@ -9,7 +9,8 @@
 
   This changes the certificate boundary, not the mathematical guarantee.  It is
   Level-3, native, deterministic, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.row-length-shape :as row-length]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -110,16 +111,16 @@
        (support/extend-with current milestone [spec])))
    checked-environment specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      matrix-lp/extend-environment
-      (extend-specs-if-missing
-       :finite-matrix-row-length-shape row-length/definition-specs)
-      (extend-specs-if-missing
-       :finite-matrix-row-length-shape
-       [row-length/length-equality-implies-same-shape-spec
-        row-length/row-length-compatible-implies-compatible-spec])
-      (support/extend-with :signed-matrix-lp-row-length-duality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.matrix-lp-duality])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-specs-if-missing :finite-matrix-row-length-shape row-length/definition-specs) (extend-specs-if-missing :finite-matrix-row-length-shape [row-length/length-equality-implies-same-shape-spec row-length/row-length-compatible-implies-compatible-spec]) (support/extend-with :signed-matrix-lp-row-length-duality theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.matrix-lp-row-length-duality))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

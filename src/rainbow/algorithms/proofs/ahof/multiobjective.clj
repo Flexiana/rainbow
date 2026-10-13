@@ -12,7 +12,8 @@
   (dominates=true entails both objective inequalities) reuses rainbow.math.logic.boolean-and
   exactly as interval-membership-soundness does.  Selection reuses nnrat-minmax.
   Native and axiom-free; chains boolean-and and nnrat-minmax on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.boolean-and :as ba]
             [rainbow.math.rational.nnrat.minmax :as minmax]))
@@ -140,12 +141,17 @@
    greedy-nearest-below-left-spec greedy-nearest-below-right-spec
    exchange-accepts-spec exchange-rejects-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.logic.boolean-and rainbow.math.rational.nnrat.minmax])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-multiobjective (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ba/extend-environment
-      minmax/extend-environment
-      (support/extend-with :ahof-multiobjective
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.multiobjective))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

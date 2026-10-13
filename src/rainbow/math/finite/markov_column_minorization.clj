@@ -2,7 +2,8 @@
   "Construct a shared lower mass by taking a finite minimum in each column.
   With a listed anchor it is the greatest listed minorizing mass pointwise.
   A positive computed total supplies a certified proper Dobrushin factor."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.rational-argmin :as argmin]
             [rainbow.math.finite.markov-dobrushin-kernel :as coefficient]
@@ -77,8 +78,16 @@
 (def definition-specs [column-minimum-mass-spec])
 (def theorem-specs [column-minimum-minorizes-spec column-minimum-greatest-spec
                     column-minimum-coefficient-bound-spec positive-column-minimum-coefficient-bound-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-minorization rainbow.math.finite.rational-argmin])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-column-minorization (concat definition-specs theorem-specs))))
+
 (defn extend-environment [env]
-  (-> env minorization/extend-environment argmin/extend-environment
-      (support/extend-with :finite-markov-column-minorization (concat definition-specs theorem-specs))))
+  (module/install-module env 'rainbow.math.finite.markov-column-minorization))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

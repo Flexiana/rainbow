@@ -9,7 +9,8 @@
 
   Universe-polymorphic in the index type, native, and axiom-free; chains the
   scalar strong-duality theorem and the finite-sum congruence on d63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.lp-strong-duality-general :as general]
@@ -236,13 +237,17 @@
 (def definition-specs [])
 (def theorem-specs [separable-multi-var-zero-gap-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      general/extend-environment
-      respects/extend-environment
-      (support/extend-with :nnrat-lp-separable-multi-var
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.lp-strong-duality-general rainbow.math.rational.nnrat.map-sum-respects])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-separable-multi-var (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-separable-multi-var))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

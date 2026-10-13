@@ -15,7 +15,8 @@
   Scope (measured by the kernel): this module has 3 worked instances (statements about specific values).
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.epsilon-constraint`
   prints this classification."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -77,9 +78,17 @@
   [within-bound-feasible-spec feasible-within-epsilon-spec
    over-bound-infeasible-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :ahof-epsilon-constraint (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :ahof-epsilon-constraint
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.epsilon-constraint))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

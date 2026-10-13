@@ -6,7 +6,8 @@
   iterate definition.  The Bellman-specific predecessor lemmas provide the
   initial/advance and below-sequence hypotheses.  Native and axiom-free on
   D63."
-  (:require [rainbow.math.finite.bellman-value-iteration-converges
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-value-iteration-converges
              :as bellman-convergence]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -661,12 +662,17 @@
    abstract-post-fixed-value-below-sequence-spec
    abstract-bellman-policy-optimality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bellman-convergence/extend-environment
-      (support/extend-with :finite-bellman-value-optimality-theorem
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-value-iteration-converges])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-bellman-value-optimality-theorem theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.bellman-value-optimality-theorem))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -13,7 +13,8 @@
   the objective is nonnegative, cannot undercut its proximity term, and—under
   the necessary same-shape hypothesis—can be zero only for equivalent plans.
   Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.algorithms.proofs.counterfactual-distance-laws :as distance-laws]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -208,22 +209,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      distance-laws/extend-environment
-      (extend-spec-if-missing
-       'signed/scale :temporal-difference temporal-difference/scale-spec)
-      (extend-spec-if-missing
-       'signed/scale-zero :vector-dot-scale dot-scale/scale-zero-spec)
-      (extend-spec-if-missing
-       'signed/scale-monotone :signed-scale-order
-       scale-order/scale-monotone-spec)
-      (extend-spec-if-missing
-       'signed/at-most-respects-equivalence :signed-order-respects
-       order-respects/at-most-respects-equivalence-spec)
-      (support/extend-with :counterfactual-objective-laws
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.counterfactual-distance-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/scale :temporal-difference temporal-difference/scale-spec) (extend-spec-if-missing 'signed/scale-zero :vector-dot-scale dot-scale/scale-zero-spec) (extend-spec-if-missing 'signed/scale-monotone :signed-scale-order scale-order/scale-monotone-spec) (extend-spec-if-missing 'signed/at-most-respects-equivalence :signed-order-respects order-respects/at-most-respects-equivalence-spec) (support/extend-with :counterfactual-objective-laws (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.counterfactual-objective-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

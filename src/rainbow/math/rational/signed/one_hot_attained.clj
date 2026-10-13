@@ -24,7 +24,8 @@
   stays 0) or W_k ~ 1 (then G_k ~ W_k G_k ~ 0, attained at k). At the end the weights sum to
   1, not 0, which leaves attainment. The sum facts used here are proved inside this induction;
   the general expr-sum-value algebra is a separate lane."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.checks :as checker]
@@ -213,19 +214,16 @@
 
 (def theorem-specs [strengthened-spec attained-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      checker/extend-environment
-      strict-more/extend-environment
-      zero-reflection/extend-environment
-      multiply-order/extend-environment
-      multiply-ring/extend-environment
-      unit-laws/extend-environment
-      no-zero-divisors/extend-environment
-      order-monotone/extend-environment
-      limit-uniqueness/extend-environment
-      map-sum/extend-environment
-      (support/extend-with :signed-one-hot-attained theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.checks rainbow.math.nat.strict-below-more rainbow.math.rational.signed.add-zero-reflection rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.unit-laws rainbow.math.rational.signed.no-zero-divisors rainbow.math.rational.signed.order-monotone rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.map-sum-algebra])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-one-hot-attained theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.one-hot-attained))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -3,7 +3,8 @@
   Forward preservation holds for every nonnegative rational D; universal-bound
   transport uses positive D and the proved original-objective bound theorem.
   No converse feasibility or candidate-bijection hypothesis is required."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.lp-scaling-bound :as bounds]
             [rainbow.math.rational.signed.pointwise-order :as pointwise]))
@@ -140,8 +141,16 @@
 (def theorem-specs [scaling-preserves-nonnegative-on-spec
                     lp-scaling-preserves-primal-feasibility-spec
                     lp-scaled-universal-bound-to-original-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.lp-scaling-bound rainbow.math.rational.signed.pointwise-order])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-lp-scaling-feasibility theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env bounds/extend-environment pointwise/extend-environment
-      (support/extend-with :signed-lp-scaling-feasibility theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.lp-scaling-feasibility))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

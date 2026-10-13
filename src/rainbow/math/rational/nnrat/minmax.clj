@@ -19,7 +19,8 @@
   motive, discharging the true branch by nnrat/decide-at-most-true-sound and the false
   branch by nnrat/decide-at-most-false-reverse -- the standard Rainbow decide case-split.
   Native and axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -181,9 +182,17 @@
   [min-lower-left-spec min-lower-right-spec max-upper-left-spec max-upper-right-spec
    at-most-min-spec at-most-max-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :nnrat-minmax (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :nnrat-minmax
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.minmax))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

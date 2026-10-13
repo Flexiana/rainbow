@@ -6,7 +6,8 @@
     signed/expr-sum-constant-of-nat : sum_{i<n} c ~ c * of-nat n
   The nnrat step unfolds to succ (k 1) = (k 1 + 1) 1 in nat, closed by multiply-one-right,
   add-successor-right and nat-add-zero-right (k 1 does not reduce: multiplication recurses on the left)."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed call at sum mul eqv refl sym trans]]
             [rainbow.math.sums.flow-cut :as a]
@@ -80,9 +81,15 @@
                    'n))))
 
 (def theorem-specs [nnrat-successor-spec signed-successor-spec sum-constant-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sums.flow-cut rainbow.math.nat.semiring rainbow.math.nat.strict-below-more rainbow.math.rational.signed.geometric-bridge rainbow.math.linear.matrix.affine-general-rate-certificate rainbow.math.rational.signed.multiply-ring rainbow.math.linear.matrix.action-scale])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with-shared :expr-sum-of-nat theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env a/extend-environment nat-semiring/extend-environment nat-more/extend-environment
-      geometric/extend-environment rate/extend-environment multiply-ring/extend-environment
-      matrix-scale/extend-environment
-      (support/extend-with-shared :expr-sum-of-nat theorem-specs)))
+  (module/install-module env 'rainbow.math.sums.of-nat))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

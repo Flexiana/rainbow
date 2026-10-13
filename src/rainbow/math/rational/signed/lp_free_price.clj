@@ -3,7 +3,8 @@
   A certified p ~ pplus - pminus preserves every coefficient contribution.
   Component witnesses are nonnegative, but need not be the host max-based split
   for a noncanonical Grothendieck representative. No host execution claim."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.rational.nnrat.farkas-elim-list :as zero-order]
@@ -93,8 +94,15 @@
 
 (def theorem-specs [free-price-split-contribution-spec price-components-reconstruct-spec
                     price-components-nonnegative-spec price-components-contribution-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.lp-objective-negate rainbow.math.rational.signed.distributive])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/add-spec-shared :nnrat-farkas-elim-list zero-order/zero-at-most-spec) (support/extend-with :signed-lp-free-price theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env sense/extend-environment distributive/extend-environment
-      (support/add-spec-shared :nnrat-farkas-elim-list zero-order/zero-at-most-spec)
-      (support/extend-with :signed-lp-free-price theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.lp-free-price))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

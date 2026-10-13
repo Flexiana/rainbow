@@ -2,7 +2,8 @@
   "A listed nonnegative rational term is bounded by its finite sum.
   Constructive membership induction; no decidable equality, normalization,
   or duplicate-freedom premise. Kernel-checked and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.metric-separation :as metric]))
 
@@ -65,7 +66,15 @@
          'items 'selected 'member))}))
 
 (def theorem-specs [map-sum-at-least-member-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.metric-separation])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-map-sum-member theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env metric/extend-environment
-      (support/extend-with :nnrat-map-sum-member theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.nnrat.map-sum-member))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

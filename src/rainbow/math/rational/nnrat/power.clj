@@ -7,7 +7,8 @@
   reflexivity, no unfold lemmas needed. Built for the geometric decay of
   total variation along kernel iterates; generic and reusable anywhere an
   exact rational envelope is stated. Native on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
 (def type-level [:succ [:zero]])
@@ -35,8 +36,16 @@
 (def definition-specs [power-spec])
 (def theorem-specs [])
 
-(defn extend-environment [env]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
   (support/extend-with env :nnrat-power definition-specs))
 
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.power))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

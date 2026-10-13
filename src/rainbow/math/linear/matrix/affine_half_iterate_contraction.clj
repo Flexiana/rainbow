@@ -7,7 +7,8 @@
   finite iterate.  The concrete half-row Lipschitz theorem can therefore be
   applied at every horizon, proving that successive paired iterates halve their
   signed sup distance.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-iterate :as iterate]
             [rainbow.math.linear.matrix.half-row-sum-fixed-point-uniqueness
              :as half]
@@ -214,15 +215,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      half/extend-environment
-      (extend-spec-if-missing
-       'matrix/affine-iterate :finite-matrix-affine-iterate
-       iterate/affine-iterate-spec)
-      (extend-specs-if-missing :vector-shape-add shape-add/theorem-specs)
-      (support/extend-with
-       :finite-matrix-affine-half-iterate-contraction theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.half-row-sum-fixed-point-uniqueness])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'matrix/affine-iterate :finite-matrix-affine-iterate iterate/affine-iterate-spec) (extend-specs-if-missing :vector-shape-add shape-add/theorem-specs) (support/extend-with :finite-matrix-affine-half-iterate-contraction theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-half-iterate-contraction))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -11,7 +11,8 @@
   belief-action-value reuses nnrat/wsum2 (b0*q0 + b1*q1); the max/bounds reuse
   nnrat-minmax; the sawtooth upper bound reuses nnrat/convex-at-most-max.
   Native and axiom-free; chains nnrat-weighted-sum, nnrat-minmax, nnrat-convex on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             ;; convex transitively chains weighted-sum (-> wsum2, multiply/add monotone),
             ;; nnrat-minmax (-> max + bounds) and nnrat-distributive
@@ -139,11 +140,17 @@
    blind-below-qmdp-spec fib-dominates-action0-spec
    sawtooth-below-max-corner-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.convex])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-pomdp-bounds (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex/extend-environment
-      (support/extend-with :ahof-pomdp-bounds
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.pomdp-bounds))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

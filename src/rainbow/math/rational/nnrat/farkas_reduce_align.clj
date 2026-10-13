@@ -20,7 +20,8 @@
   the structured representation, with the `link` fully discharged -- the
   closed step the variable-count induction folds. Native proof data,
   axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-bridge-list :as bridge-list]
@@ -195,13 +196,17 @@
 
 (def theorem-specs [align-spec eliminate-structured-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bridge-list/extend-environment
-      reduce-list/extend-environment
-      (support/extend-with :nnrat-farkas-reduce-align
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-bridge-list rainbow.math.rational.nnrat.farkas-reduce-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-reduce-align (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-reduce-align))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

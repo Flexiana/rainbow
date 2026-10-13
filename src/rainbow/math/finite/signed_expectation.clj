@@ -8,7 +8,8 @@
 
   This is reusable stochastic proof infrastructure for signed rewards and
   costs.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.action-scale :as action-scale]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -310,21 +311,16 @@
       (support/extend-with env producer missing)
       env)))
 
-(defn extend-environment [env]
-  (-> env
-      sum-algebra/extend-environment
-      (extend-specs-if-missing
-       :signed-multiply-ring multiply-ring/theorem-specs)
-      (extend-specs-if-missing
-       :signed-distributive distributive/theorem-specs)
-      (extend-spec-if-missing
-       'signed/multiply-distributes-add-left :finite-matrix-action-scale
-       action-scale/multiply-distributes-add-left-spec)
-      (extend-spec-if-missing
-       'signed/equivalent-symmetric :signed-equivalence-laws
-       equivalence-laws/equivalent-symmetric-spec)
-      (support/extend-with
-       :finite-signed-expectation (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.map-sum-algebra])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :signed-multiply-ring multiply-ring/theorem-specs) (extend-specs-if-missing :signed-distributive distributive/theorem-specs) (extend-spec-if-missing 'signed/multiply-distributes-add-left :finite-matrix-action-scale action-scale/multiply-distributes-add-left-spec) (extend-spec-if-missing 'signed/equivalent-symmetric :signed-equivalence-laws equivalence-laws/equivalent-symmetric-spec) (support/extend-with :finite-signed-expectation (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.signed-expectation))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

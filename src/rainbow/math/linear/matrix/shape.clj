@@ -13,7 +13,8 @@
   by matrix tails, and recover compatibility with the first row.  These types
   make raggedness explicit before transpose or matrix composition is added.
   Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.matrix :as matrix]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -312,21 +313,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      matrix/extend-environment
-      (extend-spec-if-missing
-       'vector/same-shape-reflexive :vector-shape-cancellation
-       shape/same-shape-reflexive-spec)
-      (extend-spec-if-missing
-       'vector/same-shape-symmetric :vector-shape-cancellation
-       shape/same-shape-symmetric-spec)
-      (extend-spec-if-missing
-       'vector/same-shape-transitive :vector-shape-cancellation
-       shape/same-shape-transitive-spec)
-      (support/extend-with :finite-matrix-shape
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.matrix])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'vector/same-shape-reflexive :vector-shape-cancellation shape/same-shape-reflexive-spec) (extend-spec-if-missing 'vector/same-shape-symmetric :vector-shape-cancellation shape/same-shape-symmetric-spec) (extend-spec-if-missing 'vector/same-shape-transitive :vector-shape-cancellation shape/same-shape-transitive-spec) (support/extend-with :finite-matrix-shape (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.shape))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

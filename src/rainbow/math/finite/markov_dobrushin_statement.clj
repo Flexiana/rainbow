@@ -4,7 +4,8 @@
   Registering this definition checks that the proposition is well formed.
   It does not inhabit that proposition or add a contraction axiom.
   The inhabitant is supplied separately by finite-markov-dobrushin-contraction."
-  (:require [rainbow.math.finite.markov-dobrushin-kernel :as coefficient]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-dobrushin-kernel :as coefficient]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]))
 
@@ -40,8 +41,16 @@
 
 (def definition-specs [contraction-statement-spec])
 (def theorem-specs [])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-dobrushin-kernel])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-dobrushin-statement definition-specs)))
+
 (defn extend-environment [env]
-  (-> env coefficient/extend-environment
-      (support/extend-with :finite-markov-dobrushin-statement definition-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-dobrushin-statement))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

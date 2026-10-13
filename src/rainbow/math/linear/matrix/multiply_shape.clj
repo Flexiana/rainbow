@@ -7,7 +7,8 @@
   compatible with any other row image, and every product is rectangular—even
   when the total ragged/truncating semantics is used.  Native and axiom-free on
   D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.linear :as matrix-linear]
             [rainbow.math.linear.matrix.multiply :as multiply]
             [rainbow.math.linear.matrix.shape :as matrix-shape]
@@ -186,23 +187,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply/extend-environment
-      (extend-spec-if-missing
-       'matrix/vector-multiply-output-shape :finite-matrix-linear
-       matrix-linear/vector-multiply-output-shape-spec)
-      (extend-spec-if-missing
-       'matrix/column-shape :finite-matrix-transpose-shape
-       transpose-shape/column-shape-spec)
-      (extend-spec-if-missing
-       'matrix/compatible :finite-matrix-shape
-       matrix-shape/compatible-spec)
-      (extend-spec-if-missing
-       'matrix/rectangular :finite-matrix-shape
-       matrix-shape/rectangular-spec)
-      (support/extend-with :finite-matrix-multiply-shape theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.multiply])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'matrix/vector-multiply-output-shape :finite-matrix-linear matrix-linear/vector-multiply-output-shape-spec) (extend-spec-if-missing 'matrix/column-shape :finite-matrix-transpose-shape transpose-shape/column-shape-spec) (extend-spec-if-missing 'matrix/compatible :finite-matrix-shape matrix-shape/compatible-spec) (extend-spec-if-missing 'matrix/rectangular :finite-matrix-shape matrix-shape/rectangular-spec) (support/extend-with :finite-matrix-multiply-shape theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.multiply-shape))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

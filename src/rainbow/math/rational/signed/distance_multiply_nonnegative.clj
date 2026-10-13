@@ -7,7 +7,8 @@
   negation congruence identifies the reverse deviation.  Folding the rows back
   yields `d(w*x,w*y) <= w*d(x,y)` for `0 <= w`, exactly the component law needed
   by nonnegative matrix rows.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.signed-scale-subtract :as subtract]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.signed-scale-subtract :as subtract]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance :as distance]
@@ -164,14 +165,16 @@
 (def definition-specs [])
 (def theorem-specs [distance-multiply-left-nonnegative-spec])
 
-(defn extend-environment [env]
-  (-> env
-      distance/extend-environment
-      monotone/extend-environment
-      negate/extend-environment
-      subtract/extend-environment
-      (support/extend-with :signed-distance-multiply-nonnegative
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distance rainbow.math.rational.signed.multiply-monotone rainbow.math.linear.vector.dot-negate rainbow.math.linear.matrix.signed-scale-subtract])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-distance-multiply-nonnegative theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.distance-multiply-nonnegative))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

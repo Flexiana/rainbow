@@ -16,7 +16,8 @@
   (V is nonnegative -- product-radius-nonneg), and nnrat-radius-cancel cancels the reciprocal
   (num D is positive -- product-radius-numerator-positive). Threshold extraction and the final
   close-respects-radius-equivalence follow the analysis/limit-sum template exactly."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.close-product :as close-product]
             [rainbow.math.rational.signed.convergent-bounded :as convergent-bounded]
@@ -143,17 +144,16 @@
 
 (def theorem-specs [limit-product-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      close-product/extend-environment
-      convergent-bounded/extend-environment
-      limit-arithmetic/extend-environment
-      radius-cancel/extend-environment
-      radius-nonneg/extend-environment
-      radius-positive/extend-environment
-      distributive/extend-environment
-      equivalence-laws/extend-environment
-      (support/extend-with :signed-limit-product theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.close-product rainbow.math.rational.signed.convergent-bounded rainbow.math.rational.signed.limit-arithmetic rainbow.math.rational.nnrat.radius-cancel rainbow.math.rational.signed.product-radius-nonneg rainbow.math.rational.signed.product-radius-positive rainbow.math.rational.signed.distributive rainbow.math.rational.signed.equivalence-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-limit-product theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-product))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

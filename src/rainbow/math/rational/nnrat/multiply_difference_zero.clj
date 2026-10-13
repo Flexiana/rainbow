@@ -6,7 +6,8 @@
   (m1+N1)(m2+N2) + N1*N2 ~ ((m1+N1)N2 + N1(m2+N2)) + m1*m2 exhibits m1*m2 as the gap; cancelling it
   gives m1*m2 ~ 0, and nnrat/multiply-zero-split splits it into m1~0 or m2~0, i.e. P1~N1 or P2~N2.
   Generalizes nnrat/square-difference-zero to distinct factors (the general no-zero-divisors core)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.multiply-zero-split :as mzs]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -137,15 +138,16 @@
 
 (def theorem-specs [ordered-spec difference-zero-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      mzs/extend-environment
-      identities/extend-environment
-      nnrat-monus/extend-environment
-      add-cancel/extend-environment
-      order-total/extend-environment
-      ring/extend-environment
-      (support/extend-with :nnrat-multiply-difference-zero theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.multiply-zero-split rainbow.math.rational.nnrat.identities rainbow.math.rational.nnrat.monus rainbow.math.rational.nnrat.add-cancel-zero rainbow.math.rational.nnrat.order-total rainbow.math.rational.nnrat.ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-multiply-difference-zero theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.multiply-difference-zero))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

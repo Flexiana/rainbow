@@ -6,7 +6,8 @@
   contributions are merely nonnegative and cannot destroy the witness.  This
   is the reusable induction step for finite positive paths and reachability.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-iteration :as iteration]
             [rainbow.math.finite.markov-stationarity :as stationarity]
             [rainbow.math.logic.function :as function]
@@ -219,19 +220,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      positive-sum/extend-environment
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-step
-       :finite-markov-positive-step-support
-       stationarity/kernel-step-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-iterate
-       :finite-markov-positive-step-support
-       iteration/kernel-iterate-spec)
-      (support/extend-with
-       :finite-markov-positive-step theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.map-sum-positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'markov/nnrat-kernel-step :finite-markov-positive-step-support stationarity/kernel-step-spec) (extend-spec-if-missing 'markov/nnrat-kernel-iterate :finite-markov-positive-step-support iteration/kernel-iterate-spec) (support/extend-with :finite-markov-positive-step theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-positive-step))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -14,7 +14,8 @@
   This is the (1/2)-contraction convergence rate -- the analytic core of value-iteration
   convergence for a 1/2-discounted Bellman operator.  Native and axiom-free; chains
   rainbow.math.rational.nnrat.harmonic-convergence on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.harmonic-convergence :as hc]))
 
@@ -142,11 +143,17 @@
 (def theorem-specs [index-le-pow2-pred-spec geometric-below-harmonic-spec
                     geometric-rate-null-spec geometric-error-converges-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.harmonic-convergence])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-geometric-convergence (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      hc/extend-environment
-      (support/extend-with :nnrat-geometric-convergence
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.geometric-convergence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

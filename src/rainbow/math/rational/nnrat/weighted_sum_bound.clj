@@ -1,6 +1,7 @@
 (ns rainbow.math.rational.nnrat.weighted-sum-bound
   "Finite-list lift of weighted-term monotonicity."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.bellman-monotone :as sums]
             [rainbow.math.rational.nnrat.weighted-term-bound :as term]))
@@ -38,7 +39,15 @@
                     (f/app 'weight 'x) (f/app 'distance 'x) 'rho
                     (f/app 'pointwise 'x)))
            'source))})
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-monotone rainbow.math.rational.nnrat.weighted-term-bound])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-weighted-sum-bound [spec])))
+
 (defn extend-environment [env]
-  (-> env sums/extend-environment term/extend-environment
-      (support/extend-with :nnrat-weighted-sum-bound [spec])))
+  (module/install-module env 'rainbow.math.rational.nnrat.weighted-sum-bound))
 (defn theorem-ids [env] (support/spec-ids env [spec]))

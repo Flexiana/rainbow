@@ -16,7 +16,8 @@
   add-zero-split splits it to SR ~ 0 and SS ~ 0.  (Per-term extraction to any
   individual r_e x_e ~ 0 is nnrat/map-sum-zero-at-split, in nnrat-map-sum-zero.)
   Native and axiom-free; chains nnrat-lp-gap and nnrat-add-cancel-zero on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.lp-gap :as gap]
             [rainbow.math.rational.nnrat.add-cancel-zero :as cz]))
@@ -91,12 +92,17 @@
 (def definition-specs [])
 (def theorem-specs [cs-dual-spec cs-primal-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.lp-gap rainbow.math.rational.nnrat.add-cancel-zero])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-complementary (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      gap/extend-environment
-      cz/extend-environment
-      (support/extend-with :nnrat-lp-complementary
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-complementary))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

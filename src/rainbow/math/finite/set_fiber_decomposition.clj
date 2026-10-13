@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.set-fiber-decomposition
   "A finite source is the union of its fibers over its finite image."
-  (:require [rainbow.math.finite.set-fiber :as fiber]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.set-fiber :as fiber]
             [rainbow.math.finite.set-indexed-union :as indexed-union]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -209,12 +210,17 @@
    image-fiber-union-decomposition-spec
    finite-image-fiber-union-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      fiber/extend-environment
-      indexed-union/extend-environment
-      (support/extend-with :finite-set-fiber-decomposition theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.set-fiber rainbow.math.finite.set-indexed-union])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-set-fiber-decomposition theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.set-fiber-decomposition))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -15,7 +15,8 @@
   use-witness + right-conjunct + re-witness. The list accumulation building
   the two lists from this per-row step is brick 1 proper. Native proof data,
   axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]))
 
@@ -133,10 +134,17 @@
 (def definition-specs [])
 (def theorem-specs [partition-row-spec])
 
-(defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :nnrat-farkas-partition-row
-                       (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :nnrat-farkas-partition-row (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-partition-row))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

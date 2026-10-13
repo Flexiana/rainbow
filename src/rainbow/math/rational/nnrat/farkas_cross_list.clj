@@ -20,7 +20,8 @@
   for each pair. Native proof data, axiom-free. The n-lower generalization
   (a list of lowers too) is brick 6's induction; the two-variable payoff
   needs only this one-lower form."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-affine-cross :as cross]
@@ -158,13 +159,17 @@
 
 (def theorem-specs [cross-list-necessary-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      cross/extend-environment
-      affine-list/extend-environment
-      (support/extend-with :nnrat-farkas-cross-list
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-affine-cross rainbow.math.rational.nnrat.farkas-elim-affine-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-cross-list (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-cross-list))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

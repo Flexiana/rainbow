@@ -5,7 +5,8 @@
   resulting matrix shape and distributes over vector/matrix addition.  A joint
   theorem shares the required four-list induction; public projections expose
   the shape and equivalence facts separately.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.add-shape :as add-shape]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.add-shape :as add-shape]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -667,11 +668,17 @@
    prepend-column-preserves-same-shape-spec
    prepend-column-additive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-shape/extend-environment
-      (support/extend-with :finite-matrix-prepend-add theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.add-shape])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-prepend-add theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.prepend-add))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

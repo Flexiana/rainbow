@@ -13,7 +13,8 @@
   X = 1/a * 1/b; then X*b ~ 1/a (assoc, commute, b*(1/b)~1 via multiply-reciprocal-self,
   one laws) and X*a ~ 1/b symmetrically; subtract-respects assembles it. Axiom-free;
   additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.reciprocal :as reciprocal]
             [rainbow.math.rational.signed.unit-laws :as unit-laws]
@@ -100,15 +101,16 @@
 
 (def theorem-specs [reciprocal-difference-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      reciprocal/extend-environment
-      unit-laws/extend-environment
-      action-scale/extend-environment
-      dot-negate/extend-environment
-      map-sum/extend-environment
-      dot-subtract/extend-environment
-      (support/extend-with :signed-reciprocal-difference theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.reciprocal rainbow.math.rational.signed.unit-laws rainbow.math.linear.matrix.action-scale rainbow.math.linear.vector.dot-negate rainbow.math.rational.signed.map-sum-algebra rainbow.math.linear.vector.dot-subtract])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-reciprocal-difference theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.reciprocal-difference))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

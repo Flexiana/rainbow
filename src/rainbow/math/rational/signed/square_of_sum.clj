@@ -6,7 +6,8 @@
 
   One right-distribution then two left-distributions. (a*b and b*a are kept distinct since
   the caller decides when to commute.) Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distributive :as distributive]
             [rainbow.math.linear.matrix.action-scale :as action-scale]
@@ -46,13 +47,16 @@
 
 (def theorem-specs [square-of-sum-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      distributive/extend-environment
-      action-scale/extend-environment
-      map-sum/extend-environment
-      equivalence-laws/extend-environment
-      (support/extend-with :signed-square-of-sum theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distributive rainbow.math.linear.matrix.action-scale rainbow.math.rational.signed.map-sum-algebra rainbow.math.rational.signed.equivalence-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-square-of-sum theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.square-of-sum))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -5,7 +5,8 @@
   Adding same-shaped matrices preserves the complete two-level shape of both
   inputs.  These certificates are the shape infrastructure needed to transport
   addition through total transpose.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.add :as matrix-add]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.add :as matrix-add]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -494,11 +495,17 @@
    same-shape-transitive-spec
    add-preserves-shape-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      matrix-add/extend-environment
-      (support/extend-with :finite-matrix-add-shape theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.add])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-add-shape theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.add-shape))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

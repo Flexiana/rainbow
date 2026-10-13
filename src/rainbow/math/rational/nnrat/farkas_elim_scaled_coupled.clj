@@ -18,7 +18,8 @@
   (multiply-monotone holds for every factor). Native proof data,
   axiom-free."
   (:refer-clojure :exclude [reduced])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-elim-coupled :as coupled]
@@ -229,13 +230,17 @@
 
 (def theorem-specs [extends-spec projects-spec solvable-iff-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      coupled/extend-environment
-      multiply-monotone/extend-environment
-      (support/extend-with :nnrat-farkas-elim-scaled-coupled
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-elim-coupled rainbow.math.rational.nnrat.multiply-monotone])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-elim-scaled-coupled (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-elim-scaled-coupled))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

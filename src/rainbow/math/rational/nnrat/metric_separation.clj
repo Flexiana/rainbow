@@ -10,7 +10,8 @@
   endpoint by an equivalent value keeps the distance equivalent.
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.algorithms.proofs.bellman-scaled-fixed-point-uniqueness
              :as legacy-separation]
             [rainbow.math.finite.metric-separation :as nat-separation]
@@ -708,71 +709,19 @@
     env
     (radius/extend-environment env)))
 
-(defn extend-environment [env]
-  (-> env
-      extend-radius-if-missing
-      sum-distance/extend-unweighted-environment
-      (extend-spec-if-missing
-       'nat/equal-zero-of-at-most-zero :finite-metric-separation
-       nat-separation/equal-zero-of-at-most-zero-spec)
-      (extend-spec-if-missing
-       'nat/at-most-antisymmetric
-       :bellman-scaled-fixed-point-uniqueness
-       legacy-separation/at-most-antisymmetric-spec)
-      (extend-spec-if-missing
-       'nnrat/equivalent-to-at-most :finite-policy-iteration
-       policy-order/equivalent-to-at-most-spec)
-      (extend-spec-if-missing
-       'nnrat/add-zero-right :nnrat-identities
-       identities/add-zero-right-spec)
-      (extend-spec-if-missing
-       'nnrat/zero-at-most :nnrat-farkas-elim-list
-       nnrat-bounds/zero-at-most-spec)
-      (extend-spec-if-missing
-       'nnrat/add-right-monotone-base :nnrat-add-monotone
-       monotone-add/add-right-monotone-base-spec)
-      (extend-spec-if-missing
-       'nnrat/add-right-monotone :nnrat-add-monotone
-       monotone-add/add-right-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/add-commutative :nnrat-add-monotone
-       monotone-add/add-commutative-spec)
-      (extend-spec-if-missing
-       'nnrat/add-left-monotone :nnrat-add-monotone
-       monotone-add/add-left-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/add-monotone :nnrat-add-monotone
-       monotone-add/add-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/add-associative :nnrat-additive-reassociation
-       additive-reassociation/add-associative-spec)
-      (extend-spec-if-missing
-       'nnrat/add-swap-right :nnrat-additive-reassociation
-       additive-reassociation/add-swap-right-spec)
-      (extend-spec-if-missing
-       'nnrat/add-four-reorder :nnrat-additive-reassociation
-       additive-reassociation/add-four-reorder-spec)
-      ;; Only the definition: the bound's proof needs map-sum to unfold,
-      ;; not its laws, and entering the whole list-sum world here would
-      ;; replay its unguarded add-monotone chain against the specs above.
-      (extend-spec-if-missing
-       'nnrat/map-sum :nnrat-list-sum list-sum/map-sum-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-monotone-base :nnrat-multiply-monotone
-       monotone-mul/multiply-monotone-base-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-monotone :nnrat-multiply-monotone
-       monotone-mul/multiply-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-commutative :nnrat-commutative
-       commutative/multiply-commutative-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-distributes-add-right :nnrat-distributive
-       distributive/multiply-distributes-add-right-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-distributes-add-left :finite-bellman-value-optimality
-       optimality/multiply-distributes-add-left-spec)
-      (support/extend-with :nnrat-metric-separation theorem-specs)))
+;; Only the definition: the bound's proof needs map-sum to unfold,
+;; not its laws, and entering the whole list-sum world here would
+;; replay its unguarded add-monotone chain against the specs above.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env extend-radius-if-missing sum-distance/extend-unweighted-environment (extend-spec-if-missing 'nat/equal-zero-of-at-most-zero :finite-metric-separation nat-separation/equal-zero-of-at-most-zero-spec) (extend-spec-if-missing 'nat/at-most-antisymmetric :bellman-scaled-fixed-point-uniqueness legacy-separation/at-most-antisymmetric-spec) (extend-spec-if-missing 'nnrat/equivalent-to-at-most :finite-policy-iteration policy-order/equivalent-to-at-most-spec) (extend-spec-if-missing 'nnrat/add-zero-right :nnrat-identities identities/add-zero-right-spec) (extend-spec-if-missing 'nnrat/zero-at-most :nnrat-farkas-elim-list nnrat-bounds/zero-at-most-spec) (extend-spec-if-missing 'nnrat/add-right-monotone-base :nnrat-add-monotone monotone-add/add-right-monotone-base-spec) (extend-spec-if-missing 'nnrat/add-right-monotone :nnrat-add-monotone monotone-add/add-right-monotone-spec) (extend-spec-if-missing 'nnrat/add-commutative :nnrat-add-monotone monotone-add/add-commutative-spec) (extend-spec-if-missing 'nnrat/add-left-monotone :nnrat-add-monotone monotone-add/add-left-monotone-spec) (extend-spec-if-missing 'nnrat/add-monotone :nnrat-add-monotone monotone-add/add-monotone-spec) (extend-spec-if-missing 'nnrat/add-associative :nnrat-additive-reassociation additive-reassociation/add-associative-spec) (extend-spec-if-missing 'nnrat/add-swap-right :nnrat-additive-reassociation additive-reassociation/add-swap-right-spec) (extend-spec-if-missing 'nnrat/add-four-reorder :nnrat-additive-reassociation additive-reassociation/add-four-reorder-spec) (extend-spec-if-missing 'nnrat/map-sum :nnrat-list-sum list-sum/map-sum-spec) (extend-spec-if-missing 'nnrat/multiply-monotone-base :nnrat-multiply-monotone monotone-mul/multiply-monotone-base-spec) (extend-spec-if-missing 'nnrat/multiply-monotone :nnrat-multiply-monotone monotone-mul/multiply-monotone-spec) (extend-spec-if-missing 'nnrat/multiply-commutative :nnrat-commutative commutative/multiply-commutative-spec) (extend-spec-if-missing 'nnrat/multiply-distributes-add-right :nnrat-distributive distributive/multiply-distributes-add-right-spec) (extend-spec-if-missing 'nnrat/multiply-distributes-add-left :finite-bellman-value-optimality optimality/multiply-distributes-add-left-spec) (support/extend-with :nnrat-metric-separation theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.metric-separation))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

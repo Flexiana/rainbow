@@ -6,7 +6,8 @@
   addition of pointwise negation, it is monotone in its left argument, antitone
   in its right argument, and mixed monotone/antitone jointly.  Native and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.signed-scale-antitone :as base]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -321,14 +322,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      base/extend-environment
-      (extend-spec-if-missing
-       'vector/add-right-monotone :vector-add-order
-       vector-order/add-right-monotone-spec)
-      (support/extend-with :finite-matrix-add-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-antitone])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'vector/add-right-monotone :vector-add-order vector-order/add-right-monotone-spec) (support/extend-with :finite-matrix-add-order theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.add-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

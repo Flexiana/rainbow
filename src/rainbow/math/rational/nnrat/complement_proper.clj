@@ -1,6 +1,7 @@
 (ns rainbow.math.rational.nnrat.complement-proper
   "Proper raw fraction for the exact complement of a positive subunit mass."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ordered-distance :as ordered]
             [rainbow.math.rational.nnrat.positive :as positive]
@@ -77,7 +78,15 @@
                   (sym packed-dp dp packed-is-dp) raw-bound)))))}))
 
 (def theorem-specs [distance-upper-of-ordered-spec complement-proper-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.ordered-distance rainbow.math.rational.nnrat.positive rainbow.math.nat.add-order])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-complement-proper theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env ordered/extend-environment positive/extend-environment add-order/extend-environment
-      (support/extend-with :nnrat-complement-proper theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.nnrat.complement-proper))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

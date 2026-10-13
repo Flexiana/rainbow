@@ -5,7 +5,8 @@
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum mul le eqv refl sym trans below]]
             [rainbow.math.sums.flow-cut :as a]
-            [rainbow.math.lemmas.one-center :as center :refer [le-ind eq-ind]]))
+            [rainbow.math.lemmas.one-center :as center :refer [le-ind eq-ind]]
+            [rainbow.module :as module]))
 
 (def type-level [:succ [:zero]])
 
@@ -106,10 +107,17 @@
 
 (def theorem-specs [witness-bound-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      center/extend-environment
-      (support/extend-with-shared :expr-sum-minimax-regret theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env center/extend-environment (support/extend-with-shared :expr-sum-minimax-regret borrowed-specs) (support/extend-with-shared :expr-sum-minimax-regret theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.minimax-regret))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

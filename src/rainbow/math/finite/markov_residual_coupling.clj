@@ -3,7 +3,8 @@
   The positive-mass coupling is p(i)*q(j)/M. Its marginals follow by
   finite-sum scaling and positive reciprocal cancellation. Positivity is
   explicit; the zero-mass case is not silently divided through."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-residual-expansion :as expansion]
@@ -150,10 +151,16 @@
 (defn- add-if-missing [env spec]
   (if (environment/resolve-id env (:name spec)) env
       (support/add-spec env :finite-markov-residual-coupling-support spec)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-residual-expansion])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (add-if-missing scale/map-sum-scale-right-spec) (add-if-missing division/divide-self-positive-spec) (support/extend-with :finite-markov-residual-coupling (concat definition-specs theorem-specs))))
+
 (defn extend-environment [env]
-  (-> env expansion/extend-environment
-      (add-if-missing scale/map-sum-scale-right-spec)
-      (add-if-missing division/divide-self-positive-spec)
-      (support/extend-with :finite-markov-residual-coupling (concat definition-specs theorem-specs))))
+  (module/install-module env 'rainbow.math.finite.markov-residual-coupling))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

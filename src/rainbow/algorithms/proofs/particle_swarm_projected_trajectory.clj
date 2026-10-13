@@ -1,6 +1,7 @@
 (ns rainbow.algorithms.proofs.particle-swarm-projected-trajectory
   "Box-projected particle updates and finite-horizon trajectory boundedness."
-  (:require [rainbow.math.finite.vector :as finite-vector]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.algorithms.proofs.particle-swarm :as swarm]
@@ -270,14 +271,17 @@
    projected-trajectory-successor-in-band-spec
    projected-trajectory-in-band-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      finite-vector/extend-environment
-      swarm/extend-environment
-      clamp/extend-environment
-      (support/extend-with :particle-swarm-projected-trajectory
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.vector rainbow.algorithms.proofs.particle-swarm rainbow.math.linear.vector.uniform-clamp])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :particle-swarm-projected-trajectory (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.particle-swarm-projected-trajectory))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -10,7 +10,8 @@
   structural equations, nonnegativity, a global pointwise upper bound,
   symmetry, and zero on the diagonal.  Native, kernel-checked, and axiom-free
   on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance :as distance]))
 
@@ -886,11 +887,16 @@
    vector-sup-distance-symmetric-spec
    vector-sup-distance-self-zero-spec])
 
-(defn extend-environment [env]
-  (-> env
-      distance/extend-environment
-      (support/extend-with :signed-vector-sup-distance
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-vector-sup-distance (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.vector-sup-distance))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

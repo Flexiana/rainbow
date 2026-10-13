@@ -15,7 +15,8 @@
   nat/multiply-left-monotone applied to succ k <= succ n, which follows from k <= n by a
   witness (proved here as nat/successor-monotone, absent from d63).
   Native and axiom-free; self-contained on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def type-level [:succ [:zero]])
@@ -121,9 +122,17 @@
 (def definition-specs [rate-null-spec harmonic-spec])
 (def theorem-specs [successor-monotone-spec harmonic-rate-null-spec rate-null-dominated-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :nnrat-harmonic-convergence (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :nnrat-harmonic-convergence
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.harmonic-convergence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

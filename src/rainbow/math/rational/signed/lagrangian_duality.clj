@@ -37,7 +37,8 @@
   nothing here assumes linearity, only order.  Native and axiom-free; chains
   signed limit uniqueness (add-zero-right, antisymmetry), signed order
   monotonicity and signed order cancellation on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-uniqueness :as uniqueness]
             [rainbow.math.rational.signed.order-cancellation :as cancellation]
@@ -206,13 +207,17 @@
 (def theorem-specs
   [weak-duality-spec zero-gap-optimal-spec complementary-slackness-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      uniqueness/extend-environment
-      monotone/extend-environment
-      cancellation/extend-environment
-      (support/extend-with :signed-lagrangian-duality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.order-monotone rainbow.math.rational.signed.order-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-lagrangian-duality theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.lagrangian-duality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

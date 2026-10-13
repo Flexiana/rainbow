@@ -12,7 +12,8 @@
   Consequently unit-bounded paired affine iterates coalesce at that rate, and
   iteration from any unit-bounded initial distance converges to a certified
   fixed point.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-equivalence :as affine-equivalence]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -439,32 +440,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      bridge/extend-environment
-      (extend-specs-if-missing
-       :nnrat-harmonic-convergence
-       (concat harmonic/definition-specs harmonic/theorem-specs))
-      (extend-spec-if-missing
-       'nat/index-le-pow2-pred :nnrat-geometric-convergence
-       geometric/index-le-pow2-pred-spec)
-      (extend-spec-if-missing
-       'analysis/geometric-below-harmonic :nnrat-geometric-convergence
-       geometric/geometric-below-harmonic-spec)
-      (extend-spec-if-missing
-       'analysis/geometric-half-rate-null :nnrat-geometric-convergence
-       geometric/geometric-rate-null-spec)
-      (extend-spec-if-missing
-       'matrix/affine-action-respects-values-equivalence
-       :finite-matrix-affine-equivalence
-       affine-equivalence/affine-action-respects-values-equivalence-spec)
-      (extend-spec-if-missing
-       'matrix/affine-iterate-fixed-point
-       :finite-matrix-affine-equivalence
-       affine-equivalence/affine-iterate-fixed-point-spec)
-      (support/extend-with
-       :finite-matrix-affine-half-iterate-converges
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.geometric-bridge])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :nnrat-harmonic-convergence (concat harmonic/definition-specs harmonic/theorem-specs)) (extend-spec-if-missing 'nat/index-le-pow2-pred :nnrat-geometric-convergence geometric/index-le-pow2-pred-spec) (extend-spec-if-missing 'analysis/geometric-below-harmonic :nnrat-geometric-convergence geometric/geometric-below-harmonic-spec) (extend-spec-if-missing 'analysis/geometric-half-rate-null :nnrat-geometric-convergence geometric/geometric-rate-null-spec) (extend-spec-if-missing 'matrix/affine-action-respects-values-equivalence :finite-matrix-affine-equivalence affine-equivalence/affine-action-respects-values-equivalence-spec) (extend-spec-if-missing 'matrix/affine-iterate-fixed-point :finite-matrix-affine-equivalence affine-equivalence/affine-iterate-fixed-point-spec) (support/extend-with :finite-matrix-affine-half-iterate-converges (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-half-iterate-converges))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

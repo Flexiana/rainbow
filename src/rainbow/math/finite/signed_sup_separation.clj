@@ -5,7 +5,8 @@
   finite sup distance.  The converse is intentionally scoped to the finset's
   members; a client claiming equality over an entire carrier must separately
   provide exhaustiveness.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.signed-sup-distance :as metric]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.signed-sup-distance :as metric]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -190,10 +191,16 @@
    pointwise-equivalent-of-finite-distance-zero-spec
    finite-distance-zero-iff-pointwise-equivalent-spec])
 
-(defn extend-environment [env]
-  (-> env
-      metric/extend-environment
-      (support/extend-with :finite-signed-sup-separation theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.signed-sup-distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-signed-sup-separation theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.signed-sup-separation))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

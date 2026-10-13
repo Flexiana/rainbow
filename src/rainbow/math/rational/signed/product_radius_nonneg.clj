@@ -5,7 +5,8 @@
 
   analysis/product-radius-nonneg :
     forall L M, signed/nonnegative (signed-add (signed-add one (absolute L)) (absolute M))"
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.absolute :as absolute]
             [rainbow.math.rational.signed.unit-laws :as unit-laws]
@@ -37,12 +38,16 @@
 
 (def theorem-specs [product-radius-nonneg-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      absolute/extend-environment
-      unit-laws/extend-environment
-      norm-nonneg/extend-environment
-      (support/extend-with :signed-product-radius-nonneg theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.absolute rainbow.math.rational.signed.unit-laws rainbow.math.linear.vector.norm-nonnegative])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-product-radius-nonneg theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.product-radius-nonneg))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

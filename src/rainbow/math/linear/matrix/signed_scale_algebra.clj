@@ -6,7 +6,8 @@
   vector/signed-scale and matrix/signed-scale.  Additivity carries the exact
   length-sensitive shape premise required by truncating addition; composition
   is unrestricted.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.subtract-linear :as subtract-linear]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -557,15 +558,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      subtract-linear/extend-environment
-      (extend-spec-if-missing
-       'signed/multiply-associative :signed-multiply-associative
-       associative/multiply-associative-spec)
-      (support/extend-with :finite-matrix-signed-scale-algebra
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.subtract-linear])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/multiply-associative :signed-multiply-associative associative/multiply-associative-spec) (support/extend-with :finite-matrix-signed-scale-algebra theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-algebra))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

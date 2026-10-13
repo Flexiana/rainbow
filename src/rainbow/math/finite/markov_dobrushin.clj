@@ -4,7 +4,8 @@
   The list fold and its conditional bounds are checked here. Complete row
   coefficients and contraction are proved in finite-markov-dobrushin-kernel
   and finite-markov-dobrushin-contraction; metadata below points to them."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.rational :as signed-rational]
             [rainbow.math.rational.signed.order :as signed-order]
@@ -206,11 +207,16 @@
                     dobrushin-coefficient-empty-spec
                     dobrushin-coefficient-bounded-spec
                     dobrushin-coefficient-at-most-one-of-pointwise-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.rational rainbow.math.rational.signed.order rainbow.math.rational.signed.vector-sup-distance rainbow.math.rational.signed.unit-laws])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-dobrushin (concat definition-specs theorem-specs))))
+
 (defn extend-environment [env]
-  (-> env signed-rational/extend-environment signed-order/extend-environment
-      signed-max/extend-environment
-      signed-units/extend-environment
-      (support/extend-with :finite-markov-dobrushin
-                           (concat definition-specs theorem-specs))))
+  (module/install-module env 'rainbow.math.finite.markov-dobrushin))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

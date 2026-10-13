@@ -9,7 +9,8 @@
   Scope (measured by the kernel): this module has 4 worked instances (statements about specific values).
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.odd-monitor`
   prints this classification."
-  (:require [rainbow.algorithms.proofs.odd-monitor :as dep-odd-monitor]
+  (:require [rainbow.module :as module]
+            [rainbow.algorithms.proofs.odd-monitor :as dep-odd-monitor]
             [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
@@ -132,10 +133,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (reduce add-spec (dep-odd-monitor/extend-environment checked-environment)
-          (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.odd-monitor])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-spec checked-environment (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.odd-monitor))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

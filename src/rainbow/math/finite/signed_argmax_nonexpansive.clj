@@ -8,7 +8,8 @@
   rationals; carrier finiteness and fallback membership are explicit.
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.signed-argmax :as argmax]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -177,11 +178,16 @@
     (support/extend-with env :signed-order-monotone
                          [monotone/add-right-monotone-spec])))
 
-(defn extend-environment [env]
-  (-> env
-      argmax/extend-environment
-      extend-add-right-monotone-if-missing
-      (support/extend-with :finite-signed-argmax-nonexpansive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.signed-argmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env extend-add-right-monotone-if-missing (support/extend-with :finite-signed-argmax-nonexpansive theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.signed-argmax-nonexpansive))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

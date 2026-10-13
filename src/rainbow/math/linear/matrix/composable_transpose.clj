@@ -4,7 +4,8 @@
   If a nonempty matrix A composes with B, then transpose B composes with
   transpose A.  Nonemptiness supplies A's row width as the row count of its
   transpose; zero-width rows remain valid.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.transpose-multiply-reverse :as reverse]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.transpose-multiply-reverse :as reverse]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -110,11 +111,17 @@
 (def definition-specs [])
 (def theorem-specs [composable-transpose-reverse-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      reverse/extend-environment
-      (support/extend-with :finite-matrix-composable-transpose theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose-multiply-reverse])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-composable-transpose theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.composable-transpose))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

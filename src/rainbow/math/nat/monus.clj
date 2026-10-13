@@ -10,7 +10,8 @@
     nat/monus-add-cancel-left : nat/monus (b + d) b = d
   (every step is the double-recursion's definitional succ/succ collapse plus the IH,
   since algebra/nat-add recurses on its LEFT argument). Axiom-free; additive."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
 (def ^:private type-level [:succ [:zero]])
@@ -79,8 +80,16 @@
 
 (def theorem-specs [monus-spec monus-zero-right-spec monus-add-cancel-left-spec])
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (support/extend-with checked-environment :nat-monus theorem-specs))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.monus))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

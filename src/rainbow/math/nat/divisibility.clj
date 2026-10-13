@@ -3,7 +3,8 @@
 
   `nat/divides d n` is constructive evidence of a natural factor k with
   d*k = n. The definition is reducible, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.expectation :as expectation]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -35,14 +36,16 @@
 (def definition-specs [divides-spec])
 (def theorem-specs [])
 
-(defn extend-environment [env]
-  (let [with-multiply
-        (if (environment/resolve-id env 'nat/multiply)
-          env
-          (support/extend-with
-           env :nat-divisibility-support [expectation/nat-multiply-spec]))]
-    (support/extend-with
-     with-multiply :nat-divisibility definition-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (let [with-multiply (if (environment/resolve-id env 'nat/multiply) env (support/extend-with env :nat-divisibility-support [expectation/nat-multiply-spec]))] (support/extend-with with-multiply :nat-divisibility definition-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.nat.divisibility))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -11,7 +11,8 @@
 
   Native and axiom-free on the d63 checkpoint."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.algorithms.proofs.bellman-scaled-fixed-point-uniqueness
              :as legacy-separation]
             [rainbow.math.logic.function :as function]
@@ -495,17 +496,17 @@
        :strict-contraction-uniqueness
        strict-uniqueness/equal-zero-of-not-positive-spec)))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      order-equivalence/extend-environment
-      monotone/extend-environment
-      commute/extend-environment
-      reassociation/extend-environment
-      identities/extend-environment
-      extend-rate-null-prerequisites
-      (support/extend-with :nnrat-order-scale
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.order-equivalence rainbow.math.rational.nnrat.multiply-monotone rainbow.math.rational.nnrat.multiply-commute rainbow.math.rational.nnrat.product-reassociation rainbow.math.rational.nnrat.identities])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-rate-null-prerequisites (support/extend-with :nnrat-order-scale (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.order-scale))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

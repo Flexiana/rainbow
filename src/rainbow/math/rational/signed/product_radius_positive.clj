@@ -12,7 +12,8 @@
   from-nnrat nnrat/one] -> nnrat/at-most nnrat/one (mag V) (from-nnrat-at-most-reverse) ->
   base-at-most (at-most-to-cross) -> den(mag) <= num(mag) (rewrite the *1 factors) ->
   1 <= den(mag) (witness) -> 1 <= num(mag) (nat at-most transitive)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.product-radius-nonneg :as radius-nonneg]
             [rainbow.math.rational.signed.magnitude :as magnitude]
@@ -101,15 +102,16 @@
 
 (def theorem-specs [product-radius-numerator-positive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      radius-nonneg/extend-environment
-      magnitude/extend-environment
-      order-equiv/extend-environment
-      geo-bridge/extend-environment
-      sup-triangle/extend-environment
-      distance-triangle/extend-environment
-      (support/extend-with :signed-product-radius-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.product-radius-nonneg rainbow.math.rational.signed.magnitude rainbow.math.rational.nnrat.order-equivalence rainbow.math.rational.signed.geometric-bridge rainbow.math.rational.signed.vector-sup-triangle rainbow.math.rational.signed.distance-triangle])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-product-radius-positive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.product-radius-positive))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

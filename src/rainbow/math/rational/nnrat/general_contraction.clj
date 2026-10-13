@@ -12,7 +12,8 @@
   denominator transport, the witness W = a*n*g^2 and nat-ring close it.  The induction and
   the rate-null conclusion mirror the 1/2 case, with general-harmonic-null + null-dominated.
   Native and axiom-free; chains nnrat-general-harmonic, nnrat-multiply-monotone, nnrat-ring."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.nat.ring :as ring]
             [rainbow.math.rational.nnrat.general-harmonic :as gh]
@@ -168,12 +169,17 @@
 (def theorem-specs [general-harmonic-step-spec error-below-spec
                     general-contraction-converges-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.general-harmonic rainbow.math.rational.nnrat.multiply-monotone])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-general-contraction (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      gh/extend-environment
-      mm/extend-environment
-      (support/extend-with :nnrat-general-contraction
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.general-contraction))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

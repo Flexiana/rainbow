@@ -7,7 +7,8 @@
   composition gives an optimality fixed point.  A separate corollary isolates
   fixed-point uniqueness as the only additional ingredient needed to identify
   that value with an optimum.  Native and axiom-free on D63."
-  (:require [rainbow.math.finite.greedy-optimal :as greedy-optimal]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.greedy-optimal :as greedy-optimal]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -213,11 +214,17 @@
   [stationary-policy-satisfies-optimality-equation-spec
    stationary-policy-value-is-optimal-given-uniqueness-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      greedy-optimal/extend-environment
-      (support/extend-with :finite-policy-iteration-optimal theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.greedy-optimal])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-policy-iteration-optimal theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.policy-iteration-optimal))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -7,7 +7,8 @@
   only on the d63 base (nnrat accessors, nat/multiply-commutative, nat congruence
   and transitivity).  Native and axiom-free."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -69,9 +70,17 @@
 (def definition-specs [])
 (def theorem-specs [multiply-commutative-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :nnrat-multiply-commute (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :nnrat-multiply-commute
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.multiply-commute))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

@@ -9,7 +9,8 @@
   stationary masses -- the composition specified in
   the design notes, now with no open inequality anywhere
   beneath it. Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-contraction-uniqueness :as conditional]
             [rainbow.math.finite.markov-dobrushin-contraction :as contraction]
             [rainbow.math.logic.function :as function]
@@ -111,21 +112,18 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      contraction/extend-environment
-      ;; The conditional theorem's own needs, entered per-spec so the
-      ;; contraction chain's worlds are never re-installed wholesale.
-      scale/extend-rate-null-prerequisites
-      (extend-spec-if-missing
-       'nnrat/zero-of-proper-contraction
-       :nnrat-order-scale scale/zero-of-proper-contraction-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-stationary-pointwise-unique-of-proper-contraction
-       :finite-markov-contraction-uniqueness
-       conditional/stationary-unique-of-proper-contraction-spec)
-      (support/extend-with :finite-markov-ergodic-uniqueness
-                           theorem-specs)))
+;; The conditional theorem's own needs, entered per-spec so the
+;; contraction chain's worlds are never re-installed wholesale.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-dobrushin-contraction])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env scale/extend-rate-null-prerequisites (extend-spec-if-missing 'nnrat/zero-of-proper-contraction :nnrat-order-scale scale/zero-of-proper-contraction-spec) (extend-spec-if-missing 'markov/nnrat-stationary-pointwise-unique-of-proper-contraction :finite-markov-contraction-uniqueness conditional/stationary-unique-of-proper-contraction-spec) (support/extend-with :finite-markov-ergodic-uniqueness theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-ergodic-uniqueness))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -16,7 +16,8 @@
   nnrat/add-monotone (f head <= g head, tail-sum <= tail-sum by the IH).
   Polymorphic in the element type A.  Native and axiom-free; chains
   nnrat-add-monotone on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.add-monotone :as am]))
 
@@ -113,11 +114,17 @@
 (def definition-specs [map-sum-spec])
 (def theorem-specs [map-sum-empty-spec map-sum-cons-spec map-sum-monotone-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-monotone])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-list-sum (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      am/extend-environment
-      (support/extend-with :nnrat-list-sum
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.list-sum))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

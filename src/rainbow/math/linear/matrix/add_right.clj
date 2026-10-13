@@ -6,7 +6,8 @@
   multiplication distributivity in its right factor.  The only premise is the
   exact two-level shape equality required by truncating addition; ragged and
   empty matrices remain supported.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.prepend-add :as prepend-add]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.prepend-add :as prepend-add]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -368,11 +369,17 @@
    transpose-additive-spec
    multiply-additive-right-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      prepend-add/extend-environment
-      (support/extend-with :finite-matrix-add-right theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.prepend-add])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-add-right theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.add-right))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -12,7 +12,8 @@
   for map-sum-add, the four-term reorder (a+b)+(c+d) ~ (a+c)+(b+d).  Polymorphic
   in the element type.  Native and axiom-free; chains nnrat-list-sum and
   nnrat-additive-reassociation on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.list-sum :as ls]
             [rainbow.math.rational.nnrat.additive-reassociation :as ar]))
@@ -110,12 +111,17 @@
 (def definition-specs [])
 (def theorem-specs [map-sum-zero-spec map-sum-add-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.list-sum rainbow.math.rational.nnrat.additive-reassociation])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-map-sum-additive (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ls/extend-environment
-      ar/extend-environment
-      (support/extend-with :nnrat-map-sum-additive
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.map-sum-additive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

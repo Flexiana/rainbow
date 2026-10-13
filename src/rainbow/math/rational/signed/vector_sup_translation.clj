@@ -7,7 +7,8 @@
   signed maximum.  Vector-add commutativity and sup-distance congruence derive
   the right-translation orientation.  Native, kernel-checked, and axiom-free
   on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance-translation :as scalar]
             [rainbow.math.rational.signed.vector-sup-congruence :as congruence]
@@ -294,13 +295,16 @@
   [sup-distance-add-left-same-shape-spec
    sup-distance-add-right-same-shape-spec])
 
-(defn extend-environment [env]
-  (-> env
-      scalar/extend-environment
-      congruence/extend-environment
-      add-order/extend-environment
-      shape/extend-environment
-      (support/extend-with :signed-vector-sup-translation theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distance-translation rainbow.math.rational.signed.vector-sup-congruence rainbow.math.linear.vector.add-order rainbow.math.linear.vector.shape-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-vector-sup-translation theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.vector-sup-translation))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

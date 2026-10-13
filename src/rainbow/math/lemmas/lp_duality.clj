@@ -4,7 +4,8 @@
   (:require [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed zero family call at sum mul le eqv refl sym]]
-            [rainbow.math.rational.signed.lp-duality-on :as lp]))
+            [rainbow.math.rational.signed.lp-duality-on :as lp]
+            [rainbow.module :as module]))
 
 (def matrix (f/arrow nat family))
 
@@ -65,11 +66,17 @@
 
 (def theorem-specs [weak-duality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      s/extend-environment
-      lp/extend-environment
-      (support/extend-with :expr-sum-lp-duality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env s/extend-environment lp/extend-environment (support/extend-with :expr-sum-lp-duality theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.lp-duality))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

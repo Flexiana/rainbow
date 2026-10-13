@@ -15,7 +15,8 @@
   result to the signed cross sums.  Equivalence completeness proves both signed
   orders and combines the two true decisions.  Native and axiom-free on D63."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.algorithms.proofs.bellman-scaled-fixed-point-uniqueness :as bellman-uniqueness]
+  (:require [rainbow.module :as module]
+            [rainbow.algorithms.proofs.bellman-scaled-fixed-point-uniqueness :as bellman-uniqueness]
             [rainbow.math.logic.boolean-and :as boolean-and]
             [rainbow.math.finite.metric-separation :as finite-separation]
             [rainbow.math.logic.function :as function]
@@ -447,19 +448,17 @@
    signed-decide-at-most-false-complete-spec
    signed-decide-equivalent-false-complete-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      decide-reflexive/extend-environment
-      nnrat-order/extend-environment
-      decide-equivalence/extend-environment
-      boolean-and/extend-environment
-      (support/extend-with :finite-metric-separation
-                           [finite-separation/equal-zero-of-at-most-zero-spec])
-      (support/extend-with
-       :bellman-scaled-fixed-point-uniqueness
-       [bellman-uniqueness/at-most-antisymmetric-spec])
-      (support/extend-with :signed-decide-completeness theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.decide-reflexive rainbow.math.rational.nnrat.order-equivalence rainbow.math.rational.signed.decide-equivalence rainbow.math.logic.boolean-and])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-metric-separation [finite-separation/equal-zero-of-at-most-zero-spec]) (support/extend-with :bellman-scaled-fixed-point-uniqueness [bellman-uniqueness/at-most-antisymmetric-spec]) (support/extend-with :signed-decide-completeness theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.decide-completeness))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

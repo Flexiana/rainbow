@@ -11,7 +11,8 @@
   left dot law is a native List induction, while the right law follows from dot
   commutativity and quotient-safe negation congruence.  No shape hypothesis is
   needed because componentwise negation preserves every list position."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
@@ -237,18 +238,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bilinear/extend-environment
-      ring/extend-environment
-      (extend-spec-if-missing
-       'signed/negate-additive :signed-negate-additive
-       signed-additive/negate-additive-spec)
-      (extend-spec-if-missing
-       'signed/negate-respects-equivalence :signed-equivalence-laws
-       signed-equivalence/negate-respects-equivalence-spec)
-      (support/extend-with :vector-dot-negate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.dot-bilinear rainbow.math.rational.nnrat.ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/negate-additive :signed-negate-additive signed-additive/negate-additive-spec) (extend-spec-if-missing 'signed/negate-respects-equivalence :signed-equivalence-laws signed-equivalence/negate-respects-equivalence-spec) (support/extend-with :vector-dot-negate theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.dot-negate))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

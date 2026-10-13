@@ -10,7 +10,8 @@
   of the corresponding signed-order cross sum, certified by the checked nnrat
   ring normalizer; the existing absolute/deviation characterization then gives
   the distance bound.  Native and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.logic.proposition :as proposition]
@@ -210,11 +211,16 @@
    additive-upper-of-subtract-at-most-spec
    additive-closeness-of-distance-at-most-spec])
 
-(defn extend-environment [env]
-  (-> env
-      ring/extend-environment
-      distance/extend-environment
-      (support/extend-with :signed-additive-distance theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.ring rainbow.math.rational.signed.distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-additive-distance theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.additive-distance))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

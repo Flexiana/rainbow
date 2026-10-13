@@ -1,7 +1,8 @@
 (ns rainbow.math.sums.bpath-walk
   "Finite one-hot walks crossing a binary cut. Signed weights are unrestricted;
   the bottleneck aggregate is seeded by the first edge, never by zero."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum le eqv below]]
             [rainbow.math.sums.flow-cut :as a]
@@ -142,9 +143,15 @@
           'bw-rows-binary 'bw-rows-unit 'bw-edges 'bw-cut-binary 'bw-source 'bw-sink 'bw-cuts)))))
 (def theorem-specs [bit-upper-spec bit-lower-spec walk-witness-spec max-upper-spec
                     witness-max-spec witness-attains-spec walk-lower-spec walk-attains-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sums.bpath-cut rainbow.math.rational.signed.indexed-max-dominates])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (reduce (fn [e spec] (println :bpath-walk :installing (:name spec)) (flush) (support/add-spec-shared e :expr-sum-bpath-walk spec)) env theorem-specs))
+
 (defn extend-environment [env]
-  (reduce (fn [e spec]
-            (println :bpath-walk :installing (:name spec)) (flush)
-            (support/add-spec-shared e :expr-sum-bpath-walk spec))
-          (imax/extend-environment (cut/extend-environment env)) theorem-specs))
+  (module/install-module env 'rainbow.math.sums.bpath-walk))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

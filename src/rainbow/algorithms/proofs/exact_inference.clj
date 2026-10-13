@@ -6,7 +6,8 @@
   expectation engine, exposed here under the inference reading and connected to
   the explicit enumerated factored joint, which opens the Bayesian-network
   cone (AHoF D1-D16)."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
@@ -202,10 +203,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (reduce add-spec checked-environment
-          (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-spec checked-environment (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.exact-inference))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

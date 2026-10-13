@@ -1,7 +1,8 @@
 (ns rainbow.math.sums.wspt-order
   "WSPT order prerequisites. Strictly positive processing times are caller premises.
   This module alone does not prove schedule optimality or permutation semantics."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed call at mul le eqv refl]]
             [rainbow.math.sums.flow-cut :as a]
@@ -135,11 +136,15 @@
               (call 'nat/at-most-successor-cancel-local 'ws-j q 'ws-j-bound))))
         'ws-i 'ws-ij))))
 (def theorem-specs [reflect-spec transitive-spec min-ordered-spec upto-spec pairwise-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (let [env (-> env a/extend-environment nz/extend-environment positive/extend-environment minmax/extend-environment) env (reduce (fn [checked spec] (support/add-spec-shared checked :wspt-cancel-prerequisites spec)) env [cancel/cancel-or-zero-spec cancel/cancel-positive-spec shorten/successor-cancel-spec])] (reduce (fn [checked spec] (println :wspt-order :installing (:name spec)) (flush) (support/add-spec-shared checked :expr-sum-wspt-order spec)) env theorem-specs)))
+
 (defn extend-environment [env]
-  (let [env (-> env a/extend-environment nz/extend-environment positive/extend-environment minmax/extend-environment)
-        env (reduce (fn [checked spec] (support/add-spec-shared checked :wspt-cancel-prerequisites spec))
-                    env [cancel/cancel-or-zero-spec cancel/cancel-positive-spec shorten/successor-cancel-spec])]
-    (reduce (fn [checked spec]
-              (println :wspt-order :installing (:name spec)) (flush)
-              (support/add-spec-shared checked :expr-sum-wspt-order spec)) env theorem-specs)))
+  (module/install-module env 'rainbow.math.sums.wspt-order))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

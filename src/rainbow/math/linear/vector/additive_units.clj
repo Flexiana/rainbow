@@ -6,7 +6,8 @@
   preserving exactly its dimension.  It is a two-sided identity for that input,
   and adding either orientation of the input and its negation is equivalent to
   zero-like.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-uniqueness :as signed-zero]
@@ -200,19 +201,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      signed-units/extend-environment
-      (extend-spec-if-missing
-       'signed/add-zero-right :signed-limit-uniqueness
-       signed-zero/signed-add-zero-right-spec)
-      add-order/extend-environment
-      (extend-spec-if-missing
-       'vector/equivalent-transitive :vector-equivalence-transitivity
-       transitivity/equivalent-transitive-spec)
-      (support/extend-with :vector-additive-units
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.unit-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/add-zero-right :signed-limit-uniqueness signed-zero/signed-add-zero-right-spec) add-order/extend-environment (extend-spec-if-missing 'vector/equivalent-transitive :vector-equivalence-transitivity transitivity/equivalent-transitive-spec) (support/extend-with :vector-additive-units (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.additive-units))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

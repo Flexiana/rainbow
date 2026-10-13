@@ -6,7 +6,8 @@
   hypothesis of nnrat/multiply-difference-zero, giving Pa~Na or Pb~Nb, i.e. a~0 or b~0. This is the
   general no-zero-divisors that strict convexity needs for the weight product (generalizes
   signed/square-nonzero to distinct factors)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.multiply-difference-zero :as mdz]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -87,13 +88,16 @@
 
 (def theorem-specs [multiply-zero-split-spec multiply-nonzero-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      mdz/extend-environment
-      identities/extend-environment
-      action-scale/extend-environment
-      equivalence-laws/extend-environment
-      (support/extend-with :signed-multiply-nonzero theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.multiply-difference-zero rainbow.math.rational.nnrat.identities rainbow.math.linear.matrix.action-scale rainbow.math.rational.signed.equivalence-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-multiply-nonzero theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.multiply-nonzero))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

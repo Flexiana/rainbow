@@ -20,7 +20,8 @@
                                  ~ from-nnrat one ~ one [D ~ mmag then divide-self-positive]
   where D = magnitude (x*x), mmag = make (succ (pred (num D))) (den-pred D), R = from-nnrat
   (recip mmag). Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.multiply-associative :as multiply-associative]
             [rainbow.math.rational.signed.geometric-bridge :as geometric-bridge]
@@ -112,18 +113,16 @@
 
 (def theorem-specs [reciprocal-spec multiply-reciprocal-self-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply-associative/extend-environment
-      geometric-bridge/extend-environment
-      norm-nonneg/extend-environment
-      magnitude/extend-environment
-      succ-form/extend-environment
-      multiply-ring/extend-environment
-      equivalence-laws/extend-environment
-      division/extend-environment
-      nnrat-base/extend-environment
-      (support/extend-with :signed-reciprocal theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply-associative rainbow.math.rational.signed.geometric-bridge rainbow.math.linear.vector.norm-nonnegative rainbow.math.rational.signed.magnitude rainbow.math.rational.nnrat.positive-succ-form rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.equivalence-laws rainbow.math.rational.division rainbow.math.nonnegative-rational])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-reciprocal theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.reciprocal))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

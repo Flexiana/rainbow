@@ -8,7 +8,8 @@
   from full-support target/proposal data to one-step reachability.
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-hastings-flow :as flow]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-hastings-flow :as flow]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.positive :as nnrat-positive]))
@@ -252,11 +253,16 @@
    hastings-completed-kernel-positive-spec
    hastings-canonical-kernel-positive-spec])
 
-(defn extend-environment [env]
-  (-> env
-      flow/extend-environment
-      nnrat-positive/extend-environment
-      (support/extend-with :finite-markov-hastings-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-hastings-flow rainbow.math.rational.nnrat.positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-hastings-positive theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-hastings-positive))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

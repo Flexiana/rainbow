@@ -11,7 +11,8 @@
   This bridges the signed affine development to Bellman policy evaluation. It
   does not cover max-over-actions Bellman optimality, fixed-point existence, or
   an executable solver. Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-general-rate-uniqueness
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-general-rate-uniqueness
              :as uniqueness]
             [rainbow.math.linear.matrix.affine-general-rate-tail-certificate
              :as tail-certificate]
@@ -391,13 +392,16 @@
    signed-policy-iterate-tail-bound-spec
    signed-policy-iterate-tail-stopping-certificate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      uniqueness/extend-environment
-      tail-certificate/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-policy
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-general-rate-uniqueness rainbow.math.linear.matrix.affine-general-rate-tail-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-policy (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-policy))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

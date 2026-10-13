@@ -9,7 +9,8 @@
 
   It verifies the submitted decision evidence, not a host parser, solver, or
   arbitrary executable.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.boolean-and :as boolean-and]
             [rainbow.math.linear.matrix.row-length-decider :as decider]
             [rainbow.math.logic.function :as function]
@@ -119,23 +120,16 @@
        (support/extend-with current milestone [spec])))
    checked-environment specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      length-duality/extend-environment
-      (extend-specs-if-missing
-       :nat-linear-order [nat-order/nat-decide-equality-spec])
-      (extend-specs-if-missing
-       :boolean-and boolean-and/definition-specs)
-      (extend-specs-if-missing
-       :boolean-and boolean-and/theorem-specs)
-      (extend-specs-if-missing
-       :finite-matrix-row-length-decider decider/definition-specs)
-      (extend-specs-if-missing
-       :finite-matrix-row-length-decider
-       [decider/nat-decide-equality-true-sound-spec
-        decider/decide-row-length-compatible-true-sound-spec])
-      (support/extend-with :signed-matrix-lp-dimension-decision-duality
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.matrix-lp-row-length-duality])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-specs-if-missing :nat-linear-order [nat-order/nat-decide-equality-spec]) (extend-specs-if-missing :boolean-and boolean-and/definition-specs) (extend-specs-if-missing :boolean-and boolean-and/theorem-specs) (extend-specs-if-missing :finite-matrix-row-length-decider decider/definition-specs) (extend-specs-if-missing :finite-matrix-row-length-decider [decider/nat-decide-equality-true-sound-spec decider/decide-row-length-compatible-true-sound-spec]) (support/extend-with :signed-matrix-lp-dimension-decision-duality theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.matrix-lp-dimension-decision-duality))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

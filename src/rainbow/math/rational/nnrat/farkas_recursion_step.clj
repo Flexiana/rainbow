@@ -18,7 +18,8 @@
   structure across all remaining variables (so the next round's cross rows
   are again structured); this step is that recursion's proved core. Native
   proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-reduce-align :as align]
@@ -88,13 +89,17 @@
 (def definition-specs [])
 (def theorem-specs [recursion-step-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      align/extend-environment
-      partition/extend-environment
-      (support/extend-with :nnrat-farkas-recursion-step
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-reduce-align rainbow.math.rational.nnrat.farkas-partition-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-recursion-step (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-recursion-step))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

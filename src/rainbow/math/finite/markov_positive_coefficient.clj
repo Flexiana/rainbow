@@ -3,7 +3,8 @@
   Kernel-checked and axiom-free on D63. For minimum m=n/(d+1),
   use epsilon=1/(d+1) on one listed column and rho=d/(d+1). The bound
   need not be sharp. This module does not assert executable correctness."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-dobrushin-kernel :as coefficient]
             [rainbow.math.finite.markov-kernel-minimum :as minimum]
@@ -73,7 +74,15 @@
 
 (def theorem-specs [coefficient-at-most-of-positive-minimum-spec
                     coefficient-at-most-of-listed-positive-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-overlap rainbow.math.rational.nnrat.unit-fraction rainbow.math.finite.markov-kernel-minimum])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-positive-coefficient theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env overlap/extend-environment unit/extend-environment minimum/extend-environment
-      (support/extend-with :finite-markov-positive-coefficient theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-positive-coefficient))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -35,7 +35,8 @@
 
   Native and axiom-free; chains the concrete constrained-duality module, the
   signed unit laws, the KKT congruence and the nnrat-ring tactic on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.rational.signed.constrained-duality :as constrained]
@@ -204,14 +205,17 @@
 (def theorem-specs
   [lagrangian-collapse-spec dual-bound-spec program-optimal-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      constrained/extend-environment
-      kkt/extend-environment
-      unit/extend-environment
-      ring/extend-environment
-      (support/extend-with :signed-upper-bound-program theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.constrained-duality rainbow.math.rational.signed.kkt-sufficiency rainbow.math.rational.signed.unit-laws rainbow.math.rational.nnrat.ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-upper-bound-program theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.upper-bound-program))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

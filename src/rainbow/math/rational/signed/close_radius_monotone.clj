@@ -4,7 +4,8 @@
   From close = (L-r<=x) AND (x<=L+r): L-r'<=L-r<=x (negate-reverses-order + add-monotone)
   and x<=L+r<=L+r' (add-monotone). Axiom-free; additive. A generally useful analysis
   lemma (and the >=-relaxation the limit-product assembly wants)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convergence :as convergence]
             [rainbow.math.rational.signed.absolute-sign :as absolute-sign]
@@ -51,12 +52,16 @@
 
 (def theorem-specs [close-radius-monotone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convergence/extend-environment
-      absolute-sign/extend-environment
-      distance-triangle/extend-environment
-      (support/extend-with :signed-close-radius-monotone theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convergence rainbow.math.rational.signed.absolute-sign rainbow.math.rational.signed.distance-triangle])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-close-radius-monotone theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.close-radius-monotone))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

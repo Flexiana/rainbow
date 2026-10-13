@@ -13,7 +13,8 @@
   feeds x~x (reflexivity) to the negation component; asymmetry derives x~y from at-most both
   ways (antisymmetry) and contradicts the negation component. Transitivity and strict
   monotonicity are the next bricks. Wall-free; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-uniqueness :as uniqueness]
             [rainbow.math.rational.signed.order-transitivity :as order-transitivity]
@@ -151,12 +152,16 @@
    less-than-transitive-spec less-than-of-at-most-of-less-than-spec
    less-than-of-less-than-of-at-most-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      uniqueness/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      (support/extend-with :signed-strict-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-strict-order theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.strict-order))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

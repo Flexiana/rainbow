@@ -6,7 +6,8 @@
   factor times a nonnegative factor is entrywise nonpositive in either factor
   order, while two nonpositive factors yield an entrywise nonnegative product.
   Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.mixed-sign-action :as mixed-action]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.mixed-sign-action :as mixed-action]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -256,10 +257,16 @@
    multiply-nonpositive-right-spec
    multiply-nonnegative-both-nonpositive-spec])
 
-(defn extend-environment [env]
-  (-> env
-      mixed-action/extend-environment
-      (support/extend-with :finite-matrix-mixed-sign-multiply theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.mixed-sign-action])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-mixed-sign-multiply theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.mixed-sign-multiply))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

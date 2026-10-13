@@ -12,7 +12,8 @@
   Instantiating the existing affine row-sum uniqueness interface removes the
   practical `gamma <= 1/2` restriction from exact fixed-point uniqueness.
   Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-general-rate-certificate
              :as general-rate]
             [rainbow.math.logic.function :as function]
@@ -235,23 +236,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      general-rate/extend-environment
-      (extend-spec-if-missing
-       'signed/add-zero-right
-       :signed-limit-uniqueness
-       limit-uniqueness/signed-add-zero-right-spec)
-      (extend-spec-if-missing
-       'signed/at-most-antisymmetric
-       :signed-limit-uniqueness
-       limit-uniqueness/signed-at-most-antisymmetric-spec)
-      (extend-spec-if-missing
-       'signed/multiply-zero-right
-       :signed-multiply-ring
-       multiply-ring/multiply-zero-right-spec)
-      (support/extend-with
-       :finite-matrix-affine-general-rate-uniqueness theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-general-rate-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/add-zero-right :signed-limit-uniqueness limit-uniqueness/signed-add-zero-right-spec) (extend-spec-if-missing 'signed/at-most-antisymmetric :signed-limit-uniqueness limit-uniqueness/signed-at-most-antisymmetric-spec) (extend-spec-if-missing 'signed/multiply-zero-right :signed-multiply-ring multiply-ring/multiply-zero-right-spec) (support/extend-with :finite-matrix-affine-general-rate-uniqueness theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-general-rate-uniqueness))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

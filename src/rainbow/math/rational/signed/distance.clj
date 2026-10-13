@@ -7,7 +7,8 @@
   the scalar specs from older vector/counterfactual developments, keeping the
   metric foundation independent of those larger representations.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.algorithms.proofs.counterfactual-distance-separation :as separation]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -326,36 +327,16 @@
     env
     (support/extend-with env producer [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      absolute-algebra/extend-environment
-      (extend-spec-if-missing
-       'signed/negate-additive :signed-negate-additive
-       negate-additive/negate-additive-spec)
-      (extend-spec-if-missing
-       'signed/equivalent-to-at-most :signed-unit-laws
-       unit/equivalent-to-at-most-spec)
-      (extend-spec-if-missing
-       'signed/add-commutative :nnrat-commutative
-       commutative/signed-add-commutative-spec)
-      (extend-spec-if-missing
-       'signed/add-respects-equivalence :signed-map-sum-algebra
-       signed-add/add-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'signed/equivalent-transitive :signed-map-sum-algebra
-       signed-add/equivalent-transitive-spec)
-      (extend-spec-if-missing
-       'signed/subtract-self-equivalent-zero :signed-unit-laws
-       unit/subtract-self-equivalent-zero-spec)
-      (extend-spec-if-missing
-       'signed/subtract-respects-equivalence :vector-dot-subtract
-       subtract-laws/subtract-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'signed/subtract-zero-reflects-equivalence
-       :counterfactual-distance-separation
-       separation/subtract-zero-reflects-equivalence-spec)
-      (support/extend-with :signed-distance
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.absolute-algebra])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/negate-additive :signed-negate-additive negate-additive/negate-additive-spec) (extend-spec-if-missing 'signed/equivalent-to-at-most :signed-unit-laws unit/equivalent-to-at-most-spec) (extend-spec-if-missing 'signed/add-commutative :nnrat-commutative commutative/signed-add-commutative-spec) (extend-spec-if-missing 'signed/add-respects-equivalence :signed-map-sum-algebra signed-add/add-respects-equivalence-spec) (extend-spec-if-missing 'signed/equivalent-transitive :signed-map-sum-algebra signed-add/equivalent-transitive-spec) (extend-spec-if-missing 'signed/subtract-self-equivalent-zero :signed-unit-laws unit/subtract-self-equivalent-zero-spec) (extend-spec-if-missing 'signed/subtract-respects-equivalence :vector-dot-subtract subtract-laws/subtract-respects-equivalence-spec) (extend-spec-if-missing 'signed/subtract-zero-reflects-equivalence :counterfactual-distance-separation separation/subtract-zero-reflects-equivalence-spec) (support/extend-with :signed-distance (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.distance))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

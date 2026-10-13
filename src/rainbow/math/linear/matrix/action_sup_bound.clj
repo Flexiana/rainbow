@@ -7,7 +7,8 @@
   within the same sup-distance bound.  This separates the generic operator
   lift from later row-norm or stochastic-row certificates.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.matrix :as matrix]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.matrix :as matrix]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.vector-sup-distance :as sup]))
@@ -128,11 +129,16 @@
 (def definition-specs [])
 (def theorem-specs [vector-multiply-sup-distance-bounded-spec])
 
-(defn extend-environment [env]
-  (-> env
-      matrix/extend-environment
-      sup/extend-environment
-      (support/extend-with :finite-matrix-action-sup-bound theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.matrix rainbow.math.rational.signed.vector-sup-distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-action-sup-bound theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.action-sup-bound))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -14,7 +14,8 @@
 
   Base: the one-arc walk i, j. A kept entry keeps its walk. A pivot entry concatenates the walks
   i -> p and p -> j (signed/walk-concat), and the lengths add."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.algorithms.proofs.graph.walk-concat :as walk-concat]
@@ -189,11 +190,16 @@
 
 (def theorem-specs [attained-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      walk-concat/extend-environment
-      walk-shorten/extend-environment
-      (support/extend-with :fw-convergence-attained theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.graph.walk-concat rainbow.algorithms.proofs.graph.walk-shorten])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :fw-convergence-attained theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.graph.floyd-warshall-convergence-attained))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

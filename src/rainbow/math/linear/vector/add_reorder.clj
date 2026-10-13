@@ -7,7 +7,8 @@
   Both statements remain valid for truncating vector addition because all sides
   stop at the same minimum input dimension.  Proofs compose existing checked
   vector algebra laws and add no recursion."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.subtract-negation :as subtract-negation]))
 
@@ -142,11 +143,17 @@
 (def definition-specs [])
 (def theorem-specs [add-four-reorder-spec subtract-additive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      subtract-negation/extend-environment
-      (support/extend-with :vector-add-reorder theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.subtract-negation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-add-reorder theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.add-reorder))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

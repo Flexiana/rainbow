@@ -7,7 +7,8 @@
   exact: transposing a zero-row matrix loses the number of zero-width rows.
   A companion theorem certifies that every column of a rectangular matrix has
   its row-count shape.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.action-associative :as action]
             [rainbow.math.linear.matrix.shape :as matrix-shape]
             [rainbow.math.linear.matrix.transpose-shape :as transpose-shape]
@@ -380,23 +381,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      action/extend-environment
-      (extend-spec-if-missing
-       'matrix/rectangular-tail :finite-matrix-shape
-       matrix-shape/rectangular-tail-spec)
-      (extend-spec-if-missing
-       'matrix/prepend-column-empty-compatible-singleton
-       :finite-matrix-transpose-shape
-       transpose-shape/prepend-column-empty-compatible-singleton-spec)
-      (extend-spec-if-missing
-       'matrix/prepend-column-preserves-compatibility
-       :finite-matrix-transpose-shape
-       transpose-shape/prepend-column-preserves-compatibility-spec)
-      (support/extend-with :finite-matrix-transpose-multiply
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.action-associative])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'matrix/rectangular-tail :finite-matrix-shape matrix-shape/rectangular-tail-spec) (extend-spec-if-missing 'matrix/prepend-column-empty-compatible-singleton :finite-matrix-transpose-shape transpose-shape/prepend-column-empty-compatible-singleton-spec) (extend-spec-if-missing 'matrix/prepend-column-preserves-compatibility :finite-matrix-transpose-shape transpose-shape/prepend-column-preserves-compatibility-spec) (support/extend-with :finite-matrix-transpose-multiply (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.transpose-multiply))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

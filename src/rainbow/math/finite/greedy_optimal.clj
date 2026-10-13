@@ -6,7 +6,8 @@
   finite argmax.  The second theorem isolates the only remaining semantic
   ingredient: uniqueness of fixed points for the extracted policy operator.
   Native and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-value-optimality
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-value-optimality
              :as bellman-value-optimality]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -270,11 +271,17 @@
    greedy-bellman-policy-fixes-optimal-value-spec
    greedy-policy-value-is-optimal-given-uniqueness-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bellman-value-optimality/extend-environment
-      (support/extend-with :finite-greedy-optimal theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-value-optimality])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-greedy-optimal theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.greedy-optimal))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

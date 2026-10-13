@@ -7,7 +7,8 @@
             [rainbow.math.sums.flow-cut :as a]
             [rainbow.math.rational.signed.unit-laws :as units]
             [rainbow.math.nat.divmod :as divmod]
-            [rainbow.math.nat.pair-index-inverse :as pairs]))
+            [rainbow.math.nat.pair-index-inverse :as pairs]
+            [rainbow.module :as module]))
 
 (def type-level [:succ [:zero]])
 
@@ -121,14 +122,17 @@
 
 (def theorem-specs [row-weights-spec col-weights-spec double-add-spec weak-duality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      s/extend-environment
-      a/extend-environment
-      units/extend-environment
-      divmod/extend-environment
-      pairs/extend-environment
-      (support/extend-with :expr-sum-assign-dual theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env s/extend-environment a/extend-environment units/extend-environment divmod/extend-environment pairs/extend-environment (support/extend-with :expr-sum-assign-dual theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.assign-dual))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

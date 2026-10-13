@@ -14,7 +14,8 @@
   the dual once t exceeds the optimum. So this is the constructive
   Farkas alternative for affine-row systems, the certificate half of
   strong duality. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-elim-affine-list :as affine-list]
@@ -204,13 +205,17 @@
 (def definition-specs [])
 (def theorem-specs [rows-decidable-spec solvable-or-not-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      affine-list/extend-environment
-      alternative/extend-environment
-      (support/extend-with :nnrat-farkas-elim-affine-decidable
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-elim-affine-list rainbow.math.rational.nnrat.farkas-alternative])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-elim-affine-decidable (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-elim-affine-decidable))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

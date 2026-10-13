@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.subtype
   "Finite propositions and finite-subtype bridges as checked proof data."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.set :as finite-set]
@@ -401,9 +402,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (reduce add-spec checked-environment (into [subsingleton-spec] theorem-specs)))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.subtype))
 (defn definition-ids [checked-environment]
   (sorted-map
    (:name subsingleton-spec)

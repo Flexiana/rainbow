@@ -16,7 +16,8 @@
 
   The remaining generalisation -- arbitrary d0 and eps with a computed modulus --
   needs the archimedean/2^n bound and is tracked separately."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -113,8 +114,16 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (support/extend-with checked-environment :geometric-threshold theorem-specs))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.analysis.geometric-threshold))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

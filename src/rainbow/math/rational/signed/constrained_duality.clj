@@ -30,7 +30,8 @@
 
   Native and axiom-free; chains the signed finite-sum, multiplicative sign-rule
   and Lagrangian duality modules on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.lagrangian-duality :as duality]
             [rainbow.math.rational.signed.list-sum :as sum]
@@ -195,13 +196,17 @@
    constrained-weak-duality-spec
    constrained-zero-gap-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      sum/extend-environment
-      sign/extend-environment
-      duality/extend-environment
-      (support/extend-with :signed-constrained-duality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.list-sum rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.lagrangian-duality])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-constrained-duality theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.constrained-duality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

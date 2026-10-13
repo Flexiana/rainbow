@@ -8,7 +8,8 @@
   contraction premise appears anywhere here; this brick is independent of
   the Dobrushin line and is consumed later when convergence toward the
   stationary target is stated. Native and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-iteration :as iteration]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-iteration :as iteration]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -102,11 +103,16 @@
 (def definition-specs [])
 (def theorem-specs [stationary-iterate-fixed-spec])
 
-(defn extend-environment [env]
-  (-> env
-      iteration/extend-environment
-      (support/extend-with :finite-markov-stationary-iterate
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-iteration])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-stationary-iterate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-stationary-iterate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -1,6 +1,7 @@
 (ns rainbow.math.rational.nnrat.weighted-map-sum-distance
   "Weighted distance lift using the canonical scalar scaling theorem."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.metric-separation :as metric]
             [rainbow.math.rational.nnrat.map-sum-distance :as sums]))
@@ -31,7 +32,15 @@
                       (app 'nnrat/distance-multiply-left-bound
                            (f/app 'weight 'x) (f/app 'left 'x) (f/app 'right 'x)))
                     'source))}))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.metric-separation])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-weighted-map-sum-distance [spec])))
+
 (defn extend-environment [env]
-  (-> env metric/extend-environment
-      (support/extend-with :nnrat-weighted-map-sum-distance [spec])))
+  (module/install-module env 'rainbow.math.rational.nnrat.weighted-map-sum-distance))
 (defn theorem-ids [env] (support/spec-ids env [spec]))

@@ -5,7 +5,8 @@
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed zero family call at sum add mul eqv le refl sym]]
             [rainbow.math.sums.flow-cut :as a :refer [one sub nadd nmul nlt matrix ring-eq chain sum-cong sum-mono
-                     matrix-row matrix-col le-trans]]))
+                     matrix-row matrix-col le-trans]]
+            [rainbow.module :as module]))
 
 (defn pairs [p q P]
   (f/forall [['u nat] ['hu (nlt 'u p)] ['v nat] ['hv (nlt 'v q)]] (P 'u 'v)))
@@ -145,10 +146,17 @@
 
 (def theorem-specs [boolean-square-spec double-count-spec weak-duality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      a/extend-environment
-      (support/extend-with :expr-sum-matching-cover-duality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env a/extend-environment (support/extend-with :expr-sum-matching-cover-duality theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.matching-cover-duality))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

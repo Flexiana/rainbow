@@ -18,7 +18,8 @@
 
   Native and axiom-free; chains rainbow.math.rational.nnrat.multiply-monotone and
   rainbow.math.rational.nnrat.add-monotone (both on the d63 base)."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.multiply-monotone :as mm]
             [rainbow.math.rational.nnrat.add-monotone :as am]))
@@ -64,12 +65,17 @@
 
 (def theorem-specs [wsum2-monotone-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.multiply-monotone rainbow.math.rational.nnrat.add-monotone])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-weighted-sum (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      mm/extend-environment
-      am/extend-environment
-      (support/extend-with :nnrat-weighted-sum
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.weighted-sum))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

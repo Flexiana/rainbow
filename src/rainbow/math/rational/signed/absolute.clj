@@ -6,7 +6,8 @@
   and is at most a threshold exactly when both linear deviation rows are.  This
   is the scalar prerequisite for signed-vector distances and quantitative
   affine contraction.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.signed.deviation-rows :as deviation]))
@@ -177,11 +178,16 @@
    absolute-nonnegative-spec
    absolute-bounded-iff-deviation-rows-spec])
 
-(defn extend-environment [env]
-  (-> env
-      deviation/extend-environment
-      (support/extend-with :signed-absolute
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.deviation-rows])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-absolute (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.absolute))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

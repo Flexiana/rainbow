@@ -11,7 +11,8 @@
   The one-half restriction comes from the currently available signed geometric
   library.  Fixed-point existence remains a premise.  Native, kernel-checked,
   and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-value-iteration
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-value-iteration
              :as value-iteration]
             [rainbow.math.linear.matrix.affine-nnrat-exact-rate-null
              :as exact-null]
@@ -281,12 +282,16 @@
    radius-rate-null-spec
    nnrat-transition-signed-iterate-fixed-point-converges-spec])
 
-(defn extend-environment [env]
-  (-> env
-      exact-null/extend-environment
-      value-iteration/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-value-iteration-converges theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-nnrat-exact-rate-null rainbow.math.finite.bellman-signed-value-iteration])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-value-iteration-converges theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-value-iteration-converges))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

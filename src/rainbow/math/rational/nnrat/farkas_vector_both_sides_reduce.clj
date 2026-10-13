@@ -23,7 +23,8 @@
   disjunction (nnrat/farkas-partition-row / -list) into a lower-list and an
   upper-list, is the concrete step the over-variable recursion folds. Native
   proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-both-sides-reduce :as reduce]
             [rainbow.math.rational.nnrat.farkas-form-scale :as form-scale]))
@@ -142,13 +143,17 @@
 (def definition-specs [])
 (def theorem-specs [vector-both-sides-reduce-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      reduce/extend-environment
-      form-scale/extend-environment
-      (support/extend-with :nnrat-farkas-vector-both-sides-reduce
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-both-sides-reduce rainbow.math.rational.nnrat.farkas-form-scale])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-vector-both-sides-reduce (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-vector-both-sides-reduce))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

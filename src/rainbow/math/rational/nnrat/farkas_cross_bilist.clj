@@ -19,7 +19,8 @@
   rows of 5d-i's per-lower fold). Reuses 5d-i
   (nnrat/farkas-cross-list-necessary) per lower row and brick 4's
   rows-satisfied for the uppers. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-cross-list :as cross-list]))
@@ -186,12 +187,17 @@
 
 (def theorem-specs [bilist-necessary-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      cross-list/extend-environment
-      (support/extend-with :nnrat-farkas-cross-bilist
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-cross-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-cross-bilist (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-cross-bilist))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

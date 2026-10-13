@@ -24,7 +24,8 @@
   farkas-partition-list-necessary's input -- so composing adapter + fold +
   partition gives one closed coefficient-vector round: a feasible system in
   k+1 variables yields a feasible system in k. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-vector-adapter-list :as val]
@@ -248,14 +249,17 @@
 
 (def theorem-specs [input-rows-append-spec adapter-bilist-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      val/extend-environment
-      cvb/extend-environment
-      (support/extend-with :nnrat-farkas-vector-adapter-bilist
-                           (concat definition-specs [input-rows-append-spec]
-                                   definition-specs-2 [adapter-bilist-spec]))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-vector-adapter-list rainbow.math.rational.nnrat.farkas-cross-vectors-bilist])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-vector-adapter-bilist (concat definition-specs [input-rows-append-spec] definition-specs-2 [adapter-bilist-spec]))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-vector-adapter-bilist))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs-2))
 

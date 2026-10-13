@@ -1,8 +1,7 @@
 (ns rainbow.math.lemmas.ncyc-infeasible
   "General lemmas: ncyc infeasible. The mathematical facts the corresponding checks rest on,
   each checked by the kernel."
-  (:require [rainbow.math.lemmas.indep-set-dual :as pdep0]
-            [rainbow.math.logic.function :as f]
+  (:require [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum mul le eqv refl sym trans below]]
             [rainbow.math.sums.flow-cut :as a]
@@ -18,7 +17,8 @@
             [rainbow.math.rational.signed.multiply-ring :as multiply-ring]
             [rainbow.math.rational.signed.distributive :as distributive]
             [rainbow.math.linear.matrix.action-scale :as matrix-scale]
-            [rainbow.math.linear.vector.dot-negate :as dot-negate]))
+            [rainbow.math.linear.vector.dot-negate :as dot-negate]
+            [rainbow.module :as module]))
 
 (def type-level [:succ [:zero]])
 
@@ -317,20 +317,17 @@
 
 (def theorem-specs [term-split-spec outer-split-spec rearrange-spec slack-spec telescope-spec step-spec walk-spec])
 
-(defn extend-environment [checked-environment]
-  (-> (pdep0/extend-environment checked-environment)
-      a/extend-environment
-      nonneg-zero/extend-environment
-      positivity/extend-environment
-      decide-complete/extend-environment
-      add-monotone/extend-environment
-      multiply-monotone/extend-environment
-      multiply-associative/extend-environment
-      multiply-ring/extend-environment
-      distributive/extend-environment
-      matrix-scale/extend-environment
-      dot-negate/extend-environment
-      (support/extend-with-shared :expr-sum-ncyc-infeasible theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.lemmas.indep-set-dual rainbow.math.sums.value-append rainbow.math.nat.infinite rainbow.math.rational.nnrat.identities rainbow.math.nat.at-most-cancellation rainbow.math.rational.nnrat.order-equivalence rainbow.math.rational.nnrat.archimedean rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.add-cancellation rainbow.math.rational.nnrat.additive-reassociation rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.convergence rainbow.math.rational.signed.order-respects rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.strict-order rainbow.math.rational.signed.multiply rainbow.math.rational.nnrat.multiply-commute rainbow.math.rational.nnrat.product-reassociation rainbow.math.rational.nnrat.distribute-right rainbow.math.rational.nnrat.ring rainbow.math.rational.nnrat.multiply-monotone rainbow.math.rational.nnrat.order-difference rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.equivalence-laws rainbow.math.rational.nnrat.minmax rainbow.math.rational.nnrat.farkas-elim-list rainbow.math.rational.signed.no-zero-divisors rainbow.math.rational.signed.decide-order rainbow.math.rational.signed.decide-reflexive rainbow.math.logic.boolean-and rainbow.math.rational.signed.decide-equivalence rainbow.math.rational.signed.decide-completeness rainbow.math.rational.signed.unit-laws rainbow.math.nat.strict-below-split rainbow.math.nat.strict-below-more rainbow.math.checks rainbow.math.nat.at-most-add rainbow.math.rational.nnrat.harmonic-convergence rainbow.math.nat.divmod rainbow.math.rational.signed.minmax rainbow.math.rational.signed.minmax-algebra rainbow.math.rational.signed.clamp rainbow.math.rational.signed.deviation-rows rainbow.math.rational.signed.absolute rainbow.math.rational.signed.absolute-algebra rainbow.math.rational.signed.distance rainbow.math.nat.linear-order rainbow.math.rational.signed.add-associative rainbow.math.nat.semiring rainbow.math.nat.multiply-zero-split rainbow.math.rational.nnrat.multiply-zero-split rainbow.math.nat.monus rainbow.math.rational.nnrat.monus rainbow.math.rational.nnrat.add-zero-split rainbow.math.rational.nnrat.add-cancel-zero rainbow.math.finite.rational-argmax rainbow.math.rational.nnrat.order-total rainbow.math.rational.nnrat.multiply-difference-zero rainbow.math.linear.vector.norm-nonnegative rainbow.math.linear.vector.norm-zero-reflection rainbow.algorithms.proofs.counterfactual-distance-separation rainbow.algorithms.proofs.counterfactual-distance-laws rainbow.math.finite.matrix rainbow.math.linear.matrix.equivalence rainbow.math.linear.matrix.transpose rainbow.math.linear.matrix.transpose-equivalence rainbow.math.linear.matrix.multiply rainbow.math.linear.matrix.multiply-shape rainbow.math.linear.matrix.composable rainbow.math.linear.matrix.composable-multiply rainbow.math.linear.vector.additive-units rainbow.math.linear.vector.shape-cancellation rainbow.math.linear.vector.shape-map rainbow.math.linear.vector.shape-add rainbow.math.linear.vector.dot-additive rainbow.math.linear.vector.dot-bilinear rainbow.math.linear.vector.dot-negate rainbow.math.linear.vector.dot-subtract rainbow.math.linear.vector.dot-scale rainbow.math.linear.matrix.action-scale rainbow.math.rational.signed.multiply-nonzero rainbow.math.rational.signed.order-monotone rainbow.math.rational.signed.list-sum rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.map-sum-algebra rainbow.math.rational.signed.negate-additive rainbow.math.rational.signed.lp-objective-negate rainbow.math.nat.pair-index-inverse rainbow.math.sums.flow-cut rainbow.math.sums.nonneg-zero rainbow.math.rational.signed.multiply-associative rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.distributive])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with-shared :expr-sum-ncyc-infeasible borrowed-specs) (support/extend-with-shared :expr-sum-ncyc-infeasible theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.ncyc-infeasible))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

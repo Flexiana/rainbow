@@ -7,7 +7,8 @@
   and linear image share a sign.  In particular, nonnegative Bellman data map
   nonnegative values back into the nonnegative cone.  Theorem-only and
   axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-order :as affine-order]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-order :as affine-order]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -185,10 +186,16 @@
    affine-action-nonpositive-values-spec
    affine-action-nonnegative-both-nonpositive-spec])
 
-(defn extend-environment [env]
-  (-> env
-      affine-order/extend-environment
-      (support/extend-with :finite-matrix-affine-sign theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-sign theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-sign))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

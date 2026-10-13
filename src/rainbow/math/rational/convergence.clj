@@ -15,7 +15,8 @@
   uniqueness result this gives proved value-iteration convergence.
 
   Requires `nat/at-most` and `nnrat/at-most` in the environment."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -73,10 +74,17 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :rational-convergence
-                       (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :rational-convergence (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.convergence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -19,7 +19,8 @@
   x1+2*x2 <= x2 + 1; then x2 <= 1 (x2 <= x1+x2 <= 1) closes it to
   x1+2*x2 <= 2. First multi-variable LP optimality proved through actual
   variable elimination. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-additive-cross :as cross]
             [rainbow.math.rational.nnrat.farkas-both-sides :as both-sides]
@@ -177,14 +178,17 @@
 (def definition-specs [])
 (def theorem-specs [primal-optimal-spec strong-duality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      cross/extend-environment
-      both-sides/extend-environment
-      add-upper/extend-environment
-      (support/extend-with :nnrat-lp-two-var-strong-duality
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-additive-cross rainbow.math.rational.nnrat.farkas-both-sides rainbow.math.rational.nnrat.add-upper])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-two-var-strong-duality (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-two-var-strong-duality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

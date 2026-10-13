@@ -10,7 +10,8 @@
   and hence ||r||^2 <= ||r + A d||^2.  This is the native exact-rational
   normal-equation optimality theorem, with all row-list shape assumptions
   explicit.  Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.norm-pythagorean :as pythagorean]))
 
@@ -177,10 +178,16 @@
    normal-residual-affine-pythagorean-spec
    normal-residual-affine-optimal-spec])
 
-(defn extend-environment [env]
-  (-> env
-      pythagorean/extend-environment
-      (support/extend-with :finite-matrix-least-squares-normal theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.norm-pythagorean])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-least-squares-normal theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.least-squares-normal))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

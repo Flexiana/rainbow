@@ -10,7 +10,8 @@
   cardinality or a sum of constants cannot replace it. Partition completeness
   and the relation between whole input/output lists remain separate obligations.
   Native proof data, no new axioms."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.farkas-both-sides :as forward]))
 
@@ -85,11 +86,17 @@
 (def definition-specs [])
 (def theorem-specs [lower-to-both-sides-spec upper-to-both-sides-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      forward/extend-environment
-      (support/extend-with :nnrat-farkas-row-reconstruction theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-both-sides])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-row-reconstruction theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-row-reconstruction))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

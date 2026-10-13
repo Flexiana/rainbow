@@ -6,7 +6,8 @@
   Rowwise lifting proves that matrix-vector action is nonnegative and monotone
   in its matrix, vector, or both inputs under the corresponding zero lower
   bounds.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.signed-scale-sign :as sign]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -372,15 +373,16 @@
     env
     (support/extend-with env milestone [spec])))
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-sign])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/multiply-right-monotone :signed-multiply-monotone multiply-monotone/multiply-right-monotone-spec) (extend-spec-if-missing 'signed/add-monotone :signed-order-monotone order-monotone/add-monotone-spec) (support/extend-with :finite-matrix-positive-action theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env
-      sign/extend-environment
-      (extend-spec-if-missing
-       'signed/multiply-right-monotone :signed-multiply-monotone
-       multiply-monotone/multiply-right-monotone-spec)
-      (extend-spec-if-missing
-       'signed/add-monotone :signed-order-monotone
-       order-monotone/add-monotone-spec)
-      (support/extend-with :finite-matrix-positive-action theorem-specs)))
+  (module/install-module env 'rainbow.math.linear.matrix.positive-action))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

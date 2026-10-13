@@ -3,7 +3,8 @@
   Split the residual total by its rational numerator. The zero case uses
   mass preservation; the positive case uses the proved product coupling.
   No contraction premise, positive-mass assumption, or new axiom is added."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-residual-coupling :as residual]
@@ -102,10 +103,15 @@
          (refl p)))}))
 
 (def theorem-specs [zero-residual-contraction-spec contraction-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-coupling-coefficient rainbow.math.finite.markov-dobrushin-statement])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env ((fn [e] (if (environment/resolve-id e 'markov/nnrat-kernel-step-preserves-total-mass-equivalence) e (support/add-spec e :finite-markov-dobrushin-contraction-support composition/kernel-step-preserves-total-mass-spec)))) (support/extend-with :finite-markov-dobrushin-contraction theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env positive/extend-environment statement/extend-environment
-      ((fn [e] (if (environment/resolve-id e 'markov/nnrat-kernel-step-preserves-total-mass-equivalence) e
-                 (support/add-spec e :finite-markov-dobrushin-contraction-support
-                                   composition/kernel-step-preserves-total-mass-spec))))
-      (support/extend-with :finite-markov-dobrushin-contraction theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-dobrushin-contraction))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

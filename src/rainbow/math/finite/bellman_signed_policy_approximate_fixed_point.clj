@@ -11,7 +11,8 @@
   evaluation.  It does not construct an exact rational fixed point: the latter
   remains a separate algebraic existence obligation.  Native, kernel-checked,
   and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-policy :as policy]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-policy :as policy]
             [rainbow.math.finite.bellman-signed-value-iteration-general-converges
              :as general-convergence]
             [rainbow.math.linear.matrix.affine-approximate-fixed-point
@@ -341,13 +342,16 @@
    signed-policy-approximate-fixed-point-general-rate-spec
    signed-policy-approximate-fixed-point-exists-general-rate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      approximate/extend-environment
-      policy/extend-environment
-      general-convergence/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-policy-approximate-fixed-point theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-approximate-fixed-point rainbow.math.finite.bellman-signed-policy rainbow.math.finite.bellman-signed-value-iteration-general-converges])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-policy-approximate-fixed-point theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-policy-approximate-fixed-point))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

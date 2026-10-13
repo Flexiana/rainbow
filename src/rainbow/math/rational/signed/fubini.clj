@@ -32,7 +32,8 @@
   proved; callers supplying their own T must reassociate themselves.
 
   Native and axiom-free; chains the signed distributive toolkit on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distributive :as dist]))
 
@@ -287,11 +288,17 @@
 (def theorem-specs
   [map-sum-swap-spec double-counting-weak-duality-spec row-bound-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      dist/extend-environment
-      (support/extend-with :signed-fubini theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distributive])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-fubini theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.fubini))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

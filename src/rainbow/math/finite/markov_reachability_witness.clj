@@ -6,7 +6,8 @@
   zero steps witness reflexive support of a point mass, and one step witnesses
   support whenever the corresponding kernel entry is positive.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-point-mass :as point-mass]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-point-mass :as point-mass]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -140,11 +141,16 @@
   [positive-entry-iterate-witness-spec
    point-mass-reflexive-iterate-witness-spec])
 
-(defn extend-environment [env]
-  (-> env
-      point-mass/extend-environment
-      (support/extend-with
-       :finite-markov-reachability-witness theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-point-mass])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-reachability-witness theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-reachability-witness))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

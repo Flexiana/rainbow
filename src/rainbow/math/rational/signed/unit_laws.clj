@@ -19,7 +19,8 @@
 
   Native and axiom-free; chains signed multiplication and the nnrat identity
   and additive-monotonicity laws on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-monotone :as am]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -187,13 +188,17 @@
    subtract-self-nonpositive-spec
    zero-at-most-one-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply/extend-environment
-      am/extend-environment
-      identities/extend-environment
-      (support/extend-with :signed-unit-laws theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.identities])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-unit-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.unit-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

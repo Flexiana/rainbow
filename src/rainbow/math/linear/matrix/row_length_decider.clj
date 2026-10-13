@@ -11,7 +11,8 @@
   This is output verification for the dimension check.  It does not prove a
   host Clojure parser or arbitrary executable correct, and it does not inspect
   matrix entries.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.boolean-and :as boolean-and]
             [rainbow.math.linear.matrix.row-length-shape :as row-length]
             [rainbow.math.logic.function :as function]
@@ -491,18 +492,17 @@
        (support/extend-with current milestone [spec])))
    checked-environment specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      row-length/extend-environment
-      (extend-specs-if-missing
-       :nat-linear-order [nat-order/nat-decide-equality-spec])
-      (extend-specs-if-missing
-       :boolean-and boolean-and/definition-specs)
-      (extend-specs-if-missing
-       :boolean-and boolean-and/theorem-specs)
-      (support/extend-with :finite-matrix-row-length-decider
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.row-length-shape])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-specs-if-missing :nat-linear-order [nat-order/nat-decide-equality-spec]) (extend-specs-if-missing :boolean-and boolean-and/definition-specs) (extend-specs-if-missing :boolean-and boolean-and/theorem-specs) (support/extend-with :finite-matrix-row-length-decider (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.row-length-decider))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

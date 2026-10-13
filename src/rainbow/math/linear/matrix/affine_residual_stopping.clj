@@ -6,7 +6,8 @@
   shape premises required by truncating vector subtraction.  This connects an
   observable value-iteration stopping condition directly to the policy-
   evaluation equation.  Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-residual :as residual]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-residual :as residual]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -180,11 +181,16 @@
    affine-iterate-residual-equation-implies-stable-spec
    affine-iterate-stable-iff-residual-equation-spec])
 
-(defn extend-environment [env]
-  (-> env
-      residual/extend-environment
-      (support/extend-with :finite-matrix-affine-residual-stopping
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-residual])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-residual-stopping theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-residual-stopping))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

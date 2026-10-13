@@ -8,7 +8,8 @@
   When gamma <= 1/2, the a posteriori residual theorem then yields a fixed-point
   error certificate with the same exact envelope.  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-residual-decay :as decay]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-residual-decay :as decay]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -499,12 +500,16 @@
    affine-nnrat-strong-row-iterate-error-exact-rate-spec
    affine-nnrat-strong-row-stopping-exact-rate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      decay/extend-environment
-      (support/extend-with
-       :finite-matrix-affine-nnrat-exact-rate
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-residual-decay])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-nnrat-exact-rate (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-nnrat-exact-rate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -9,7 +9,8 @@
   (backward) given w<=w and -w<=w (the latter from 0<=w via negate-reverses-order +
   transitivity); w <= |w| is at-most-absolute; antisymmetry closes it.
   absolute-of-nonpositive reduces to the nonnegative case at -w plus absolute-negate."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.absolute-algebra :as absolute-algebra]
             [rainbow.math.linear.vector.dot-negate :as dot-negate]
@@ -79,12 +80,16 @@
 
 (def theorem-specs [absolute-of-nonnegative-spec absolute-of-nonpositive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      absolute-algebra/extend-environment
-      dot-negate/extend-environment
-      decide-order/extend-environment
-      (support/extend-with :signed-absolute-sign theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.absolute-algebra rainbow.math.linear.vector.dot-negate rainbow.math.rational.signed.decide-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-absolute-sign theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.absolute-sign))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

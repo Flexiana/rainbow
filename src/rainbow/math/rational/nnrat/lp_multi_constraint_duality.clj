@@ -18,7 +18,8 @@
   duality; extracting such an index from the fold is deliberately separate.
 
   Every declaration is native proof data and axiom-free on D63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.lp-strong-duality-general :as single]))
@@ -511,12 +512,17 @@
    primal-optimal-spec
    head-binding-strong-duality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      single/extend-environment
-      (support/extend-with :nnrat-lp-multi-constraint-duality
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.lp-strong-duality-general])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-multi-constraint-duality (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-multi-constraint-duality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

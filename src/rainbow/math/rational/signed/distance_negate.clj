@@ -5,7 +5,8 @@
   Proof: distance p q = |p - q|; subtract(-a,-b) ~ negate(a-b) (from negate-additive on
   a and (negate b), since subtract reduces to add-with-negated-second); then
   |negate(a-b)| ~ |a-b| via absolute-negate."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.absolute-algebra :as absolute-algebra]
             [rainbow.math.rational.signed.distance :as distance]
@@ -42,12 +43,16 @@
 
 (def theorem-specs [distance-negate-both-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      absolute-algebra/extend-environment
-      distance/extend-environment
-      negate-additive/extend-environment
-      (support/extend-with :signed-distance-negate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.absolute-algebra rainbow.math.rational.signed.distance rainbow.math.rational.signed.negate-additive])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-distance-negate theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.distance-negate))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

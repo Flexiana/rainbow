@@ -10,7 +10,8 @@
   residual certificates bound their disagreement.  The practical theorem
   accepts an NNRAT row bound gamma <= 1/2 and separate residual thresholds.
   Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-residual-certificate
              :as residual]
             [rainbow.math.logic.function :as function]
@@ -295,15 +296,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      residual/extend-environment
-      (extend-spec-if-missing
-       'signed/add-associative
-       :signed-add-associative
-       associative/add-associative-spec)
-      (support/extend-with
-       :finite-matrix-affine-approximate-stability theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-residual-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/add-associative :signed-add-associative associative/add-associative-spec) (support/extend-with :finite-matrix-affine-approximate-stability theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-approximate-stability))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

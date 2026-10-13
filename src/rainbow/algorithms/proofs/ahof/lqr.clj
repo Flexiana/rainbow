@@ -11,7 +11,8 @@
   worked-instance idiom of the 222 catalog. Native and axiom-free on D63;
   a proved native module at module level, not a formally credited ledger
   row (that pipeline is a separate follow-up per the catalog workflow)."
-  (:require [rainbow.algorithms.proofs.counterfactual-objective-laws :as scale-sign]
+  (:require [rainbow.module :as module]
+            [rainbow.algorithms.proofs.counterfactual-objective-laws :as scale-sign]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.deviation-rows :as order-reverse]))
@@ -117,12 +118,16 @@
 (def definition-specs [lqr-action-spec])
 (def theorem-specs [lqr-action-worked-spec lqr-action-sign-reversing-spec])
 
-(defn extend-environment [env]
-  (-> env
-      scale-sign/extend-environment
-      order-reverse/extend-environment
-      (support/extend-with :ahof-lqr
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.counterfactual-objective-laws rainbow.math.rational.signed.deviation-rows])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :ahof-lqr (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.algorithms.proofs.ahof.lqr))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

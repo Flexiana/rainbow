@@ -11,7 +11,8 @@
   signed-minmax for signed/max; native and axiom-free on D63. A proved
   native module; formal ledger crediting is the separate catalog
   follow-up."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-uniqueness :as antisymmetry]
             [rainbow.math.rational.signed.minmax :as minmax]))
@@ -115,12 +116,16 @@
                     nnls-project-nonnegative-spec
                     nnls-project-fixes-nonnegative-spec])
 
-(defn extend-environment [env]
-  (-> env
-      minmax/extend-environment
-      (antisymmetry/extend-environment)
-      (support/extend-with :ahof-nnls
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.minmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (antisymmetry/extend-environment) (support/extend-with :ahof-nnls (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.algorithms.proofs.ahof.nnls))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

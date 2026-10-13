@@ -45,8 +45,8 @@ the proof says exactly that:
 
 The `:type` is the statement, the `:value` is the proof term, and both are
 ordinary Clojure data built by small helper functions. The module's
-`theorem-specs` lists eight such laws, and its `extend-environment` installs them
-through the kernel.
+`theorem-specs` lists eight such laws, and installing the module adds them
+through the kernel (see [`modules.md`](modules.md) for the module format).
 
 ```sh
 lein verify rainbow.math.rational.nnrat.identities

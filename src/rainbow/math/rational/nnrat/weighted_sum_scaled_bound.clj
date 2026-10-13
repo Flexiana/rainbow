@@ -1,6 +1,7 @@
 (ns rainbow.math.rational.nnrat.weighted-sum-scaled-bound
   "Compose the finite weighted-sum bound with right-scaling of a sum."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.weighted-sum-bound :as bound]
             [rainbow.math.rational.nnrat.weighted-sum-scaling :as scaling]))
@@ -49,8 +50,15 @@
              (f/app (c 'nnrat/equivalent-reflexive) lhs)
              scaled-eq-summed step)))} )
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.weighted-sum-bound rainbow.math.rational.nnrat.weighted-sum-scaling])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-weighted-sum-scaled-bound [spec])))
+
 (defn extend-environment [env]
-  (-> env bound/extend-environment
-      scaling/extend-environment
-      (support/extend-with :nnrat-weighted-sum-scaled-bound [spec])))
+  (module/install-module env 'rainbow.math.rational.nnrat.weighted-sum-scaled-bound))
 (defn theorem-ids [env] (support/spec-ids env [spec]))

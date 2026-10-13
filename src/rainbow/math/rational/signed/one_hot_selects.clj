@@ -15,7 +15,8 @@
   sum to at least 1 + 1. A step with S k ~ 0 keeps the case; S k ~ 1 moves case 0 to case 1 at
   p = k, and cases 1 and 2 to case 2. At the end a sum of ~ 1 rules out ~ 0 (1 is not 0) and
   >= 1 + 1 (1 + 1 <= 1 would give 1 <= 0)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.signed.one-hot-keep :as one-hot-keep]
@@ -230,11 +231,16 @@
 
 (def theorem-specs [strengthened-spec selects-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      one-hot-keep/extend-environment
-      order-cancellation/extend-environment
-      (support/extend-with :signed-one-hot-selects theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.one-hot-keep rainbow.math.rational.signed.order-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-one-hot-selects theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.one-hot-selects))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

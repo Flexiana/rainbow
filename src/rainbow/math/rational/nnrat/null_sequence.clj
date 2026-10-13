@@ -11,7 +11,8 @@
   convergence: if the error e(n) <= gamma^n * C and gamma^n -> 0, then e -> 0.
 
   Native and axiom-free; chains rainbow.math.rational.nnrat.minmax on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.minmax :as minmax]))
 
@@ -81,11 +82,17 @@
 (def definition-specs [null-spec])
 (def theorem-specs [null-dominated-spec null-max-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.minmax])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-null-sequence (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      (support/extend-with :nnrat-null-sequence
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.null-sequence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

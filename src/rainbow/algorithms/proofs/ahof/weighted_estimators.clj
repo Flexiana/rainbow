@@ -12,7 +12,8 @@
   MIS reuses nnrat/wsum2 and inherits the convex bound (estimate <= max proposal when
   balance weights sum to one).  The rest are add/multiply compositions with worked
   instances.  Native and axiom-free; chains nnrat-convex (-> wsum2, minmax) on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.convex :as convex]))
 
@@ -119,11 +120,17 @@
   [mis-within-max-spec ig-completeness-example-spec gauss-newton-example-spec
    ridge-example-spec bayesian-mc-example-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.convex])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-weighted-estimators (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex/extend-environment
-      (support/extend-with :ahof-weighted-estimators
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.weighted-estimators))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

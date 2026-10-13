@@ -11,7 +11,8 @@
     scale(d, scale(reciprocal d, v)) ~ v.
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.division :as rational-division]
@@ -102,18 +103,16 @@
 (defn- guard [env alias extend]
   (if (environment/resolve-id env alias) env (extend env)))
 
-(defn extend-environment [env]
-  (-> env
-      rational-division/extend-environment
-      (guard 'signed/subtract-unfold signed-rational/extend-environment)
-      (guard 'signed/add-associative add-associative/extend-environment)
-      (guard 'signed/subtract-self-equivalent-zero unit-laws/extend-environment)
-      (guard 'signed/equivalent-of-equality sup-distance/extend-environment)
-      (guard 'signed/add-respects-equivalence signed-algebra/extend-environment)
-      (guard 'signed/scale-composition scale-composition/extend-environment)
-      (guard 'signed/scale-one convex/extend-environment)
-      (support/extend-with :signed-recovery-laws
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.division])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (guard 'signed/subtract-unfold signed-rational/extend-environment) (guard 'signed/add-associative add-associative/extend-environment) (guard 'signed/subtract-self-equivalent-zero unit-laws/extend-environment) (guard 'signed/equivalent-of-equality sup-distance/extend-environment) (guard 'signed/add-respects-equivalence signed-algebra/extend-environment) (guard 'signed/scale-composition scale-composition/extend-environment) (guard 'signed/scale-one convex/extend-environment) (support/extend-with :signed-recovery-laws (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.recovery-laws))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -11,7 +11,8 @@
   The length splits with signed/expr-sum-value-append. The first a arcs are x's, and the
   rest are y's because concat t = y (t - a) from a on (nat/walk-concat-tail, using x a = y 0 at
   t = a and (i + a) - a = i)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.algorithms.proofs.graph.walk-cycle-cut :as cycle-cut]
@@ -202,12 +203,16 @@
 
 (def theorem-specs [monus-shift-spec concat-head-spec concat-tail-spec concat-spec concat-range-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      cycle-cut/extend-environment
-      monus/extend-environment
-      at-most-cancellation/extend-environment
-      (support/extend-with :walk-concat theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.graph.walk-cycle-cut rainbow.math.nat.monus rainbow.math.nat.at-most-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :walk-concat theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.graph.walk-concat))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

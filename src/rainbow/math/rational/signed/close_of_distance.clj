@@ -10,7 +10,8 @@
   distance (reciprocal (s n)) (reciprocal L) <= eps and lands the goal
   close (reciprocal L) eps (reciprocal (s n)) via this bridge. Axiom-free; additive; does
   not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.absolute :as absolute]
             [rainbow.math.rational.signed.distance :as distance]
@@ -64,15 +65,16 @@
 
 (def theorem-specs [close-of-distance-at-most-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      absolute/extend-environment
-      distance/extend-environment
-      additive-distance/extend-environment
-      convergence/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      (support/extend-with :signed-close-of-distance theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.absolute rainbow.math.rational.signed.distance rainbow.math.rational.signed.additive-distance rainbow.math.rational.signed.convergence rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-close-of-distance theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.close-of-distance))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

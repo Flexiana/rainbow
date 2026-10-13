@@ -22,7 +22,8 @@
   binary_test by a fold into Nat). Additive and opt-in: it adds a block to a
   checked environment via `extend-environment`, mirroring rainbow.data.list; it
   does not touch the trusted base."
-  (:require [rainbow.kernel :as kernel]
+  (:require [rainbow.module :as module]
+            [rainbow.kernel :as kernel]
             [rainbow.elaborate :as elaborate]
             [rainbow.term :as term]
             [rainbow.math.logic.function :as function]))
@@ -725,13 +726,20 @@
                        :name name :result result})))
     (:environment result)))
 
-(defn extend-environment
-  "Install the data/Bin inductive block (and its generated data/Bin.rec) plus the
-  bin/to-nat interpretation into a checked environment. Additive; chain it once,
-  like other block modules."
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
   [checked-environment]
   (reduce add-definition (add-bin-block checked-environment) definition-specs))
 
+(defn extend-environment
+  "Install the data/Bin inductive block (and its generated data/Bin.rec) plus the
+  bin/to-nat interpretation into a checked environment. Additive; chain it once,
+  like other block modules." [checked-environment]
+  (module/install-module checked-environment 'rainbow.data.binary))
 (defn block-aliases
   "The declarations this module introduces (the type, its constructors, and the
   generated recursor)."

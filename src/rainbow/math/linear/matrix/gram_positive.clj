@@ -7,7 +7,8 @@
   nonnegative for every vector compatible with A.  This is the exact-rational
   positive-semidefinite bridge needed by least-squares and quadratic OR cones.
   Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.positive-multiply :as positive-multiply]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -154,21 +155,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      positive-multiply/extend-environment
-      (extend-specs-if-missing
-       :signed-decide-order
-       (concat decide/definition-specs decide/theorem-specs))
-      (extend-specs-if-missing
-       :nnrat-add-monotone add-monotone/theorem-specs)
-      (extend-spec-if-missing
-       'signed/add-nonnegative :vector-norm-nonnegative
-       norm-positive/add-nonnegative-spec)
-      (extend-spec-if-missing
-       'signed/square-nonnegative :vector-norm-nonnegative
-       norm-positive/square-nonnegative-spec)
-      (support/extend-with :finite-matrix-gram-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.positive-multiply])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :signed-decide-order (concat decide/definition-specs decide/theorem-specs)) (extend-specs-if-missing :nnrat-add-monotone add-monotone/theorem-specs) (extend-spec-if-missing 'signed/add-nonnegative :vector-norm-nonnegative norm-positive/add-nonnegative-spec) (extend-spec-if-missing 'signed/square-nonnegative :vector-norm-nonnegative norm-positive/square-nonnegative-spec) (support/extend-with :finite-matrix-gram-positive theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.gram-positive))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

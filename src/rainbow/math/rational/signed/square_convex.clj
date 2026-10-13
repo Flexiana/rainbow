@@ -17,7 +17,8 @@
   Each sub-lemma is opaque once registered, so the identity and square-convex reference
   them at O(1) instead of re-reducing their bodies. Off the magnitude/reciprocal modulus.
   Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convex-function :as convex-fn]
             [rainbow.math.rational.signed.square-of-sum :as sos]
@@ -310,26 +311,16 @@
    variance-identity-spec
    square-convex-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex-fn/extend-environment
-      sos/extend-environment
-      multiply-associative/extend-environment
-      multiply-ring/extend-environment
-      action-scale/extend-environment
-      distributive/extend-environment
-      map-sum/extend-environment
-      from-add/extend-environment
-      geo-bridge/extend-environment
-      unit-laws/extend-environment
-      multiply-order/extend-environment
-      order-monotone/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      norm-nonneg/extend-environment
-      absolute-multiply/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-square-convex theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convex-function rainbow.math.rational.signed.square-of-sum rainbow.math.rational.signed.multiply-associative rainbow.math.rational.signed.multiply-ring rainbow.math.linear.matrix.action-scale rainbow.math.rational.signed.distributive rainbow.math.rational.signed.map-sum-algebra rainbow.math.linear.matrix.affine-general-rate-certificate rainbow.math.rational.signed.geometric-bridge rainbow.math.rational.signed.unit-laws rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.order-monotone rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects rainbow.math.linear.vector.norm-nonnegative rainbow.math.rational.signed.absolute-multiply rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-square-convex theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.square-convex))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

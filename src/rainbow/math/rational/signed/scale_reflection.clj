@@ -3,7 +3,8 @@
   endpoint equivalences this transports a checked scaled bound to its original
   values. It does not assert that a host-language transformation produces those
   equivalences. Positivity is structural: make (succ ap) adp, never zero."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.rational.nnrat.order-scale :as order-scale]
@@ -72,11 +73,16 @@
 
 (def definition-specs [])
 (def theorem-specs [scale-positive-reflects-order-spec scaled-bound-to-original-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.scale-order rainbow.math.rational.nnrat.order-scale rainbow.math.rational.signed.order-respects])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-scale-reflection theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env
-      scale-order/extend-environment
-      order-scale/extend-environment
-      respects/extend-environment
-      (support/extend-with :signed-scale-reflection theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.scale-reflection))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

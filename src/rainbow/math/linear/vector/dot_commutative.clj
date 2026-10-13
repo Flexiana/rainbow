@@ -7,7 +7,8 @@
   cons/cons case combines signed multiplication commutativity at the head with
   the tail induction hypothesis through signed addition congruence.  Native and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.algorithms.proofs.inner-product :as inner]
             [rainbow.math.milestone-support :as support]
@@ -131,28 +132,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      signed-multiply/extend-environment
-      (extend-specs-if-missing
-       :nnrat-add-monotone add-monotone/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-multiply-commute multiply-commute/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-product-reassociation product-reassoc/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-additive-reassociation add-reassoc/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-distribute-right distribute/theorem-specs)
-      (extend-spec-if-missing
-       'signed/multiply-commutative :signed-multiply-ring
-       signed-ring/multiply-commutative-spec)
-      (extend-spec-if-missing
-       'signed/add-respects-equivalence :signed-map-sum-algebra
-       signed-add/add-respects-equivalence-spec)
-      inner/extend-environment
-      (support/extend-with :vector-dot-commutative theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-specs-if-missing :nnrat-add-monotone add-monotone/theorem-specs) (extend-specs-if-missing :nnrat-multiply-commute multiply-commute/theorem-specs) (extend-specs-if-missing :nnrat-product-reassociation product-reassoc/theorem-specs) (extend-specs-if-missing :nnrat-additive-reassociation add-reassoc/theorem-specs) (extend-specs-if-missing :nnrat-distribute-right distribute/theorem-specs) (extend-spec-if-missing 'signed/multiply-commutative :signed-multiply-ring signed-ring/multiply-commutative-spec) (extend-spec-if-missing 'signed/add-respects-equivalence :signed-map-sum-algebra signed-add/add-respects-equivalence-spec) inner/extend-environment (support/extend-with :vector-dot-commutative theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.dot-commutative))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

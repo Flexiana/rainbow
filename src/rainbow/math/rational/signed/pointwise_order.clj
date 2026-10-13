@@ -25,7 +25,8 @@
   quadratic in the instance and nothing is fixed at theorem-writing time.
 
   Native and axiom-free on D63; chains the signed finite-sum order laws."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.list-sum :as sum]))
 
@@ -225,12 +226,17 @@
   [all-at-most-empty-spec all-at-most-cons-spec all-at-most-combine-spec
    map-sum-monotone-on-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      sum/extend-environment
-      (support/extend-with :signed-pointwise-order
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.list-sum])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-pointwise-order (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.pointwise-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

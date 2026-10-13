@@ -8,7 +8,8 @@
   premises required by the established uniqueness, finite-horizon rate, and
   rate-null convergence theorems.  Native, kernel-checked, and axiom-free on
   D63."
-  (:require [rainbow.math.linear.matrix.affine-half-iterate-converges
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-half-iterate-converges
              :as convergence]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -271,11 +272,16 @@
    strong-row-iterate-sup-distance-rate-null-spec
    strong-row-iterate-converges-to-fixed-point-spec])
 
-(defn extend-environment [env]
-  (-> env
-      convergence/extend-environment
-      (support/extend-with
-       :finite-matrix-affine-strong-row-contraction theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-half-iterate-converges])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-strong-row-contraction theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-strong-row-contraction))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

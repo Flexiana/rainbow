@@ -7,7 +7,8 @@
   normal residual value exactly when A d is componentwise zero.  Thus normal
   solutions are unique modulo ker A, with all finite row-list shape premises
   explicit.  Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.least-squares-normal :as normal]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -281,16 +282,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      normal/extend-environment
-      (extend-spec-if-missing
-       'signed/at-most-add-right-cancel :signed-order-cancellation
-       order-cancellation/add-right-cancel-spec)
-      (extend-spec-if-missing
-       'signed/at-most-add-left-cancel :signed-order-cancellation
-       order-cancellation/add-left-cancel-spec)
-      (support/extend-with :finite-matrix-least-squares-equality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.least-squares-normal])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/at-most-add-right-cancel :signed-order-cancellation order-cancellation/add-right-cancel-spec) (extend-spec-if-missing 'signed/at-most-add-left-cancel :signed-order-cancellation order-cancellation/add-left-cancel-spec) (support/extend-with :finite-matrix-least-squares-equality theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.least-squares-equality))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

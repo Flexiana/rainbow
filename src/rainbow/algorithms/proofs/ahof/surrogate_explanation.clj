@@ -11,7 +11,8 @@
   Scope (measured by the kernel): this module has 4 worked instances (statements about specific values).
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.surrogate-explanation`
   prints this classification."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -71,9 +72,17 @@
 
 (def theorem-specs [low-error-faithful-spec boundary-faithful-spec fidelity-certificate-spec high-error-unfaithful-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :ahof-surrogate-explanation (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :ahof-surrogate-explanation
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.surrogate-explanation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

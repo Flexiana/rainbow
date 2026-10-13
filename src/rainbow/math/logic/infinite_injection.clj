@@ -1,6 +1,7 @@
 (ns rainbow.math.logic.infinite-injection
   "Classical, sort-polymorphic infinitude transport along injections."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.type :as finite-type]
@@ -353,9 +354,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (reduce add-theorem checked-environment theorem-specs))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.logic.infinite-injection))
 (defn theorem-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

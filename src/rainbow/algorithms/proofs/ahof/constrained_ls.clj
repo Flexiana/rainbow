@@ -10,7 +10,8 @@
   LSI feasibility reuses the decidable order (soundness via decide-at-most-true-sound);
   LDP reuses nnrat-minmax min; the consensus average reuses nnrat/wsum2 and inherits the
   convex bound.  Native and axiom-free; chains nnrat-convex (-> wsum2, minmax) on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.convex :as convex]))
 
@@ -91,11 +92,17 @@
   [lsi-feasible-sound-spec ldp-below-left-spec ldp-below-right-spec
    admm-consensus-within-max-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.convex])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-constrained-ls (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex/extend-environment
-      (support/extend-with :ahof-constrained-ls
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.constrained-ls))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

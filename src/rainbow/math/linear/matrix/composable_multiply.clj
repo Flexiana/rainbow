@@ -7,7 +7,8 @@
   laws then show (A*B) composable C.  The combined theorem certifies both sides
   of an associative triple without claiming their values equal yet.  Native
   and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.composable :as composability]
             [rainbow.math.linear.matrix.shape :as matrix-shape]
             [rainbow.math.linear.matrix.transpose-shape :as transpose-shape]
@@ -205,18 +206,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      composability/extend-environment
-      (extend-spec-if-missing
-       'matrix/compatible-head-shape :finite-matrix-shape
-       matrix-shape/compatible-head-shape-spec)
-      (extend-spec-if-missing
-       'matrix/prepend-column-output-shape
-       :finite-matrix-transpose-shape
-       transpose-shape/prepend-column-output-shape-spec)
-      (support/extend-with :finite-matrix-composable-multiply theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.composable])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'matrix/compatible-head-shape :finite-matrix-shape matrix-shape/compatible-head-shape-spec) (extend-spec-if-missing 'matrix/prepend-column-output-shape :finite-matrix-transpose-shape transpose-shape/prepend-column-output-shape-spec) (support/extend-with :finite-matrix-composable-multiply theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.composable-multiply))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

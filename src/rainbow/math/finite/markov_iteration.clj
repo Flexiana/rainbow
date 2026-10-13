@@ -7,7 +7,8 @@
   invariant and normalized initial masses remain normalized.  Any stationary
   mass is pointwise invariant under every finite iterate.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-kernel-composition :as composition]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-kernel-composition :as composition]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -370,12 +371,16 @@
    kernel-iterate-preserves-normalization-spec
    stationary-kernel-iterate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      composition/extend-environment
-      (support/extend-with
-       :finite-markov-iteration
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-kernel-composition])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-iteration (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-iteration))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

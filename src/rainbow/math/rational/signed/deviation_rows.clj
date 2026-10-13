@@ -31,7 +31,8 @@
   the nnrat order.
 
   Native and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-monotone :as add-monotone]
             [rainbow.math.rational.signed.minmax :as minmax]
@@ -119,13 +120,17 @@
    deviation-rows-sound-spec
    deviation-rows-complete-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-monotone/extend-environment
-      transitivity/extend-environment
-      minmax/extend-environment
-      (support/extend-with :signed-deviation-rows theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.minmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-deviation-rows theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.deviation-rows))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

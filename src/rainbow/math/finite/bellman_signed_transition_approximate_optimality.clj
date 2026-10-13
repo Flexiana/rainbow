@@ -8,7 +8,8 @@
   turns that whole-carrier result into a scalar certificate over the supplied
   finite state source.  No exact fixed point or choice principle is assumed.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-approximate-optimality
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-approximate-optimality
              :as approximate]
             [rainbow.math.finite.bellman-signed-transition-operator
              :as transition-operator]
@@ -313,14 +314,16 @@
    transition-approximate-fixed-point-exists-general-rate-spec
    transition-approximate-fixed-point-sup-general-rate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      approximate/extend-environment
-      transition-operator/extend-environment
-      sup-bridge/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-transition-approximate-optimality
-       theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-approximate-optimality rainbow.math.finite.bellman-signed-transition-operator rainbow.math.finite.signed-approximate-fixed-point-sup])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-transition-approximate-optimality theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-transition-approximate-optimality))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

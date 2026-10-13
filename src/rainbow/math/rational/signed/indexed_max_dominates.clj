@@ -6,7 +6,8 @@
   refuted); n=succ m splits strict-below i (succ m) via nat/strict-below-successor-split into
   (i < m -> use IH, then max-upper-left) or (i = m -> max-upper-right, transported along i=m).
   Off the trusted base (a property of the self-contained indexed-max aggregation)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.indexed-max :as imax]
             [rainbow.math.nat.strict-below-split :as split]))
@@ -80,11 +81,16 @@
 
 (def theorem-specs [dominates-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      imax/extend-environment
-      split/extend-environment
-      (support/extend-with :signed-indexed-max-dominates theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.indexed-max rainbow.math.nat.strict-below-split])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-indexed-max-dominates theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.indexed-max-dominates))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

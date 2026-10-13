@@ -9,7 +9,8 @@
   This is the reciprocal form of the Bernoulli bound gamma^n <= a/(a+n(b-a)) written with
   the gap g = b-a, letting arbitrary gamma = a/(a+g) < 1 be handled by domination.
   Native and axiom-free; chains nnrat-harmonic-convergence on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.harmonic-convergence :as hc]))
 
@@ -100,11 +101,17 @@
 (def definition-specs [general-harmonic-spec])
 (def theorem-specs [general-harmonic-null-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.harmonic-convergence])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-general-harmonic (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      hc/extend-environment
-      (support/extend-with :nnrat-general-harmonic
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.general-harmonic))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

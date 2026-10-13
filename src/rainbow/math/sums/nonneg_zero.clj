@@ -2,7 +2,8 @@
   "Nonnegative terms that sum to zero are each zero, over signed/expr-sum-value: if 0 <= F i for every
   i < k and sum F k ~ 0 then F i ~ 0 for every i < k. The two-term step: 0 <= a, 0 <= b, a + b ~ 0
   give a ~ 0 (a <= a + b ~ 0 and 0 <= a) and then b ~ 0. The induction peels the last term."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum le eqv refl sym trans below]]
             [rainbow.math.sums.flow-cut :as a]
@@ -79,8 +80,15 @@
                       'k))))
 
 (def theorem-specs [pair-spec sum-nonneg-spec terms-zero-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env s/extend-environment a/extend-environment monotone/extend-environment infinite/extend-environment divmod/extend-environment shorten/extend-environment (support/extend-with :expr-sum-nonneg-zero theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env s/extend-environment a/extend-environment monotone/extend-environment
-      infinite/extend-environment divmod/extend-environment shorten/extend-environment
-      (support/extend-with :expr-sum-nonneg-zero theorem-specs)))
+  (module/install-module env 'rainbow.math.sums.nonneg-zero))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

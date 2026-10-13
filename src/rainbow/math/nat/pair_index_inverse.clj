@@ -11,7 +11,8 @@
 
   Uniqueness is by trichotomy on b, b': if b < b' then a + b*n < (b+1)*n <= b'*n <= a' + b'*n, which
   contradicts the equation; symmetrically for b' < b. Then a = a' by cancellation."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.divmod :as divmod]))
 
@@ -137,10 +138,16 @@
 
 (def theorem-specs [unique-row-spec unique-col-spec row-of-pair-spec col-of-pair-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      divmod/extend-environment
-      (support/extend-with :nat-pair-index-inverse theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.divmod])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-pair-index-inverse theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.pair-index-inverse))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

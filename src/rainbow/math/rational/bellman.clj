@@ -1,7 +1,8 @@
 (ns rainbow.math.rational.bellman
   "Finite fixed-policy Bellman evaluation over nonnegative rational proof data."
   (:refer-clojure :exclude [denominator numerator])
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
@@ -629,9 +630,17 @@
 (defn extend-theorems [checked-environment]
   (reduce add-spec checked-environment theorem-specs))
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (-> checked-environment extend-definitions extend-theorems))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.bellman))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

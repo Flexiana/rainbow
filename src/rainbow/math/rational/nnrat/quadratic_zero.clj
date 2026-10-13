@@ -13,7 +13,8 @@
   writes the larger as smaller+gap; verified ring normalization reduces the
   hypothesis to core+gap^2 ~ core, additive cancellation forces gap^2~0, and
   square-zero reflection forces gap~0.  Native and axiom-free."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-cancel-zero :as add-cancel]
@@ -314,20 +315,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      difference/extend-environment
-      (extend-spec-if-missing
-       'nat/multiply-succ-zero-left :nnrat-add-zero-split
-       zero-split/multiply-succ-zero-left-spec)
-      (extend-spec-if-missing
-       'nnrat/add-cancel-to-zero :nnrat-add-cancel-zero
-       add-cancel/add-cancel-to-zero-spec)
-      (extend-spec-if-missing
-       'nnrat/add-zero-right :nnrat-identities
-       identities/add-zero-right-spec)
-      (support/extend-with :nnrat-quadratic-zero theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.order-difference])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'nat/multiply-succ-zero-left :nnrat-add-zero-split zero-split/multiply-succ-zero-left-spec) (extend-spec-if-missing 'nnrat/add-cancel-to-zero :nnrat-add-cancel-zero add-cancel/add-cancel-to-zero-spec) (extend-spec-if-missing 'nnrat/add-zero-right :nnrat-identities identities/add-zero-right-spec) (support/extend-with :nnrat-quadratic-zero theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.quadratic-zero))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

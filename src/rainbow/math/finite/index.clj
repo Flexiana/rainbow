@@ -11,7 +11,8 @@
   This first layer supplies the family, its constructors, and the complete
   successor case split.  Enumeration and certified equality build on that
   structural split.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -1105,35 +1106,17 @@
     env
     (support/extend-with env :finite-index-support [spec])))
 
-(defn extend-environment [env]
-  (let [env
-        (-> env
-            (extend-spec-if-missing
-             'finite/certified-equality-decision
-             diagonal-spike/certified-equality-decision-spec)
-            (extend-spec-if-missing
-             'finite/certified-exhaustive-carrier
-             diagonal-spike/certified-exhaustive-carrier-spec))
-        empty-id (environment/resolve-id env 'finite/Empty)
-        installed?
-        (every? #(environment/resolve-id env (:name %))
-                declaration-specs)]
-    (cond
-      (and empty-id installed?) env
-      (or empty-id installed?)
-      (throw
-       (ex-info "Finite index package is partially installed"
-                {:empty-installed? (boolean empty-id)
-                 :declarations-installed? installed?}))
-      :else
-      (let [added (kernel/add-inductive-block env empty-block-spec)]
-        (when-not (= :accepted (:status added))
-          (throw (ex-info "Finite Empty inductive block rejected"
-                          {:result added})))
-        (support/extend-with
-         (:environment added) :finite-index
-         declaration-specs)))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (let [env (-> env (extend-spec-if-missing 'finite/certified-equality-decision diagonal-spike/certified-equality-decision-spec) (extend-spec-if-missing 'finite/certified-exhaustive-carrier diagonal-spike/certified-exhaustive-carrier-spec)) empty-id (environment/resolve-id env 'finite/Empty) installed? (every? #(environment/resolve-id env (:name %)) declaration-specs)] (cond (and empty-id installed?) env (or empty-id installed?) (throw (ex-info "Finite index package is partially installed" {:empty-installed? (boolean empty-id) :declarations-installed? installed?})) :else (let [added (kernel/add-inductive-block env empty-block-spec)] (when-not (= :accepted (:status added)) (throw (ex-info "Finite Empty inductive block rejected" {:result added}))) (support/extend-with (:environment added) :finite-index declaration-specs)))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.index))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))
 (defn block-id [env] (environment/resolve-id env 'finite/Empty))

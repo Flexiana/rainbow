@@ -11,7 +11,8 @@
   Equivalence of x*x with signed zero is therefore the quadratic equality
   proved by nnrat/quadratic-equality-reflects, modulo the zero padding in the
   Grothendieck relation.  Native and axiom-free."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -97,16 +98,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      quadratic/extend-environment
-      (extend-spec-if-missing
-       'signed/multiply :signed-multiply multiply/multiply-spec)
-      (extend-spec-if-missing
-       'nnrat/add-zero-left :nnrat-identities
-       identities/add-zero-left-spec)
-      (support/extend-with :signed-square-zero theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.quadratic-zero])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/multiply :signed-multiply multiply/multiply-spec) (extend-spec-if-missing 'nnrat/add-zero-left :nnrat-identities identities/add-zero-left-spec) (support/extend-with :signed-square-zero theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.square-zero))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

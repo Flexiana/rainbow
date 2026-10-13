@@ -7,7 +7,8 @@
   finite carrier (when the fallback does) and dominates every declared action.
   Runtime carrier length and arbitrary signed scores are both supported.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.signed.minmax :as minmax]
@@ -467,12 +468,16 @@
    argmax-from-origin-spec finite-argmax-member-spec
    finite-argmax-dominates-spec])
 
-(defn extend-environment [env]
-  (-> env
-      transitivity/extend-environment
-      minmax/extend-environment
-      (support/extend-with
-       :finite-signed-argmax (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.minmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-signed-argmax (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.signed-argmax))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

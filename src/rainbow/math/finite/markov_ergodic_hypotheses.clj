@@ -7,7 +7,8 @@
   For canonical Hastings kernels on Index n, proposal normalization proves row
   normalization, while the executable full-support verdict proves the other
   two fields. Native and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-full-support-irreducible
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-full-support-irreducible
              :as full-support-cone]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -283,12 +284,16 @@
    index-ergodic-hypotheses-spec
    index-stationary-ergodic-hypotheses-spec])
 
-(defn extend-environment [env]
-  (-> env
-      full-support-cone/extend-environment
-      (support/extend-with
-       :finite-markov-ergodic-hypotheses
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-full-support-irreducible])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-ergodic-hypotheses (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-ergodic-hypotheses))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

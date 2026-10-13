@@ -8,7 +8,8 @@
   both results at the same point, preserving equal result dimensions and the
   componentwise order.  Impossible mismatched-input branches are eliminated
   from the order evidence.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -604,15 +605,17 @@
     (support/extend-with checked-environment :signed-add-associative
                          [associative/add-associative-spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      finite-vector/extend-environment
-      order-laws/extend-environment
-      extend-signed-monotone-if-missing
-      extend-signed-commutative-if-missing
-      extend-signed-associative-if-missing
-      (support/extend-with :vector-add-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.vector rainbow.math.linear.vector.pointwise-order-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-signed-monotone-if-missing extend-signed-commutative-if-missing extend-signed-associative-if-missing (support/extend-with :vector-add-order theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.add-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -2,7 +2,8 @@
   "Universal additive quality from a certified endpoint and reported gap.
   Arbitrary feasible sets/objectives; no optimizer existence or absolute-distance
   assertion. The conclusion includes feasibility of the submitted point."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.lp-objective-negate :as foundations]
             [rainbow.math.rational.signed.additive-distance :as rearrange]
@@ -59,9 +60,15 @@
 (def upper-gap-epsilon-optimal-spec (quality-spec false))
 (def lower-gap-epsilon-optimal-spec (quality-spec true))
 (def theorem-specs [upper-gap-epsilon-optimal-spec lower-gap-epsilon-optimal-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.lp-objective-negate])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/add-spec-shared :signed-order-monotone monotone/add-right-monotone-spec) (support/add-spec-shared :signed-additive-distance rearrange/subtract-at-most-of-additive-upper-spec) (support/extend-with-shared :signed-gap-quality theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env foundations/extend-environment
-      (support/add-spec-shared :signed-order-monotone monotone/add-right-monotone-spec)
-      (support/add-spec-shared :signed-additive-distance rearrange/subtract-at-most-of-additive-upper-spec)
-      (support/extend-with-shared :signed-gap-quality theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.gap-quality))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

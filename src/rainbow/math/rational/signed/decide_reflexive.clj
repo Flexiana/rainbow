@@ -7,7 +7,8 @@
   sums: comparing a value with itself computes to true for every value, not
   merely for concrete numerals. Native and axiom-free on D63."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.decide-order :as decide]))
 
@@ -97,11 +98,17 @@
    nnrat-decide-at-most-reflexive-true-spec
    signed-decide-at-most-reflexive-true-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      decide/extend-environment
-      (support/extend-with :signed-decide-reflexive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.decide-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-decide-reflexive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.decide-reflexive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

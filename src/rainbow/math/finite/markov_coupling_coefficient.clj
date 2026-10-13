@@ -1,7 +1,8 @@
 (ns rainbow.math.finite.markov-coupling-coefficient
   "Charge off-diagonal residual coupling costs to the Dobrushin coefficient.
   Positive residual mass is explicit here; the zero branch is separate."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-coupling-distance :as distance]
@@ -162,10 +163,15 @@
 
 (def theorem-specs [row-l1-at-most-twice-rho-spec coupling-cost-at-most-spec
                     positive-residual-contraction-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-coupling-distance rainbow.math.finite.markov-dobrushin-kernel rainbow.math.rational.nnrat.map-sum-on])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env ((fn [e] (if (environment/resolve-id e 'signed/from-nnrat-at-most-reverse) e (support/add-spec e :finite-markov-coupling-coefficient-support embedding/from-nnrat-at-most-reverse-spec)))) (support/extend-with :finite-markov-coupling-coefficient theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env distance/extend-environment coefficient/extend-environment sums-on/extend-environment
-      ((fn [e] (if (environment/resolve-id e 'signed/from-nnrat-at-most-reverse) e
-                 (support/add-spec e :finite-markov-coupling-coefficient-support
-                                   embedding/from-nnrat-at-most-reverse-spec))))
-      (support/extend-with :finite-markov-coupling-coefficient theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-coupling-coefficient))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -31,7 +31,8 @@
   Native and axiom-free; chains the nnrat order toolkit, the nat-ring tactic (for
   the witness identity) and the nnrat-ring tactic (for the two regroupings) on
   D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.ring :as ring]
             [rainbow.math.rational.nnrat.add-monotone :as am]
@@ -215,16 +216,17 @@
 (def definition-specs [])
 (def theorem-specs [at-most-difference-spec rearrangement-two-point-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      oe/extend-environment
-      nnring/extend-environment
-      am/extend-environment
-      rr/extend-environment
-      dist/extend-environment
-      mm/extend-environment
-      (support/extend-with :nnrat-order-difference theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.order-equivalence rainbow.math.rational.nnrat.ring rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.additive-reassociation rainbow.math.rational.nnrat.distribute-right rainbow.math.rational.nnrat.multiply-monotone])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-order-difference theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.order-difference))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

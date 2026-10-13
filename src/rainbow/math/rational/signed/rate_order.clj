@@ -7,7 +7,8 @@
   they do not assume completeness or construct limits.
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-value-iteration-general-converges
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-value-iteration-general-converges
              :as general-convergence]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -153,13 +154,16 @@
   [signed-at-most-of-all-plus-reciprocal-spec
    signed-at-most-of-rate-null-upper-bounds-spec])
 
-(defn extend-environment [env]
-  (-> env
-      general-convergence/extend-environment
-      signed-limit/extend-environment
-      additive-distance/extend-environment
-      ring/extend-environment
-      (support/extend-with :signed-rate-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-value-iteration-general-converges rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.additive-distance rainbow.math.rational.nnrat.ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-rate-order theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.rate-order))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

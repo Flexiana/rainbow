@@ -7,16 +7,17 @@
             [rainbow.math.sums.flow-cut :as a]
             [rainbow.math.sums.two-terms :as two-terms]
             [rainbow.math.sums.of-nat :as of-nat]
-            [rainbow.math.lemmas.one-center :as center :refer [le-ind eq-ind]]
             [rainbow.math.lemmas.cea-rule :as cea]
             [rainbow.math.lemmas.kmeans-nearest :as kmeans]
             [rainbow.math.lemmas.bb-leaf-bound :as rectangular-index]
-            [rainbow.math.nat.pair-index-inverse :as pairs]
-            [rainbow.math.rational.signed.one-hot-attained :as attained]
-            [rainbow.math.rational.signed.decide-completeness :as decide-complete]
             [rainbow.math.lemmas.bottleneck-assignment :as bap]
             [rainbow.math.lemmas.indep-set-dual :as indep]
-            [rainbow.math.finite.rational-argmax :as argmax]))
+            [rainbow.math.lemmas.one-center :as center :refer [le-ind eq-ind]]
+            [rainbow.math.rational.signed.decide-completeness :as decide-complete]
+            [rainbow.math.rational.signed.one-hot-attained :as attained]
+            [rainbow.math.nat.pair-index-inverse :as pairs]
+            [rainbow.math.finite.rational-argmax :as argmax]
+            [rainbow.module :as module]))
 
 (def type-level [:succ [:zero]])
 
@@ -273,16 +274,17 @@
 
 (def theorem-specs [eq-ind-one-spec eq-ind-equiv-spec unit-sum-witness-spec eq-ind-zero-or-one-spec succ-gt-spec of-nat-lt-spec at-most-one-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      center/extend-environment
-      of-nat/extend-environment
-      decide-complete/extend-environment
-      attained/extend-environment
-      pairs/extend-environment
-      two-terms/extend-environment
-      argmax/extend-environment
-      (support/extend-with-shared :expr-sum-borda theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env center/extend-environment of-nat/extend-environment decide-complete/extend-environment attained/extend-environment pairs/extend-environment two-terms/extend-environment argmax/extend-environment (support/extend-with-shared :expr-sum-borda borrowed-specs) (support/extend-with-shared :expr-sum-borda theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.borda))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

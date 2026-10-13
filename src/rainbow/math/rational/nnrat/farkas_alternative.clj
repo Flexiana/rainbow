@@ -9,7 +9,8 @@
   is a checkable Farkas certificate: a refutation of the collapsed reduced
   condition.  All declarations are native proof data and axiom-free."
   (:refer-clojure :exclude [reduced])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-elim-chain :as elim-chain]
@@ -706,12 +707,17 @@
    unit-zero-instance-not-reduced-spec
    unit-zero-instance-not-solvable-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      elim-chain/extend-environment
-      order-equivalence/extend-environment
-      (support/extend-with :nnrat-farkas-alternative theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-elim-chain rainbow.math.rational.nnrat.order-equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-alternative theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-alternative))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

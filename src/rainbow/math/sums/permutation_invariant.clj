@@ -1,7 +1,8 @@
 (ns rainbow.math.sums.permutation-invariant
   "Nonlinear two-coordinate sums are invariant under a binary permutation matrix.
   Selection is derived from one-hot columns, not supplied as an external decoder."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum mul le eqv refl sym]]
             [rainbow.math.sums.flow-cut :as a]
@@ -88,9 +89,15 @@
               (at 'pi-cols k hk))))
         (call 'signed/permutation-row-weight-conservation X values n 'pi-rows)))))
 (def theorem-specs [one-hot-operation-spec weighted-conservation-spec invariant-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (reduce (fn [checked spec] (println :permutation-invariant :installing (:name spec)) (flush) (support/add-spec-shared checked :expr-sum-permutation-invariant spec)) (-> env assignment/extend-environment select/extend-environment) theorem-specs))
+
 (defn extend-environment [env]
-  (reduce (fn [checked spec]
-            (println :permutation-invariant :installing (:name spec)) (flush)
-            (support/add-spec-shared checked :expr-sum-permutation-invariant spec))
-          (-> env assignment/extend-environment select/extend-environment) theorem-specs))
+  (module/install-module env 'rainbow.math.sums.permutation-invariant))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

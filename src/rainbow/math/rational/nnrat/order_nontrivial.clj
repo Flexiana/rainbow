@@ -4,7 +4,8 @@
   The first proof extracts a natural slack from cross-product order and derives
   successor(extra)=0. The second cancels the arbitrary common summand k.
   No classical principle or new axiom is used."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.logic.proposition :as p]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-monotone :as monotone]
@@ -58,11 +59,16 @@
 (def definition-specs [])
 (def theorem-specs [one-not-at-most-zero-spec common-add-unit-gap-impossible-spec])
 
-(defn extend-environment [env]
-  (-> env
-      monotone/extend-environment
-      cancellation/extend-environment
-      (support/extend-with :nnrat-order-nontrivial theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.add-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-order-nontrivial theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.order-nontrivial))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

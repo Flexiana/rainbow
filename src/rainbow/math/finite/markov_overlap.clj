@@ -3,7 +3,8 @@
   Equal input total mass gives normalized TV + common mass = input mass.
   For probability rows, a lower bound on common mass certifies an upper
   bound on the all-pairs coefficient, without rational subtraction."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-residual-coupling :as residual]
             [rainbow.math.finite.markov-dobrushin-kernel :as coefficient]
@@ -165,7 +166,15 @@
 (def theorem-specs [normalized-tv-is-residual-total-spec tv-plus-common-total-spec
                     normalized-tv-at-most-of-overlap-spec common-total-at-least-listed-term-spec
                     coefficient-at-most-of-overlap-spec coefficient-at-most-of-shared-column-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-residual-coupling rainbow.math.finite.markov-dobrushin-kernel rainbow.math.rational.nnrat.map-sum-member])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-overlap theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env residual/extend-environment coefficient/extend-environment member-sum/extend-environment
-      (support/extend-with :finite-markov-overlap theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-overlap))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

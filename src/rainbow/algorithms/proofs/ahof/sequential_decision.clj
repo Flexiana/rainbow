@@ -11,7 +11,8 @@
   Selection/optimism/priority reuse nnrat-minmax; the certainty-equivalence value and
   the replay Bellman target reuse nnrat/wsum2 and nnrat add/multiply.
   Native and axiom-free; chains nnrat-convex (-> wsum2, minmax) on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.convex :as convex]))
 
@@ -117,11 +118,17 @@
   [best-response-dominates-spec rmax-optimistic-spec sweep-picks-max-priority-spec
    model-based-example-spec replay-target-example-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.convex])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-sequential-decision (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex/extend-environment
-      (support/extend-with :ahof-sequential-decision
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.sequential-decision))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

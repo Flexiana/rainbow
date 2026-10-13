@@ -7,7 +7,8 @@
   At each scalar head, scaling a negated Grothendieck pair and negating a scaled
   pair are definitionally the same pair.  Subtraction distribution then composes
   this result with vector/scale-additive.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-monotone :as add-monotone]
@@ -140,27 +141,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-reorder/extend-environment
-      (extend-specs-if-missing
-       :nnrat-add-monotone add-monotone/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-multiply-commute multiply-commute/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-product-reassociation product-reassoc/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-additive-reassociation add-reassoc/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-distribute-right distribute/theorem-specs)
-      (extend-spec-if-missing
-       'signed/scale-additive :signed-scale-additive
-       signed-additive/scale-additive-spec)
-      (extend-spec-if-missing
-       'vector/scale-additive :vector-scale-additive
-       scale-additive/scale-additive-spec)
-      (support/extend-with :vector-scale-subtract theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.add-reorder])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-specs-if-missing :nnrat-add-monotone add-monotone/theorem-specs) (extend-specs-if-missing :nnrat-multiply-commute multiply-commute/theorem-specs) (extend-specs-if-missing :nnrat-product-reassociation product-reassoc/theorem-specs) (extend-specs-if-missing :nnrat-additive-reassociation add-reassoc/theorem-specs) (extend-specs-if-missing :nnrat-distribute-right distribute/theorem-specs) (extend-spec-if-missing 'signed/scale-additive :signed-scale-additive signed-additive/scale-additive-spec) (extend-spec-if-missing 'vector/scale-additive :vector-scale-additive scale-additive/scale-additive-spec) (support/extend-with :vector-scale-subtract theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.scale-subtract))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

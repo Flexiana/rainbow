@@ -14,7 +14,8 @@
   any other feasible x', weak duality gives c.x' <= b.y, and the zero-gap
   hypothesis rewrites b.y to c.x (at-most-respects-equivalence).  Native and
   axiom-free; chains nnrat-lp-weak-duality on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.lp-weak-duality :as lp]))
 
@@ -129,11 +130,17 @@
 (def definition-specs [])
 (def theorem-specs [optimality-spec dual-optimality-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.lp-weak-duality])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-optimality (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      lp/extend-environment
-      (support/extend-with :nnrat-lp-optimality
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-optimality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

@@ -1,6 +1,7 @@
 (ns rainbow.algorithms.proofs.particle-swarm-best-iterate
   "Finite-horizon best-so-far recurrence and objective monotonicity."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.algorithms.proofs.particle-swarm-global-best :as global-best]
             [rainbow.math.logic.proposition :as proposition]))
@@ -234,12 +235,17 @@
    best-iterate-successor-bounds-proposal-spec
    best-iterate-bounds-initial-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      global-best/extend-environment
-      (support/extend-with :particle-swarm-best-iterate
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.particle-swarm-global-best])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :particle-swarm-best-iterate (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.particle-swarm-best-iterate))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

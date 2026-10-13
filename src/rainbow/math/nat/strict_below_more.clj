@@ -3,7 +3,8 @@
      nat/add-successor-right     : i + succ e = succ (i + e)   (add recurses left, so this needs proof)
      nat/strict-below-self       : m < succ m
      nat/strict-below-weaken     : i < m -> i < succ m"
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.strict-below-split :as split]))
 
@@ -70,10 +71,16 @@
 
 (def theorem-specs [add-successor-right-spec strict-below-self-spec strict-below-weaken-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      split/extend-environment
-      (support/extend-with :nat-strict-below-more theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.strict-below-split])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-strict-below-more theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.strict-below-more))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -6,7 +6,8 @@
   The proof follows the two list shapes carried by vector/at-most.  Matching
   components invoke signed/scale-monotone; mismatched dimensions are already
   false and therefore need no arithmetic.  Native and axiom-free on D63."
-  (:require [rainbow.math.finite.vector :as finite-vector]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.scale-order :as signed-scale]
@@ -186,13 +187,17 @@
 (def theorem-specs
   [scale-monotone-spec scale-respects-equivalence-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      signed-scale/extend-environment
-      finite-vector/extend-environment
-      order-laws/extend-environment
-      (support/extend-with :vector-scale-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.scale-order rainbow.math.finite.vector rainbow.math.linear.vector.pointwise-order-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-scale-order theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.scale-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

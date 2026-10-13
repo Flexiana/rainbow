@@ -13,7 +13,8 @@
   sum collapses (w0+w1)*max ~ 1*max ~ max via distributivity + from-nnrat-add + (w0+w1~1).
   Does NOT route through the magnitude/reciprocal modulus, so it is free of that reduction
   wall. Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.minmax :as minmax]
             [rainbow.math.rational.signed.multiply-monotone :as multiply-monotone]
@@ -118,20 +119,16 @@
 
 (def theorem-specs [convex-at-most-max-spec convex-at-least-min-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      multiply-monotone/extend-environment
-      order-monotone/extend-environment
-      distributive/extend-environment
-      from-add/extend-environment
-      geo-bridge/extend-environment
-      multiply-ring/extend-environment
-      unit-laws/extend-environment
-      multiply-order/extend-environment
-      order-respects/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-convex-combination theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.minmax rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.order-monotone rainbow.math.rational.signed.distributive rainbow.math.linear.matrix.affine-general-rate-certificate rainbow.math.rational.signed.geometric-bridge rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.unit-laws rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.order-respects rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-convex-combination theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.convex-combination))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

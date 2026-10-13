@@ -12,7 +12,8 @@
   certificate.  Instantiating inverse with `(1-rate)^-1` gives the sharp
   a-posteriori factor for any rational rate below one.  Theorem-only,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-residual-certificate
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-residual-certificate
              :as residual]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -320,11 +321,16 @@
    affine-inverse-gap-fixed-point-residual-bound-spec
    affine-inverse-gap-stopping-certificate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      residual/extend-environment
-      (support/extend-with
-       :finite-matrix-affine-inverse-gap-certificate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-residual-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-inverse-gap-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-inverse-gap-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

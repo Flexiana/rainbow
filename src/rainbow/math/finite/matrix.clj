@@ -10,7 +10,8 @@
   OR: a zero-like input maps to a zero-like output, equivalent inputs map to
   equivalent outputs, and the operator preserves same-shaped vector addition.
   Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.algorithms.proofs.counterfactual-distance-laws :as distance-laws]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -190,33 +191,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      distance-laws/extend-environment
-      (extend-spec-if-missing
-       'vector/dot-zero-like-right :vector-dot-zero-laws
-       zero-laws/dot-zero-like-right-spec)
-      (extend-spec-if-missing
-       'vector/dot-left-respects-equivalence :vector-dot-congruence
-       dot-congruence/dot-left-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'vector/dot-right-respects-equivalence :vector-dot-congruence
-       dot-congruence/dot-right-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'signed/multiply-distributes-add-right :signed-distributive
-       distributive/multiply-distributes-add-right-spec)
-      (extend-spec-if-missing
-       'signed/add-four-reorder :signed-map-sum-algebra
-       signed-add/add-four-reorder-spec)
-      (extend-spec-if-missing
-       'vector/dot-additive-left :vector-dot-additive
-       dot-additive/dot-additive-left-spec)
-      (extend-spec-if-missing
-       'vector/dot-additive-right :vector-dot-bilinear
-       bilinear/dot-additive-right-spec)
-      (support/extend-with :finite-matrix
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.counterfactual-distance-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'vector/dot-zero-like-right :vector-dot-zero-laws zero-laws/dot-zero-like-right-spec) (extend-spec-if-missing 'vector/dot-left-respects-equivalence :vector-dot-congruence dot-congruence/dot-left-respects-equivalence-spec) (extend-spec-if-missing 'vector/dot-right-respects-equivalence :vector-dot-congruence dot-congruence/dot-right-respects-equivalence-spec) (extend-spec-if-missing 'signed/multiply-distributes-add-right :signed-distributive distributive/multiply-distributes-add-right-spec) (extend-spec-if-missing 'signed/add-four-reorder :signed-map-sum-algebra signed-add/add-four-reorder-spec) (extend-spec-if-missing 'vector/dot-additive-left :vector-dot-additive dot-additive/dot-additive-left-spec) (extend-spec-if-missing 'vector/dot-additive-right :vector-dot-bilinear bilinear/dot-additive-right-spec) (support/extend-with :finite-matrix (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.matrix))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

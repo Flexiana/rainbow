@@ -12,7 +12,8 @@
   two.  The comparison rows B need not contract and neither candidate must be
   an exact fixed point.  Exact-distance and separate-threshold forms are
   theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-inverse-gap-stability
              :as stability]
             [rainbow.math.logic.function :as function]
@@ -483,13 +484,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      stability/extend-environment
-      (extend-specs-if-missing
-       :signed-vector-sup-translation translation/theorem-specs)
-      (support/extend-with
-       :finite-matrix-affine-general-rate-sensitivity theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-inverse-gap-stability])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :signed-vector-sup-translation translation/theorem-specs) (support/extend-with :finite-matrix-affine-general-rate-sensitivity theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-general-rate-sensitivity))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

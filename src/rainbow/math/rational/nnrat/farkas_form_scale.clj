@@ -13,7 +13,8 @@
   over the pairs; nil by multiply-zero-left; cons by distribute-right then
   multiply-swap-right (fold the scalar into the coefficient) then the IH.
   Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.distribute-right :as distribute]
             [rainbow.math.rational.nnrat.multiply-commute :as multiply-commute]
@@ -122,16 +123,17 @@
 
 (def theorem-specs [form-scale-right-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      distribute/extend-environment
-      multiply-commute/extend-environment
-      product/extend-environment
-      identities/extend-environment
-      linear-form/extend-environment
-      (support/extend-with :nnrat-farkas-form-scale
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.distribute-right rainbow.math.rational.nnrat.multiply-commute rainbow.math.rational.nnrat.product-reassociation rainbow.math.rational.nnrat.identities rainbow.math.rational.nnrat.farkas-linear-form])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-form-scale (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-form-scale))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -3,7 +3,8 @@
 
   This removes a shared component before bounding the remaining mass in the
   Dobrushin proof. No normalization or disjointness premise is needed here."
-  (:require [rainbow.math.finite.markov-total-variation-bound :as bound]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-total-variation-bound :as bound]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.distance-translation :as scalar]))
@@ -55,7 +56,15 @@
 
 (def theorem-specs [total-variation-common-mass-spec
                     normalized-total-variation-common-mass-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-total-variation-bound rainbow.math.rational.nnrat.distance-translation])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-total-variation-translation theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env bound/extend-environment scalar/extend-environment
-      (support/extend-with :finite-markov-total-variation-translation theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-total-variation-translation))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -3,7 +3,8 @@
   unfolds to a nat equality (num a)*(den zero) = 0 with den zero = succ zero, so it is (num a)*1;
   strip the *1 (multiply-one-right), apply nat/square-zero-implies-zero to (num m)^2, then rebuild
   m ~ 0 by substituting num m = 0."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.square-zero :as nat-sq]
             [rainbow.math.nat.semiring :as nat-semiring]))
@@ -48,11 +49,16 @@
 
 (def theorem-specs [square-zero-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nat-sq/extend-environment
-      nat-semiring/extend-environment
-      (support/extend-with :nnrat-square-zero theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.square-zero rainbow.math.nat.semiring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-square-zero theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.square-zero))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

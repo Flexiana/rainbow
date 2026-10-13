@@ -6,7 +6,8 @@
                           or (exists i, strict-below i n AND indexed-max-from env init n = env i).
   The aggregate is either the fallback init or an actual input at some index below n. By induction on
   n via max-is-left-or-right, the IH, and the nat weakening/self lemmas. Off the trusted base."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.indexed-max :as imaxmod]
             [rainbow.math.nat.strict-below-more :as more]))
@@ -119,11 +120,16 @@
 
 (def theorem-specs [max-is-left-or-right-spec indexed-max-attains-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      imaxmod/extend-environment
-      more/extend-environment
-      (support/extend-with :signed-indexed-max-attains theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.indexed-max rainbow.math.nat.strict-below-more])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-indexed-max-attains theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.indexed-max-attains))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

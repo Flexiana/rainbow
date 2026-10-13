@@ -10,7 +10,8 @@
   powers, by Nat.rec on the exponent using limit-product at each step, with an
   existential modulus to avoid modulus-matching) is the natural next extension. Axiom-free;
   additive; does not touch the LP checker; does NOT depend on the reciprocal arc."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-product :as limit-product]))
 
@@ -60,10 +61,16 @@
 
 (def theorem-specs [limit-square-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      limit-product/extend-environment
-      (support/extend-with :signed-limit-square theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-product])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-limit-square theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-square))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

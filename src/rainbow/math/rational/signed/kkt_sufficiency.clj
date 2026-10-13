@@ -25,7 +25,8 @@
 
   Native and axiom-free; chains signed convex optimality and signed Lagrangian
   duality on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convex-optimality :as convex]
             [rainbow.math.rational.signed.lagrangian-duality :as duality]))
@@ -201,12 +202,17 @@
    stationary-minimizes-lagrangian-spec
    kkt-sufficiency-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex/extend-environment
-      duality/extend-environment
-      (support/extend-with :signed-kkt-sufficiency theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convex-optimality rainbow.math.rational.signed.lagrangian-duality])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-kkt-sufficiency theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.kkt-sufficiency))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

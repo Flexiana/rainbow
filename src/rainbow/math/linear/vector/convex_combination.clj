@@ -1,6 +1,7 @@
 (ns rainbow.math.linear.vector.convex-combination
   "Normalized two-point convex combinations preserve vector intervals."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.distributive :as distributive]
@@ -468,18 +469,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-order/extend-environment
-      signed-scale/extend-environment
-      (extend-if-missing :nnrat-distributive
-                         [distributive/multiply-one-left-spec])
-      (extend-if-missing :vector-scale-order scale-order/theorem-specs)
-      (extend-if-missing :vector-equivalence-transitivity
-                         equivalence-transitivity/theorem-specs)
-      (support/extend-with :vector-convex-combination
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.add-order rainbow.math.rational.signed.scale-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-if-missing :nnrat-distributive [distributive/multiply-one-left-spec]) (extend-if-missing :vector-scale-order scale-order/theorem-specs) (extend-if-missing :vector-equivalence-transitivity equivalence-transitivity/theorem-specs) (support/extend-with :vector-convex-combination (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.convex-combination))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

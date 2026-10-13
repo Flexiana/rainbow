@@ -6,7 +6,8 @@
   assigns zero distance when either list is empty.  Together the directions
   give the exact fixed-dimension separation law.  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.signed.vector-sup-distance :as sup]
@@ -384,11 +385,16 @@
    equivalent-of-sup-distance-zero-spec
    sup-distance-zero-iff-equivalent-same-shape-spec])
 
-(defn extend-environment [env]
-  (-> env
-      sup/extend-environment
-      shape/extend-environment
-      (support/extend-with :signed-vector-sup-separation theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.vector-sup-distance rainbow.math.linear.vector.shape-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-vector-sup-separation theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.vector-sup-separation))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

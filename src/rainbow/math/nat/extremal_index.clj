@@ -10,7 +10,8 @@
                             exists s, s <= k /\\ Q s /\\ forall s', s < s' -> s' <= k -> not Q s'
 
   All three are by induction on k."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.nat.pigeonhole :as pigeonhole]))
@@ -226,10 +227,16 @@
 
 (def theorem-specs [search-spec least-spec greatest-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      pigeonhole/extend-environment
-      (support/extend-with :nat-extremal-index theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.pigeonhole])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-extremal-index theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.extremal-index))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

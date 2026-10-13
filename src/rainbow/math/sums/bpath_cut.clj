@@ -1,7 +1,8 @@
 (ns rainbow.math.sums.bpath-cut
   "Cut/exit proof support for bottleneck paths. All weights are signed; no nonnegative
   bottleneck premise. New lemmas over unchanged sums and selector definitions."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum mul le eqv refl sym trans below]]
             [rainbow.math.sums.flow-cut :as a]
@@ -145,9 +146,15 @@
                 (s/le-transport threshold threshold (at W u v) (weight A B W n)
                   (refl threshold) (sym (weight A B W n) (at W u v) (picked W)) bound)))))))))
 (def theorem-specs [selector-bit-spec exit-spec difference-bound-spec cut-step-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sums.one-hot-factor])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (reduce (fn [e spec] (println :bpath-cut :installing (:name spec)) (flush) (support/add-spec-shared e :expr-sum-bpath-cut spec)) env theorem-specs))
+
 (defn extend-environment [env]
-  (reduce (fn [e spec]
-            (println :bpath-cut :installing (:name spec)) (flush)
-            (support/add-spec-shared e :expr-sum-bpath-cut spec))
-          (factor/extend-environment env) theorem-specs))
+  (module/install-module env 'rainbow.math.sums.bpath-cut))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

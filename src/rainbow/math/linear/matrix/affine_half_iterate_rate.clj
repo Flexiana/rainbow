@@ -9,7 +9,8 @@
       sup-distance(F^n x, F^n y) <= half-power-scale n (sup-distance x y).
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-half-iterate-contraction
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-half-iterate-contraction
              :as contraction]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -257,12 +258,16 @@
    half-power-scale-monotone-spec
    affine-half-iterate-sup-distance-rate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      contraction/extend-environment
-      (support/extend-with
-       :finite-matrix-affine-half-iterate-rate
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-half-iterate-contraction])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-half-iterate-rate (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-half-iterate-rate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

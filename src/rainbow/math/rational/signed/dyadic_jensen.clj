@@ -14,7 +14,8 @@
   convex-on at (1/2,1/2) to each midpoint (bounding f of a midpoint by the midpoint of f's),
   then combine by midpoint monotonicity and transitivity. Wall-free; does not touch the LP
   checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convex-function :as convex-fn]
             [rainbow.math.rational.signed.multiply-monotone :as multiply-monotone]
@@ -90,15 +91,16 @@
 
 (def theorem-specs [half-add-self-equivalent-one-spec dyadic-jensen-four-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex-fn/extend-environment
-      multiply-monotone/extend-environment
-      order-monotone/extend-environment
-      order-transitivity/extend-environment
-      multiply-order/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-dyadic-jensen theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convex-function rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.order-monotone rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.multiply-order rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-dyadic-jensen theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.dyadic-jensen))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -12,7 +12,8 @@
   Native and axiom-free; chains nnrat-list-sum, nnrat-additive-reassociation,
   nnrat-identities on d63."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.list-sum :as ls]
             [rainbow.math.rational.nnrat.additive-reassociation :as ar]
@@ -84,13 +85,17 @@
 (def definition-specs [])
 (def theorem-specs [map-sum-append-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.list-sum rainbow.math.rational.nnrat.additive-reassociation rainbow.math.rational.nnrat.identities])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-map-sum-append (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ls/extend-environment
-      ar/extend-environment
-      ident/extend-environment
-      (support/extend-with :nnrat-map-sum-append
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.map-sum-append))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

@@ -10,7 +10,8 @@
 
   This is a fixed-policy finite-matrix result, not signed Bellman optimality.
   Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-general-rate-sensitivity
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-general-rate-sensitivity
              :as sensitivity]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -130,11 +131,16 @@
 (def definition-specs [])
 (def theorem-specs [signed-policy-problem-perturbation-stability-spec])
 
-(defn extend-environment [env]
-  (-> env
-      sensitivity/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-policy-sensitivity theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-general-rate-sensitivity])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-policy-sensitivity theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-policy-sensitivity))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

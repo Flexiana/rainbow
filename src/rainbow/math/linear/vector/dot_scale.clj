@@ -10,7 +10,8 @@
   The scalar laws are semiring identities checked through the verified nnrat
   ring normalizer.  Dot homogeneity is then one List induction, combining the
   scalar product law, the tail hypothesis, and signed scale additivity."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
@@ -279,14 +280,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bilinear/extend-environment
-      (extend-spec-if-missing
-       'signed/scale-additive :signed-scale-additive
-       signed-additive/scale-additive-spec)
-      (support/extend-with :vector-dot-scale theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.dot-bilinear])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/scale-additive :signed-scale-additive signed-additive/scale-additive-spec) (support/extend-with :vector-dot-scale theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.dot-scale))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

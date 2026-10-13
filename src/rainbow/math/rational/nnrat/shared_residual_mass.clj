@@ -3,7 +3,8 @@
 
   c=min(a,b), p=distance(c,a), q=distance(c,b). Then c+p~a,
   c+q~b, at least one residual is zero, and distance(a,b)~p+q."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.distance-translation :as translation]
             [rainbow.math.rational.nnrat.minmax :as minmax]
@@ -123,10 +124,16 @@
 (def theorem-specs [shared-plus-left-residual-spec shared-plus-right-residual-spec
                     residuals-disjoint-spec residual-distance-spec
                     distance-is-residual-sum-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.distance-translation rainbow.math.rational.nnrat.ordered-distance rainbow.math.rational.nnrat.minmax])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-shared-residual-mass (concat definition-specs theorem-specs))))
+
 (defn extend-environment [env]
-  (-> env translation/extend-environment ordered/extend-environment
-      minmax/extend-environment
-      (support/extend-with :nnrat-shared-residual-mass
-                           (concat definition-specs theorem-specs))))
+  (module/install-module env 'rainbow.math.rational.nnrat.shared-residual-mass))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

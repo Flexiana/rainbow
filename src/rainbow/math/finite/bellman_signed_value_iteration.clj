@@ -11,7 +11,8 @@
   This proves finite-horizon error propagation only.  Fixed-point existence and
   convergence of the radius remain separate obligations.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-signed-transition-bridge :as bridge]
             [rainbow.math.finite.policy-evaluation :as policy-evaluation]
             [rainbow.math.logic.function :as function]
@@ -597,15 +598,16 @@
       (support/extend-with env producer missing)
       env)))
 
-(defn extend-environment [env]
-  (-> env
-      bridge/extend-environment
-      (extend-specs-if-missing
-       :finite-policy-evaluation
-       [policy-evaluation/recursor-successor-spec])
-      (support/extend-with
-       :finite-bellman-signed-value-iteration
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-transition-bridge])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :finite-policy-evaluation [policy-evaluation/recursor-successor-spec]) (support/extend-with :finite-bellman-signed-value-iteration (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-value-iteration))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

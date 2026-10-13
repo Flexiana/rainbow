@@ -5,7 +5,8 @@
   is empty, so a global triangle law over arbitrary unequal lengths is false.
   Two adjacent `vector/same-shape` hypotheses rule out exactly those mismatch
   cases.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance-triangle :as scalar]
             [rainbow.math.rational.signed.vector-sup-distance :as sup]
@@ -309,12 +310,16 @@
 (def definition-specs [])
 (def theorem-specs [sup-distance-triangle-same-shape-spec])
 
-(defn extend-environment [env]
-  (-> env
-      scalar/extend-environment
-      sup/extend-environment
-      shape/extend-environment
-      (support/extend-with :signed-vector-sup-triangle theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distance-triangle rainbow.math.rational.signed.vector-sup-distance rainbow.math.linear.vector.shape-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-vector-sup-triangle theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.vector-sup-triangle))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

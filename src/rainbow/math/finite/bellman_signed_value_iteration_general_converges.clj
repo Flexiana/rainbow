@@ -14,7 +14,8 @@
   The Bellman capstone still assumes a normalized nnrat transition kernel and
   existence of a signed fixed point.  Native, kernel-checked, and axiom-free on
   D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-signed-value-iteration-converges
              :as half-convergence]
             [rainbow.math.linear.matrix.affine-nnrat-exact-rate :as exact-rate]
@@ -487,25 +488,16 @@
       (support/extend-with env producer missing)
       env)))
 
-(defn extend-environment [env]
-  (-> env
-      half-convergence/extend-environment
-      (extend-specs-if-missing
-       :nnrat-general-harmonic
-       [general-harmonic/general-harmonic-spec
-        general-harmonic/general-harmonic-null-spec])
-      (extend-specs-if-missing
-       :nnrat-general-contraction
-       [general-contraction/general-harmonic-step-spec])
-      (extend-specs-if-missing
-       :signed-geometric-bridge
-       [signed-bridge/from-nnrat-multiply-spec])
-      (extend-specs-if-missing
-       :finite-matrix-affine-nnrat-exact-rate
-       [exact-rate/nnrat-power-scale-nonnegative-spec])
-      (support/extend-with
-       :finite-bellman-signed-value-iteration-general-converges
-       theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-value-iteration-converges])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :nnrat-general-harmonic [general-harmonic/general-harmonic-spec general-harmonic/general-harmonic-null-spec]) (extend-specs-if-missing :nnrat-general-contraction [general-contraction/general-harmonic-step-spec]) (extend-specs-if-missing :signed-geometric-bridge [signed-bridge/from-nnrat-multiply-spec]) (extend-specs-if-missing :finite-matrix-affine-nnrat-exact-rate [exact-rate/nnrat-power-scale-nonnegative-spec]) (support/extend-with :finite-bellman-signed-value-iteration-general-converges theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-value-iteration-general-converges))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

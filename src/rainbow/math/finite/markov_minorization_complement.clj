@@ -1,7 +1,8 @@
 (ns rainbow.math.finite.markov-minorization-complement
   "Exact complementary-mass bounds, without a raw-denominator approximation.
   A listed normalized row bounds the shared total before taking its complement."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-minorization :as minorization]
             [rainbow.math.rational.nnrat.ordered-distance :as ordered]))
@@ -59,7 +60,15 @@
                     'S 'states 'kernel 'lower-mass 'normalized 'minorization 'anchor 'anchor-member))))}))
 
 (def theorem-specs [minorizing-total-at-most-one-spec exact-complement-budget-spec exact-minorization-bound-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-minorization rainbow.math.rational.nnrat.ordered-distance])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-minorization-complement theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env minorization/extend-environment ordered/extend-environment
-      (support/extend-with :finite-markov-minorization-complement theorem-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-minorization-complement))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

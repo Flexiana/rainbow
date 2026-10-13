@@ -15,7 +15,8 @@
   two functions on an explicit list of problem indices, while vector/at-most
   compares two native value lists by position and makes equal dimension part of
   the proposition."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.uniform-clamp :as uniform-clamp]))
 
@@ -255,12 +256,17 @@
   [at-most-empty-spec at-most-cons-spec at-most-reflexive-spec
    uniform-clamp-monotone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      uniform-clamp/extend-environment
-      (support/extend-with :vector-pointwise-order
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.uniform-clamp])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-pointwise-order (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.pointwise-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

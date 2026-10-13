@@ -31,7 +31,8 @@
   reconstruct (row-both-sides head w); conjoin. Direction-neutral (a standalone
   theorem; does not rewire the covered chain or the Feasible predicate). Native
   proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-row-reconstruction :as recon]
             [rainbow.math.rational.nnrat.farkas-reduce-list :as reduce-list]))
@@ -152,13 +153,17 @@
 (def definition-specs [])
 (def theorem-specs [reduced-list-satisfied-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      recon/extend-environment
-      reduce-list/extend-environment
-      (support/extend-with :nnrat-farkas-reduced-list-satisfied
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-row-reconstruction rainbow.math.rational.nnrat.farkas-reduce-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-reduced-list-satisfied (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-reduced-list-satisfied))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

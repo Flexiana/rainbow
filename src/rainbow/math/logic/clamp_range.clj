@@ -11,7 +11,8 @@
   Together: whenever lo <= hi, the clamped value provably lies in the interval
   [lo, hi] for every input r -- the guarantee the clip step relies on. Native and
   axiom-free; chains rainbow.math.rational.nnrat.minmax."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def nnrat (function/const* 'nnrat/NonnegativeRational []))
@@ -60,9 +61,17 @@
 
 (def theorem-specs [clamp-at-most-hi-spec lo-at-most-clamp-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :clamp-range (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :clamp-range
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.logic.clamp-range))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

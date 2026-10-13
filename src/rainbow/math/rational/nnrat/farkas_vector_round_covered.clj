@@ -18,7 +18,8 @@
   not disturbed. This proof DEPENDS on the covered keystone (its value applies
   partition-list-covered), so it breaks loudly if the keystone stops holding.
   Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-vector-adapter-bilist :as vab]
             [rainbow.math.rational.nnrat.farkas-partition-covered :as covered]))
@@ -119,13 +120,17 @@
 (def definition-specs [])
 (def theorem-specs [round-covered-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      vab/extend-environment
-      covered/extend-environment
-      (support/extend-with :nnrat-farkas-vector-round-covered
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-vector-adapter-bilist rainbow.math.rational.nnrat.farkas-partition-covered])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-vector-round-covered (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-vector-round-covered))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

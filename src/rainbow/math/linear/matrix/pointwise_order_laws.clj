@@ -6,7 +6,8 @@
   yields both order directions, and order endpoints may therefore be replaced
   by equivalent representatives.  Dimension mismatches eliminate through the
   falsity branches of the reducible relation.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.signed-scale-order :as order]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -676,24 +677,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      order/extend-environment
-      (extend-spec-if-missing
-       'vector/negate-reverses-order :vector-pointwise-order-laws
-       vector-laws/negate-reverses-order-spec)
-      (extend-spec-if-missing
-       'vector/at-most-transitive :vector-pointwise-order-laws
-       vector-laws/at-most-transitive-spec)
-      (extend-spec-if-missing
-       'vector/at-most-antisymmetric :vector-pointwise-order-laws
-       vector-laws/at-most-antisymmetric-spec)
-      (extend-spec-if-missing
-       'vector/equivalent-to-mutual-at-most :vector-pointwise-order-laws
-       vector-laws/equivalent-to-mutual-at-most-spec)
-      (support/extend-with :finite-matrix-pointwise-order-laws
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'vector/negate-reverses-order :vector-pointwise-order-laws vector-laws/negate-reverses-order-spec) (extend-spec-if-missing 'vector/at-most-transitive :vector-pointwise-order-laws vector-laws/at-most-transitive-spec) (extend-spec-if-missing 'vector/at-most-antisymmetric :vector-pointwise-order-laws vector-laws/at-most-antisymmetric-spec) (extend-spec-if-missing 'vector/equivalent-to-mutual-at-most :vector-pointwise-order-laws vector-laws/equivalent-to-mutual-at-most-spec) (support/extend-with :finite-matrix-pointwise-order-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.pointwise-order-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

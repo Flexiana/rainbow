@@ -13,7 +13,8 @@
   The wrap test decides `succ (succ col) <= n` rather than `succ col = n` so that its true branch
   gives the strict bound directly (decide-at-most-true-sound) and its false branch, together with
   col < n and at-most-split, forces succ col = n."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.strict-below-more :as more]
             [rainbow.math.nat.at-most-add :as at-most-add]
@@ -206,13 +207,16 @@
 (def theorem-specs [at-most-split-spec at-most-or-strict-below-spec col-of-spec row-of-spec
                     col-of-below-spec col-row-decomposition-spec row-of-below-spec pair-index-below-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      more/extend-environment
-      at-most-add/extend-environment
-      harmonic/extend-environment
-      decide-completeness/extend-environment
-      (support/extend-with :nat-divmod theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.strict-below-more rainbow.math.nat.at-most-add rainbow.math.rational.nnrat.harmonic-convergence rainbow.math.rational.signed.decide-completeness])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-divmod theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.divmod))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

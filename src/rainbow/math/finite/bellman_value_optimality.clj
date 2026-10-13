@@ -5,7 +5,8 @@
   finite row total with nnrat/one.  All additive estimates are subtraction
   free.  The optimality-step proof delegates finite-argmax transport to the
   opaque unfold-based nonexpansiveness theorem.  Native and axiom-free on D63."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.bellman-monotone :as monotone]
@@ -809,16 +810,17 @@
                 {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (let [base (-> checked-environment
-                 monotone/extend-environment
-                 optimal/extend-environment
-                 map-respects/extend-environment
-                 map-scale/extend-environment
-                 multiply-commute/extend-environment
-                 general-contraction/extend-environment)]
-    (reduce add-spec base (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [base (-> checked-environment monotone/extend-environment optimal/extend-environment map-respects/extend-environment map-scale/extend-environment multiply-commute/extend-environment general-contraction/extend-environment)] (reduce add-spec base (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.bellman-value-optimality))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

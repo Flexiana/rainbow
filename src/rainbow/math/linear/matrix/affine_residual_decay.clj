@@ -11,7 +11,8 @@
   of `x_n` using only the initial residual and the chosen horizon.  Practical
   corollaries accept actual-row NNRAT bounds gamma <= 1/2.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-iterate :as iterate]
             [rainbow.math.linear.matrix.affine-residual-certificate
              :as certificate]
@@ -343,19 +344,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      certificate/extend-environment
-      (extend-spec-if-missing
-       'matrix/affine-iterate-successor
-       :finite-matrix-affine-iterate
-       iterate/affine-iterate-successor-spec)
-      (extend-spec-if-missing
-       'matrix/affine-iterate-shift
-       :finite-matrix-affine-trajectory-order
-       trajectory/affine-iterate-shift-spec)
-      (support/extend-with
-       :finite-matrix-affine-residual-decay theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-residual-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'matrix/affine-iterate-successor :finite-matrix-affine-iterate iterate/affine-iterate-successor-spec) (extend-spec-if-missing 'matrix/affine-iterate-shift :finite-matrix-affine-trajectory-order trajectory/affine-iterate-shift-spec) (support/extend-with :finite-matrix-affine-residual-decay theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-residual-decay))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

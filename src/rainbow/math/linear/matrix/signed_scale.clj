@@ -8,7 +8,8 @@
   homogeneity law for matrix multiplication.  These laws remain valid for
   ragged and empty matrices because every operation uses the same total list
   semantics.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.associativity-counterexample
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.associativity-counterexample
              :as counterexample]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -206,12 +207,17 @@
    vector-multiply-signed-scale-spec
    multiply-signed-scale-left-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      counterexample/extend-environment
-      (support/extend-with :finite-matrix-signed-scale
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.associativity-counterexample])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-signed-scale (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

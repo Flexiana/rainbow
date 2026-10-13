@@ -20,7 +20,8 @@
   this to the n-variable LP feasibility induction; the base case Feasible 0
   is the objective bound, and the accumulated witnesses across the steps are
   the dual (piece iii). Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -72,10 +73,17 @@
 (def definition-specs [])
 (def theorem-specs [eliminate-all-spec])
 
-(defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :nnrat-farkas-eliminate-all
-                       (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :nnrat-farkas-eliminate-all (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-eliminate-all))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -3,7 +3,8 @@
   (num x)*1 = 0, and num(m1*m2) = (num m1)*(num m2), so the hypothesis strips to (num m1)*(num m2) = 0;
   nat/multiply-zero-split splits it, and each nat disjunct is rebuilt into an nnrat equivalence by the
   same substitution nnrat/square-zero uses. Generalizes nnrat/square-zero to distinct factors."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.multiply-zero-split :as nat-mzs]
             [rainbow.math.nat.semiring :as nat-semiring]))
@@ -63,11 +64,16 @@
 
 (def theorem-specs [multiply-zero-split-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nat-mzs/extend-environment
-      nat-semiring/extend-environment
-      (support/extend-with :nnrat-multiply-zero-split theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.multiply-zero-split rainbow.math.nat.semiring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-multiply-zero-split theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.multiply-zero-split))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

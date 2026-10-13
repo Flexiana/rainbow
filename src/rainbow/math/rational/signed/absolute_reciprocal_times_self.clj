@@ -11,7 +11,8 @@
   multiply-reciprocal-self + |1|~1. In the assembly, combined with |s n| >= |L|/2 and
   multiply-right-cancel, it yields |reciprocal (s n)| <= reciprocal(|L|/2) = 2/|L|.
   Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.reciprocal :as reciprocal]
             [rainbow.math.rational.signed.absolute-multiply :as absolute-multiply]
@@ -64,15 +65,16 @@
 
 (def theorem-specs [absolute-reciprocal-times-self-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      reciprocal/extend-environment
-      absolute-multiply/extend-environment
-      absolute-sign/extend-environment
-      absolute-algebra/extend-environment
-      multiply-ring/extend-environment
-      unit-laws/extend-environment
-      (support/extend-with :signed-absolute-reciprocal-times-self theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.reciprocal rainbow.math.rational.signed.absolute-multiply rainbow.math.rational.signed.absolute-sign rainbow.math.rational.signed.absolute-algebra rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.unit-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-absolute-reciprocal-times-self theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.absolute-reciprocal-times-self))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

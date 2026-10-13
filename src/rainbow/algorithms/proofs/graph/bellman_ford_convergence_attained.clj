@@ -16,7 +16,8 @@
   the arc (i, v) extends i's walk by v: ext x k v = fun t. if t <= k then x t else v (by
   nat/decide-at-most). The extended walk agrees with x below k + 1, so its first k arcs have the
   same length (signed/expr-sum-value-congruence-below), and its last arc is W(i, v)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.algorithms.proofs.graph.bellman-ford-convergence-upper :as upper]
@@ -277,11 +278,16 @@
 
 (def theorem-specs [labels-attained-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      upper/extend-environment
-      decide-completeness/extend-environment
-      (support/extend-with :bford-convergence-attained theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.graph.bellman-ford-convergence-upper rainbow.math.rational.signed.decide-completeness])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :bford-convergence-attained theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.graph.bellman-ford-convergence-attained))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -6,7 +6,8 @@
   fixed operands preserve endpoint orientation; nonpositive fixed operands
   reverse it.  These paired bounds are reusable certificates for Bellman
   enclosures and bounded OR trajectories.  Theorem-only and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.antitone :as antitone]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.antitone :as antitone]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -305,10 +306,16 @@
    multiply-bounds-right-nonnegative-factor-spec
    multiply-bounds-right-nonpositive-factor-spec])
 
-(defn extend-environment [env]
-  (-> env
-      antitone/extend-environment
-      (support/extend-with :finite-matrix-interval-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.antitone])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-interval-order theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.interval-order))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

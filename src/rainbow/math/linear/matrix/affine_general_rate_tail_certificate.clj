@@ -12,7 +12,8 @@
   neither an exact fixed point nor a completeness axiom.  A threshold corollary
   exposes a direct stopping condition.  Theorem-only, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-general-rate-iterate-certificate
              :as iterate-certificate]
             [rainbow.math.linear.matrix.affine-inverse-gap-stability
@@ -282,31 +283,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      iterate-certificate/extend-environment
-      (extend-spec-if-missing
-       'signed/add-associative
-       :signed-add-associative
-       associative/add-associative-spec)
-      (extend-specs-if-missing
-       :finite-matrix-affine-inverse-gap-stability
-       stability/theorem-specs)
-      (extend-spec-if-missing
-       'matrix/affine-iterate-preserves-initial-shape
-       :finite-matrix-affine-tail-diameter
-       tail/affine-iterate-preserves-initial-shape-spec)
-      (extend-spec-if-missing
-       'matrix/affine-iterates-same-shape
-       :finite-matrix-affine-tail-diameter
-       tail/affine-iterates-same-shape-spec)
-      (extend-spec-if-missing
-       'matrix/affine-iterate-residual-shape
-       :finite-matrix-affine-tail-diameter
-       tail/affine-iterate-residual-shape-spec)
-      (support/extend-with
-       :finite-matrix-affine-general-rate-tail-certificate
-       theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-general-rate-iterate-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/add-associative :signed-add-associative associative/add-associative-spec) (extend-specs-if-missing :finite-matrix-affine-inverse-gap-stability stability/theorem-specs) (extend-spec-if-missing 'matrix/affine-iterate-preserves-initial-shape :finite-matrix-affine-tail-diameter tail/affine-iterate-preserves-initial-shape-spec) (extend-spec-if-missing 'matrix/affine-iterates-same-shape :finite-matrix-affine-tail-diameter tail/affine-iterates-same-shape-spec) (extend-spec-if-missing 'matrix/affine-iterate-residual-shape :finite-matrix-affine-tail-diameter tail/affine-iterate-residual-shape-spec) (support/extend-with :finite-matrix-affine-general-rate-tail-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-general-rate-tail-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

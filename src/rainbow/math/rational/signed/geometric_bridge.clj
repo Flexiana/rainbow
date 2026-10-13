@@ -8,7 +8,8 @@
   `nnrat/geometric-half`.  The bridge lets signed vector contraction reuse the
   established harmonic domination and rate-null machinery rather than
   duplicating its arithmetic.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-half-iterate-rate :as rate]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -252,31 +253,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      rate/extend-environment
-      (extend-spec-if-missing
-       'nnrat/multiply-zero-right :nnrat-identities
-       identities/multiply-zero-right-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-zero-left :nnrat-identities
-       identities/multiply-zero-left-spec)
-      (extend-spec-if-missing
-       'nat/pow2-pred :nnrat-geometric-convergence
-       geometric/pow2-pred-spec)
-      (extend-spec-if-missing
-       'nnrat/geometric-half :nnrat-geometric-convergence
-       geometric/geometric-spec)
-      (extend-spec-if-missing
-       'nat/two-times :nnrat-value-iteration
-       value-iteration/two-times-spec)
-      (extend-spec-if-missing
-       'nat/two-times-succ :nnrat-value-iteration
-       value-iteration/two-times-succ-spec)
-      (extend-spec-if-missing
-       'nnrat/geometric-half-halving :nnrat-value-iteration
-       value-iteration/geom-halving-spec)
-      (support/extend-with :signed-geometric-bridge theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-half-iterate-rate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nnrat/multiply-zero-right :nnrat-identities identities/multiply-zero-right-spec) (extend-spec-if-missing 'nnrat/multiply-zero-left :nnrat-identities identities/multiply-zero-left-spec) (extend-spec-if-missing 'nat/pow2-pred :nnrat-geometric-convergence geometric/pow2-pred-spec) (extend-spec-if-missing 'nnrat/geometric-half :nnrat-geometric-convergence geometric/geometric-spec) (extend-spec-if-missing 'nat/two-times :nnrat-value-iteration value-iteration/two-times-spec) (extend-spec-if-missing 'nat/two-times-succ :nnrat-value-iteration value-iteration/two-times-succ-spec) (extend-spec-if-missing 'nnrat/geometric-half-halving :nnrat-value-iteration value-iteration/geom-halving-spec) (support/extend-with :signed-geometric-bridge theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.geometric-bridge))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

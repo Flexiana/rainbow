@@ -8,7 +8,8 @@
   component by a nonnegative rational rate scales the squared norm by
   rate*rate.  Both are theorem-only consequences of native dot bilinearity;
   they add no numerical square-root assumption."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.negate-additive :as signed-additive]
@@ -138,23 +139,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      dot-negate/extend-environment
-      (extend-spec-if-missing
-       'signed/scale-additive :signed-scale-additive
-       scale-additive/scale-additive-spec)
-      (extend-specs-if-missing
-       :vector-dot-scale dot-scale/theorem-specs)
-      norm/extend-environment
-      (extend-spec-if-missing
-       'signed/scale-composition :signed-scale-composition
-       composition/scale-composition-spec)
-      (extend-spec-if-missing
-       'signed/negate-involutive :signed-order
-       signed-order/negate-involutive-spec)
-      (support/extend-with :vector-norm-laws theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.dot-negate])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/scale-additive :signed-scale-additive scale-additive/scale-additive-spec) (extend-specs-if-missing :vector-dot-scale dot-scale/theorem-specs) norm/extend-environment (extend-spec-if-missing 'signed/scale-composition :signed-scale-composition composition/scale-composition-spec) (extend-spec-if-missing 'signed/negate-involutive :signed-order signed-order/negate-involutive-spec) (support/extend-with :vector-norm-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.norm-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

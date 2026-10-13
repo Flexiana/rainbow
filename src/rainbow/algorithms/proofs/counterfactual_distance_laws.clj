@@ -9,7 +9,8 @@
   `-(left - right) ~ right - left`.  Self-distance and equivalence use the
   shape-preserving zero vector and squared-norm congruence.  Native and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.algorithms.proofs.counterfactual-distance-separation :as separation]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -170,114 +171,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      separation/extend-environment
-      (extend-spec-if-missing
-       'signed/equivalent-reflexive :signed-rational
-       signed-rational/equivalent-reflexive-spec)
-      (extend-spec-if-missing
-       'signed/negate-additive :signed-negate-additive
-       signed-additive/negate-additive-spec)
-      (extend-spec-if-missing
-       'signed/at-most-transitive :signed-order-transitivity
-       signed-transitivity/at-most-transitive-spec)
-      (extend-spec-if-missing
-       'signed/at-most-antisymmetric :signed-limit-uniqueness
-       signed-antisymmetry/signed-at-most-antisymmetric-spec)
-      (extend-spec-if-missing
-       'signed/equivalent-symmetric :signed-equivalence-laws
-       signed-equivalence/equivalent-symmetric-spec)
-      (extend-spec-if-missing
-       'signed/negate-respects-equivalence :signed-equivalence-laws
-       signed-equivalence/negate-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'signed/equivalent-to-at-most :signed-unit-laws
-       signed-units/equivalent-to-at-most-spec)
-      (extend-specs-if-missing
-       :signed-order-monotone signed-monotone/theorem-specs)
-      (extend-spec-if-missing
-       'signed/add-commutative :nnrat-commutative
-       commutative/signed-add-commutative-spec)
-      (extend-spec-if-missing
-       'signed/add-respects-equivalence :signed-map-sum-algebra
-       signed-add/add-respects-equivalence-spec)
-      (extend-specs-if-missing
-       :signed-multiply-ring signed-ring/theorem-specs)
-      (extend-spec-if-missing
-       'signed/multiply-zero-left :signed-distributive
-       distributive/multiply-zero-left-spec)
-      (extend-spec-if-missing
-       'vector/at-most :vector-pointwise-order
-       pointwise/vector-at-most-spec)
-      (extend-spec-if-missing
-       'vector/at-most-transitive :vector-pointwise-order-laws
-       order-laws/at-most-transitive-spec)
-      (extend-spec-if-missing
-       'vector/at-most-antisymmetric :vector-pointwise-order-laws
-       order-laws/at-most-antisymmetric-spec)
-      (extend-spec-if-missing
-       'vector/equivalent-to-mutual-at-most :vector-pointwise-order-laws
-       order-laws/equivalent-to-mutual-at-most-spec)
-      (extend-spec-if-missing
-       'vector/equivalent-transitive :vector-equivalence-transitivity
-       transitivity/equivalent-transitive-spec)
-      (extend-spec-if-missing
-       'vector/equivalent-reflexive :vector-equivalence-laws
-       equivalence-laws/equivalent-reflexive-spec)
-      (extend-spec-if-missing
-       'vector/equivalent-symmetric :vector-equivalence-laws
-       equivalence-laws/equivalent-symmetric-spec)
-      (extend-spec-if-missing
-       'vector/map-respects-equivalence :vector-equivalence-laws
-       equivalence-laws/map-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'vector/negate-respects-equivalence :vector-equivalence-laws
-       equivalence-laws/negate-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'vector/negate-involutive :vector-equivalence-laws
-       equivalence-laws/negate-involutive-spec)
-      (extend-specs-if-missing
-       :vector-add-order
-       [add-order/add-right-monotone-spec
-        add-order/add-left-monotone-spec
-        add-order/add-monotone-spec
-        add-order/add-respects-equivalence-spec
-        add-order/add-commutative-spec])
-      (extend-spec-if-missing
-       'vector/negate-additive :vector-negate-additive
-       negate-additive/negate-additive-spec)
-      (extend-spec-if-missing
-       'vector/negate-subtract :vector-subtract-negation
-       subtract-negation/negate-subtract-spec)
-      (extend-spec-if-missing
-       'vector/dot-commutative :vector-dot-commutative
-       dot-commutative/dot-commutative-spec)
-      (extend-specs-if-missing
-       :vector-dot-negate dot-negate/theorem-specs)
-      (extend-spec-if-missing
-       'norm/norm-squared-negate :vector-norm-laws
-       norm-laws/norm-squared-negate-spec)
-      (extend-spec-if-missing
-       'norm/norm-squared-respects-equivalence :vector-norm-congruence
-       congruence/norm-squared-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'signed/subtract-self-equivalent-zero :signed-unit-laws
-       signed-units/subtract-self-equivalent-zero-spec)
-      (extend-spec-if-missing
-       'vector/subtract-self-equivalent-zero-like :vector-additive-units
-       units/subtract-self-equivalent-zero-like-spec)
-      (extend-spec-if-missing
-       'vector/dot-zero-like-left :vector-dot-zero-laws
-       zero-laws/dot-zero-like-left-spec)
-      (extend-spec-if-missing
-       'norm/norm-squared-zero-like :vector-dot-zero-laws
-       zero-laws/norm-squared-zero-like-spec)
-      (extend-spec-if-missing
-       'vector/subtract-respects-equivalence :vector-subtract-laws
-       subtract-laws/subtract-respects-equivalence-spec)
-      (support/extend-with :counterfactual-distance-laws theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.counterfactual-distance-separation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/equivalent-reflexive :signed-rational signed-rational/equivalent-reflexive-spec) (extend-spec-if-missing 'signed/negate-additive :signed-negate-additive signed-additive/negate-additive-spec) (extend-spec-if-missing 'signed/at-most-transitive :signed-order-transitivity signed-transitivity/at-most-transitive-spec) (extend-spec-if-missing 'signed/at-most-antisymmetric :signed-limit-uniqueness signed-antisymmetry/signed-at-most-antisymmetric-spec) (extend-spec-if-missing 'signed/equivalent-symmetric :signed-equivalence-laws signed-equivalence/equivalent-symmetric-spec) (extend-spec-if-missing 'signed/negate-respects-equivalence :signed-equivalence-laws signed-equivalence/negate-respects-equivalence-spec) (extend-spec-if-missing 'signed/equivalent-to-at-most :signed-unit-laws signed-units/equivalent-to-at-most-spec) (extend-specs-if-missing :signed-order-monotone signed-monotone/theorem-specs) (extend-spec-if-missing 'signed/add-commutative :nnrat-commutative commutative/signed-add-commutative-spec) (extend-spec-if-missing 'signed/add-respects-equivalence :signed-map-sum-algebra signed-add/add-respects-equivalence-spec) (extend-specs-if-missing :signed-multiply-ring signed-ring/theorem-specs) (extend-spec-if-missing 'signed/multiply-zero-left :signed-distributive distributive/multiply-zero-left-spec) (extend-spec-if-missing 'vector/at-most :vector-pointwise-order pointwise/vector-at-most-spec) (extend-spec-if-missing 'vector/at-most-transitive :vector-pointwise-order-laws order-laws/at-most-transitive-spec) (extend-spec-if-missing 'vector/at-most-antisymmetric :vector-pointwise-order-laws order-laws/at-most-antisymmetric-spec) (extend-spec-if-missing 'vector/equivalent-to-mutual-at-most :vector-pointwise-order-laws order-laws/equivalent-to-mutual-at-most-spec) (extend-spec-if-missing 'vector/equivalent-transitive :vector-equivalence-transitivity transitivity/equivalent-transitive-spec) (extend-spec-if-missing 'vector/equivalent-reflexive :vector-equivalence-laws equivalence-laws/equivalent-reflexive-spec) (extend-spec-if-missing 'vector/equivalent-symmetric :vector-equivalence-laws equivalence-laws/equivalent-symmetric-spec) (extend-spec-if-missing 'vector/map-respects-equivalence :vector-equivalence-laws equivalence-laws/map-respects-equivalence-spec) (extend-spec-if-missing 'vector/negate-respects-equivalence :vector-equivalence-laws equivalence-laws/negate-respects-equivalence-spec) (extend-spec-if-missing 'vector/negate-involutive :vector-equivalence-laws equivalence-laws/negate-involutive-spec) (extend-specs-if-missing :vector-add-order [add-order/add-right-monotone-spec add-order/add-left-monotone-spec add-order/add-monotone-spec add-order/add-respects-equivalence-spec add-order/add-commutative-spec]) (extend-spec-if-missing 'vector/negate-additive :vector-negate-additive negate-additive/negate-additive-spec) (extend-spec-if-missing 'vector/negate-subtract :vector-subtract-negation subtract-negation/negate-subtract-spec) (extend-spec-if-missing 'vector/dot-commutative :vector-dot-commutative dot-commutative/dot-commutative-spec) (extend-specs-if-missing :vector-dot-negate dot-negate/theorem-specs) (extend-spec-if-missing 'norm/norm-squared-negate :vector-norm-laws norm-laws/norm-squared-negate-spec) (extend-spec-if-missing 'norm/norm-squared-respects-equivalence :vector-norm-congruence congruence/norm-squared-respects-equivalence-spec) (extend-spec-if-missing 'signed/subtract-self-equivalent-zero :signed-unit-laws signed-units/subtract-self-equivalent-zero-spec) (extend-spec-if-missing 'vector/subtract-self-equivalent-zero-like :vector-additive-units units/subtract-self-equivalent-zero-like-spec) (extend-spec-if-missing 'vector/dot-zero-like-left :vector-dot-zero-laws zero-laws/dot-zero-like-left-spec) (extend-spec-if-missing 'norm/norm-squared-zero-like :vector-dot-zero-laws zero-laws/norm-squared-zero-like-spec) (extend-spec-if-missing 'vector/subtract-respects-equivalence :vector-subtract-laws subtract-laws/subtract-respects-equivalence-spec) (support/extend-with :counterfactual-distance-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.counterfactual-distance-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

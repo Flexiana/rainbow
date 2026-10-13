@@ -5,17 +5,18 @@
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum mul le eqv refl sym trans below]]
             [rainbow.math.sums.flow-cut :as a]
-            [rainbow.math.sums.nonneg-zero :as nonneg-zero]
             [rainbow.math.sums.two-terms :as two-terms]
-            [rainbow.math.lemmas.one-center :as center :refer [eq-ind]]
             [rainbow.math.lemmas.indep-set-dual :as indep]
+            [rainbow.math.lemmas.cpm-makespan :as cpm]
+            [rainbow.math.lemmas.kmeans-nearest :as kmeans]
+            [rainbow.math.lemmas.one-center :as center :refer [eq-ind]]
+            [rainbow.math.sums.nonneg-zero :as nonneg-zero]
             [rainbow.math.rational.signed.order-monotone :as add-monotone]
             [rainbow.math.rational.signed.multiply-monotone :as multiply-monotone]
             [rainbow.math.rational.signed.multiply-ring :as multiply-ring]
             [rainbow.math.linear.vector.dot-negate :as dot-negate]
-            [rainbow.math.lemmas.cpm-makespan :as cpm]
-            [rainbow.math.lemmas.kmeans-nearest :as kmeans]
-            [rainbow.math.finite.rational-argmax :as argmax]))
+            [rainbow.math.finite.rational-argmax :as argmax]
+            [rainbow.module :as module]))
 
 (def type-level [:succ [:zero]])
 
@@ -289,17 +290,17 @@
 
 (def theorem-specs [others-lose-spec winner-bid-spec price-bound-spec loser-below-spec dsic-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      center/extend-environment
-      nonneg-zero/extend-environment
-      add-monotone/extend-environment
-      multiply-monotone/extend-environment
-      multiply-ring/extend-environment
-      dot-negate/extend-environment
-      two-terms/extend-environment
-      argmax/extend-environment
-      (support/extend-with-shared :expr-sum-vickrey-dsic theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env center/extend-environment nonneg-zero/extend-environment add-monotone/extend-environment multiply-monotone/extend-environment multiply-ring/extend-environment dot-negate/extend-environment two-terms/extend-environment argmax/extend-environment (support/extend-with-shared :expr-sum-vickrey-dsic borrowed-specs) (support/extend-with-shared :expr-sum-vickrey-dsic theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.lemmas.vickrey-dsic))
 
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -15,7 +15,8 @@
   magnitude/reciprocal modulus (no reduction wall). Next: affine and square convexity
   (the variance inequality), then n-point Jensen by induction. Axiom-free; additive;
   does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distributive :as distributive]
             [rainbow.math.linear.matrix.affine-general-rate-certificate :as from-add]
@@ -105,16 +106,16 @@
 
 (def theorem-specs [convex-on-spec identity-convex-spec constant-convex-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      distributive/extend-environment
-      from-add/extend-environment
-      geo-bridge/extend-environment
-      unit-laws/extend-environment
-      multiply-ring/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      (support/extend-with :signed-convex-function theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distributive rainbow.math.linear.matrix.affine-general-rate-certificate rainbow.math.rational.signed.geometric-bridge rainbow.math.rational.signed.unit-laws rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-convex-function theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.convex-function))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

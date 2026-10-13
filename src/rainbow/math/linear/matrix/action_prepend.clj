@@ -6,7 +6,8 @@
   necessary premise for the usual decomposition into the scaled inserted
   column plus the old matrix action; without it native vector/add truncation
   makes the statement false.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.action-scale :as scale]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -346,17 +347,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      scale/extend-environment
-      (extend-spec-if-missing
-       'signed/add-zero-right :signed-limit-uniqueness
-       signed-units/signed-add-zero-right-spec)
-      (extend-spec-if-missing
-       'vector/add-respects-equivalence :vector-add-order
-       add-order/add-respects-equivalence-spec)
-      (support/extend-with :finite-matrix-action-prepend theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.action-scale])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/add-zero-right :signed-limit-uniqueness signed-units/signed-add-zero-right-spec) (extend-spec-if-missing 'vector/add-respects-equivalence :vector-add-order add-order/add-respects-equivalence-spec) (support/extend-with :finite-matrix-action-prepend theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.action-prepend))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

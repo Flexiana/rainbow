@@ -14,7 +14,8 @@
   projected optimization, box constraints, trust regions, and bounded monitors.
   Native and axiom-free on D63."
   (:refer-clojure :exclude [min max])
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.minmax-algebra :as algebra]))
 
@@ -266,12 +267,17 @@
    clamp-monotone-spec clamp-respects-equivalence-spec
    clamp-below-spec clamp-above-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      algebra/extend-environment
-      (support/extend-with :signed-clamp
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.minmax-algebra])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-clamp (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.clamp))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

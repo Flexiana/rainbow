@@ -10,7 +10,8 @@
   reassociates a*(W*v) ~ W*(a*v) (multiply assoc + comm), the constant term collapses
   (w0)b+(w1)b ~ b, and the four summands reorder (add-four-reorder). Off the magnitude/
   reciprocal modulus (no reduction wall). Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convex-function :as convex-fn]
             [rainbow.math.linear.matrix.action-scale :as action-scale]
@@ -115,20 +116,16 @@
 
 (def theorem-specs [affine-convex-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex-fn/extend-environment
-      action-scale/extend-environment
-      distributive/extend-environment
-      multiply-associative/extend-environment
-      multiply-ring/extend-environment
-      map-sum/extend-environment
-      from-add/extend-environment
-      geo-bridge/extend-environment
-      unit-laws/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      (support/extend-with :signed-affine-convex theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convex-function rainbow.math.linear.matrix.action-scale rainbow.math.rational.signed.distributive rainbow.math.rational.signed.multiply-associative rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.map-sum-algebra rainbow.math.linear.matrix.affine-general-rate-certificate rainbow.math.rational.signed.geometric-bridge rainbow.math.rational.signed.unit-laws rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-affine-convex theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.affine-convex))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

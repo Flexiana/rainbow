@@ -10,7 +10,8 @@
   This module does not yet prove that a transition-weighted signed Bellman
   action backup supplies those bounds.  Native, kernel-checked, and axiom-free
   on D63."
-  (:require [rainbow.math.finite.signed-argmax-nonexpansive :as argmax]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.signed-argmax-nonexpansive :as argmax]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -396,12 +397,16 @@
    optimality-step-additive-upper-bound-spec
    optimality-step-additively-nonexpansive-spec])
 
-(defn extend-environment [env]
-  (-> env
-      argmax/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-optimality
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.signed-argmax-nonexpansive])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-optimality (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-optimality))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

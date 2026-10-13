@@ -1,7 +1,8 @@
 (ns rainbow.math.rational.nnrat.identities
   "Neutral and absorbing laws for native nonnegative rationals, up to cross-product equivalence."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
@@ -338,17 +339,20 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce (fn [env spec] (if (environment/resolve-id env (:name spec)) (support/add-spec-shared env :nnrat-identities spec) (add-spec env spec))) checked-environment theorem-specs))
+
 (defn extend-environment
   "Shared-world safe: an alias already present (nnrat/multiply-one-left is
   also installed by nnrat-distributive) is compared by elaborated type via
-  support/add-spec-shared -- identical skips, a different statement throws."
-  [checked-environment]
-  (reduce (fn [env spec]
-            (if (environment/resolve-id env (:name spec))
-              (support/add-spec-shared env :nnrat-identities spec)
-              (add-spec env spec)))
-          checked-environment theorem-specs))
-
+  support/add-spec-shared -- identical skips, a different statement throws." [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.identities))
 (defn theorem-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

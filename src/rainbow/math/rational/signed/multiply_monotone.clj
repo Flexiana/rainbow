@@ -24,7 +24,8 @@
 
   Native and axiom-free; chains the nnrat rearrangement toolkit, the nnrat-ring
   tactic and the signed sign rules on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.order-difference :as difference]
             [rainbow.math.rational.nnrat.ring :as ring]
@@ -121,13 +122,17 @@
 (def theorem-specs
   [multiply-left-monotone-spec multiply-right-monotone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      ring/extend-environment
-      difference/extend-environment
-      sign/extend-environment
-      (support/extend-with :signed-multiply-monotone theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.ring rainbow.math.rational.nnrat.order-difference rainbow.math.rational.signed.multiply-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-multiply-monotone theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.multiply-monotone))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

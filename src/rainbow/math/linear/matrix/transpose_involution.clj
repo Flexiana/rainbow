@@ -7,7 +7,8 @@
   native lemmas prove the core valid algebra: transpose undoes insertion of a
   nonempty vector into empty columns, and into nonempty columns whose remaining
   count matches the remaining vector width.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.transpose-shape :as transpose-shape]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.transpose-shape :as transpose-shape]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -322,11 +323,17 @@
   [transpose-prepend-column-empty-spec
    transpose-prepend-column-cons-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      transpose-shape/extend-environment
-      (support/extend-with :finite-matrix-transpose-involution theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose-shape])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-transpose-involution theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.transpose-involution))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

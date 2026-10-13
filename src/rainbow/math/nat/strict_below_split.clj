@@ -5,7 +5,8 @@
   extra=0 gives i = m (add-commutative strips the +0); extra=succ e gives strict-below i m with
   witness e (add-commutative moves the successor across). The reusable decomposition needed for
   'indexed-max dominates every index below n' -- a pure nat lemma, off the trusted base."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.infinite :as nat-infinite]))
 
@@ -74,10 +75,16 @@
 
 (def theorem-specs [strict-below-successor-split-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nat-infinite/extend-environment
-      (support/extend-with :nat-strict-below-split theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.infinite])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-strict-below-split theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.strict-below-split))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

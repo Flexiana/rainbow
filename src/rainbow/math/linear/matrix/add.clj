@@ -6,7 +6,8 @@
   addition.  The shape premise is exactly what makes native matrix action
   additive in its rows and matrix multiplication distributive in its left
   factor under total list semantics.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.signed-scale-right :as bilinear]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.signed-scale-right :as bilinear]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -450,12 +451,17 @@
    vector-multiply-additive-rows-spec
    multiply-additive-left-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bilinear/extend-environment
-      (support/extend-with :finite-matrix-add
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-right])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-add (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.add))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

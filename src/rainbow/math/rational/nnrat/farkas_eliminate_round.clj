@@ -21,7 +21,8 @@
   nnrat/farkas-eliminate-round proves the reduced affine system holds --
   the whole elimination round in one theorem. Native proof data,
   axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-cross-bilist :as bilist]
             [rainbow.math.rational.nnrat.farkas-reduce-list :as reduce-list]))
@@ -97,13 +98,17 @@
 (def definition-specs [])
 (def theorem-specs [eliminate-round-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bilist/extend-environment
-      reduce-list/extend-environment
-      (support/extend-with :nnrat-farkas-eliminate-round
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-cross-bilist rainbow.math.rational.nnrat.farkas-reduce-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-eliminate-round (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-eliminate-round))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -11,7 +11,8 @@
   and D ~ mmag (nnrat/make-succ-of-positive-numerator) is lifted to from-nnrat D ~ from-nnrat
   mmag (from-nnrat-respects-equivalence) then under the scale (multiply-right-respects).
   No nnrat/reciprocal-respects needed. Axiom-free; additive."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-scale-law :as scale-law]
             [rainbow.math.rational.nnrat.positive-succ-form :as succ-form]
@@ -55,12 +56,16 @@
 
 (def theorem-specs [nnrat-radius-cancel-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      scale-law/extend-environment
-      succ-form/extend-environment
-      multiply-ring/extend-environment
-      (support/extend-with :nnrat-radius-cancel theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-scale-law rainbow.math.rational.nnrat.positive-succ-form rainbow.math.rational.signed.multiply-ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-radius-cancel theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.radius-cancel))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

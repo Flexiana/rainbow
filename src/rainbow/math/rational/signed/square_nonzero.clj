@@ -3,7 +3,8 @@
   pos(d*d) ~ neg(d*d), i.e. (Pd*Pd + Nd*Nd) ~ (Pd*Nd + Nd*Pd) (modulo add-zero), which is
   exactly nnrat/square-difference-zero's input, giving Pd ~ Nd, i.e. d ~ 0 -- contradicting
   the premise. Core of signed no-zero-divisors for the square case (what strict convexity needs)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.square-difference-zero :as sdz]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -81,16 +82,16 @@
 
 (def theorem-specs [square-nonzero-spec square-positive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      sdz/extend-environment
-      identities/extend-environment
-      action-scale/extend-environment
-      strict-order/extend-environment
-      multiply-order/extend-environment
-      equivalence-laws/extend-environment
-      norm-nonneg/extend-environment
-      (support/extend-with :signed-square-nonzero theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.square-difference-zero rainbow.math.rational.nnrat.identities rainbow.math.linear.matrix.action-scale rainbow.math.rational.signed.strict-order rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.equivalence-laws rainbow.math.linear.vector.norm-nonnegative])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-square-nonzero theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.square-nonzero))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

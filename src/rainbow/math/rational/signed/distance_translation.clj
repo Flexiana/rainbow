@@ -6,7 +6,8 @@
   additive commutativity supplies the right-translation orientation.  These
   are the scalar cancellation laws required to remove the offset from affine
   sup-distance bounds.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.rational.signed.distance :as distance]))
@@ -108,11 +109,16 @@
    distance-add-left-spec
    distance-add-right-spec])
 
-(defn extend-environment [env]
-  (-> env
-      ring/extend-environment
-      distance/extend-environment
-      (support/extend-with :signed-distance-translation theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.ring rainbow.math.rational.signed.distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-distance-translation theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.distance-translation))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

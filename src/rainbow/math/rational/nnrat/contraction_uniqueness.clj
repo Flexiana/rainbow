@@ -22,7 +22,8 @@
 
   Native and axiom-free; chains nnrat-order-equivalence (to-cross + the nat additive
   cancellation and sum-zero-left bricks) and nat-ring."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.nat.ring :as ring]
             [rainbow.math.rational.nnrat.order-equivalence :as oe]))
@@ -130,11 +131,17 @@
 (def definition-specs [])
 (def theorem-specs [contraction-collapse-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.order-equivalence])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-contraction-uniqueness (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      oe/extend-environment
-      (support/extend-with :nnrat-contraction-uniqueness
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.contraction-uniqueness))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

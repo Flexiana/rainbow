@@ -21,7 +21,8 @@
   den(seq d0 N) = den(d0) * 2^N, the last analytic ingredient of the general
   forall-epsilon convergence modulus, and fills a fundamental gap in the nat
   semiring."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -144,8 +145,16 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (support/extend-with checked-environment :nat-distributive theorem-specs))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.distributive))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

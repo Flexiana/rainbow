@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.range-surjective
   "Characterize surjections by their universal ranges."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.sets.range-image-bridge :as range-image]))
@@ -152,10 +153,16 @@
    range-universal-mutual-subset-of-surjective-spec
    surjective-equivalent-range-universal-mutual-subset-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      range-image/extend-environment
-      (support/extend-with :set-range-surjective theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sets.range-image-bridge])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-range-surjective theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.range-surjective))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

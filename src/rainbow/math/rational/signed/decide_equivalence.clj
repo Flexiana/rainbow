@@ -17,7 +17,8 @@
   This deliberately accepts different representations of the same rational
   (for example 1/2 and 2/4), while the kernel rejects a true-result witness for
   unequal values.  Native and axiom-free on D63."
-  (:require [rainbow.math.logic.boolean-and :as boolean-and]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.boolean-and :as boolean-and]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.decide-order :as decide-order]
@@ -83,14 +84,17 @@
 (def definition-specs [decide-equivalent-spec])
 (def theorem-specs [decide-equivalent-true-sound-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      uniqueness/extend-environment
-      boolean-and/extend-environment
-      decide-order/extend-environment
-      (support/extend-with :signed-decide-equivalence
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-uniqueness rainbow.math.logic.boolean-and rainbow.math.rational.signed.decide-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-decide-equivalence (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.decide-equivalence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

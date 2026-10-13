@@ -9,7 +9,8 @@
   the survivor, so `farkas-elim-chain-solvable-iff` decides chains of every finite
   length.  All definitions and proofs are native proof data and axiom-free."
   (:refer-clojure :exclude [reduced])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-elim-list :as elim-list]
@@ -771,15 +772,20 @@
   [open-extends-spec open-projects-spec open-solvable-iff-spec
    extends-spec projects-spec solvable-iff-spec])
 
-(defn extend-environment [checked-environment]
-  ;; The coupled extension installs the list development transitively.  Both are
-  ;; required here explicitly because the closing theorem also uses list
-  ;; elimination directly; proposition supplies the proof-data encodings.
-  (-> checked-environment
-      elim-coupled/extend-environment
-      (support/extend-with :nnrat-farkas-elim-chain
-                           (concat definition-specs theorem-specs))))
+;; The coupled extension installs the list development transitively.  Both are
+;; required here explicitly because the closing theorem also uses list
+;; elimination directly; proposition supplies the proof-data encodings.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-elim-coupled])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-elim-chain (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-elim-chain))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

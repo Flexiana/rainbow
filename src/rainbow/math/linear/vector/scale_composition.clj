@@ -5,7 +5,8 @@
 
   The proof maps signed/scale-composition over the list.  Native and axiom-free
   on D63."
-  (:require [rainbow.math.finite.vector :as finite-vector]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.scale-composition :as signed-composition]
@@ -84,13 +85,17 @@
 (def definition-specs [])
 (def theorem-specs [scale-composition-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      signed-composition/extend-environment
-      finite-vector/extend-environment
-      vector-equivalence/extend-environment
-      (support/extend-with :vector-scale-composition theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.scale-composition rainbow.math.finite.vector rainbow.math.linear.vector.equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-scale-composition theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.scale-composition))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

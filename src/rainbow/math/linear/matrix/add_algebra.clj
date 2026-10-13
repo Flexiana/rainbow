@@ -5,7 +5,8 @@
   semantics, commutativity and associativity need no shape premise.  Structural
   congruence in each argument makes the operation well defined over native
   matrix equivalence.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.add-right :as additive]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.add-right :as additive]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -436,11 +437,17 @@
    add-respects-right-equivalence-spec
    add-respects-equivalence-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      additive/extend-environment
-      (support/extend-with :finite-matrix-add-algebra theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.add-right])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-add-algebra theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.add-algebra))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

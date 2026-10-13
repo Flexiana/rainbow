@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.rational-argmin
   "Executable finite argmin with exact rational minimality certificates."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.rational-argmax :as argmax]
@@ -599,12 +600,17 @@
 (defn extend-theorems [checked-environment]
   (reduce add-spec checked-environment theorem-specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      argmax/extend-environment
-      extend-definitions
-      extend-theorems))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.rational-argmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-definitions extend-theorems))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.rational-argmin))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

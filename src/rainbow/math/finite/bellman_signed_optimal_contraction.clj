@@ -8,7 +8,8 @@
   Bellman operator at every state.
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-signed-action-backup :as action-backup]
             [rainbow.math.finite.bellman-signed-optimality :as optimality]
             [rainbow.math.finite.signed-argmax :as finite-argmax]
@@ -196,25 +197,16 @@
       (support/extend-with env producer missing)
       env)))
 
-(defn extend-environment [env]
-  (-> env
-      action-backup/extend-environment
-      (extend-specs-if-missing
-       :signed-decide-order
-       (concat decide/definition-specs decide/theorem-specs))
-      (extend-specs-if-missing
-       :signed-minmax
-       (concat minmax/definition-specs minmax/theorem-specs))
-      (extend-specs-if-missing
-       :finite-signed-argmax
-       (concat finite-argmax/definition-specs finite-argmax/theorem-specs))
-      (extend-specs-if-missing
-       :finite-signed-argmax-nonexpansive nonexpansive/theorem-specs)
-      (extend-specs-if-missing
-       :finite-bellman-signed-optimality
-       (concat optimality/definition-specs optimality/theorem-specs))
-      (support/extend-with
-       :finite-bellman-signed-optimal-contraction theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-action-backup])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :signed-decide-order (concat decide/definition-specs decide/theorem-specs)) (extend-specs-if-missing :signed-minmax (concat minmax/definition-specs minmax/theorem-specs)) (extend-specs-if-missing :finite-signed-argmax (concat finite-argmax/definition-specs finite-argmax/theorem-specs)) (extend-specs-if-missing :finite-signed-argmax-nonexpansive nonexpansive/theorem-specs) (extend-specs-if-missing :finite-bellman-signed-optimality (concat optimality/definition-specs optimality/theorem-specs)) (support/extend-with :finite-bellman-signed-optimal-contraction theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-optimal-contraction))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

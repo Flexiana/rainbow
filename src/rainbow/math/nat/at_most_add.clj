@@ -10,7 +10,8 @@
      nat/at-most-add-left-swap : x + (d + y) <= d + (x + y)    (the same, as an order fact)
   The swap pair is what lets a depth d threaded on the LEFT of every family index commute past a
   fixed layout offset when bounding reads under extra bindings."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
 (def ^:private type-level [:succ [:zero]])
@@ -72,8 +73,16 @@
 (def theorem-specs [at-most-add-right-spec at-most-add-left-spec at-most-add-nested-spec
                     add-left-swap-spec at-most-add-left-swap-spec])
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (support/extend-with checked-environment :nat-at-most-add theorem-specs))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.at-most-add))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

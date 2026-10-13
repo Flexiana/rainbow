@@ -12,7 +12,8 @@
   x a = x b. With b = (e + 1) + a and k = c + b, signed/walk-cut-length cuts the cycle. The cut
   walk has c + a < k arcs, the same ends and no greater length, and the induction hypothesis
   finishes it. This is what makes n - 1 Bellman-Ford rounds enough."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.algorithms.proofs.graph.walk-cycle-cut :as cycle-cut]
@@ -247,11 +248,16 @@
 
 (def theorem-specs [successor-cancel-spec shorter-spec shorten-spec final-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      cycle-cut/extend-environment
-      pigeonhole/extend-environment
-      (support/extend-with :walk-shorten theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.graph.walk-cycle-cut rainbow.math.nat.pigeonhole])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :walk-shorten theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.graph.walk-shorten))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

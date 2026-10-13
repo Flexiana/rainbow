@@ -10,7 +10,8 @@
   residual it can actually compute, without knowing the fixed point's value.
   The practical corollaries accept an NNRAT row bound gamma <= 1/2 and actual-row
   membership premises.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-strong-row-contraction
              :as strong]
             [rainbow.math.linear.matrix.equivalence-shape
@@ -321,25 +322,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      strong/extend-environment
-      (extend-specs-if-missing
-       :signed-distance-triangle scalar-triangle/theorem-specs)
-      (extend-spec-if-missing
-       'vector/sup-distance-triangle-same-shape
-       :signed-vector-sup-triangle
-       vector-triangle/sup-distance-triangle-same-shape-spec)
-      (extend-spec-if-missing
-       'vector/map-respects-equivalence
-       :vector-equivalence-laws
-       vector-laws/map-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'vector/equivalent-implies-same-shape
-       :finite-matrix-equivalence-shape
-       equivalence-shape/vector-equivalent-implies-same-shape-spec)
-      (support/extend-with
-       :finite-matrix-affine-residual-certificate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-strong-row-contraction])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :signed-distance-triangle scalar-triangle/theorem-specs) (extend-spec-if-missing 'vector/sup-distance-triangle-same-shape :signed-vector-sup-triangle vector-triangle/sup-distance-triangle-same-shape-spec) (extend-spec-if-missing 'vector/map-respects-equivalence :vector-equivalence-laws vector-laws/map-respects-equivalence-spec) (extend-spec-if-missing 'vector/equivalent-implies-same-shape :finite-matrix-equivalence-shape equivalence-shape/vector-equivalent-implies-same-shape-spec) (support/extend-with :finite-matrix-affine-residual-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-residual-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

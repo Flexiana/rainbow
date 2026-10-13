@@ -12,7 +12,8 @@
   No exact fixed point is assumed or constructed.  The witness is the actual
   finite Bellman iterate, and its residual guarantee holds pointwise over the
   entire state type.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-value-iteration-general-converges
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-value-iteration-general-converges
              :as general-convergence]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -644,11 +645,16 @@
   [abstract-successive-iterate-additive-radius-spec
    rate-certificate-approximate-fixed-point-spec])
 
-(defn extend-environment [env]
-  (-> env
-      general-convergence/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-approximate-optimality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-value-iteration-general-converges])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-approximate-optimality theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-approximate-optimality))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

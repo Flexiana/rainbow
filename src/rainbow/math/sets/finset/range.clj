@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.finset.range
   "Native initial segments of Nat and finite-Finset range bounds."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
@@ -727,21 +728,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (reduce add-spec checked-environment
-          [setlike-membership-spec finset-setlike-spec
-           order-less-than-spec order-less-or-equal-spec nat-at-most-spec
-           order-preorder-from-partial-spec finset-partial-order-spec
-           order-monotone-spec nat-range-spec
-           member-range-successor-add-spec below-member-range-spec
-           finset-range-spec
-           member-range-equivalent-below-spec
-           exists-nat-subset-range-spec
-           not-strictly-below-self-spec not-member-range-self-spec
-           member-range-proposition-equality-spec
-           range-subset-of-at-most-spec at-most-of-range-subset-spec
-           range-subset-equivalent-at-most-spec range-monotone-spec]))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-spec checked-environment [setlike-membership-spec finset-setlike-spec order-less-than-spec order-less-or-equal-spec nat-at-most-spec order-preorder-from-partial-spec finset-partial-order-spec order-monotone-spec nat-range-spec member-range-successor-add-spec below-member-range-spec finset-range-spec member-range-equivalent-below-spec exists-nat-subset-range-spec not-strictly-below-self-spec not-member-range-self-spec member-range-proposition-equality-spec range-subset-of-at-most-spec at-most-of-range-subset-spec range-subset-equivalent-at-most-spec range-monotone-spec]))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.finset.range))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

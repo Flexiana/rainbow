@@ -6,7 +6,8 @@
   Vector addition truncates to the shorter list, and both sides truncate at the
   same position.  The cons/cons case invokes signed/scale-additive and the tail
   induction hypothesis.  Native and axiom-free on D63."
-  (:require [rainbow.math.finite.vector :as finite-vector]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.scale-additive :as signed-additive]
@@ -120,13 +121,17 @@
 (def definition-specs [])
 (def theorem-specs [scale-additive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      signed-additive/extend-environment
-      finite-vector/extend-environment
-      vector-equivalence/extend-environment
-      (support/extend-with :vector-scale-additive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.scale-additive rainbow.math.finite.vector rainbow.math.linear.vector.equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-scale-additive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.scale-additive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

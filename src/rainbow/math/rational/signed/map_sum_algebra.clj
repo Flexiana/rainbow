@@ -22,7 +22,8 @@
 
   Native and axiom-free; chains signed finite sums and signed multiplicative
   monotonicity on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.list-sum :as sum]
             [rainbow.math.rational.signed.multiply-monotone :as mono]
@@ -326,13 +327,17 @@
    map-sum-add-spec
    weighted-sum-monotone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      sum/extend-environment
-      mono/extend-environment
-      unit/extend-environment
-      (support/extend-with :signed-map-sum-algebra theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.list-sum rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.unit-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-map-sum-algebra theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.map-sum-algebra))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

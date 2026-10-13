@@ -6,7 +6,8 @@
   iterate equivalent to that value and, consequently, every pair of later
   iterates equivalent to each other.  No positivity premise is needed.
   Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-invariant-interval
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-invariant-interval
              :as invariant-interval]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -151,10 +152,16 @@
    affine-iterate-stabilizes-spec
    affine-iterate-stable-tail-equivalent-spec])
 
-(defn extend-environment [env]
-  (-> env
-      invariant-interval/extend-environment
-      (support/extend-with :finite-matrix-affine-stabilization theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-invariant-interval])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-stabilization theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-stabilization))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

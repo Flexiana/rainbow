@@ -7,7 +7,8 @@
   semantics and agrees with ordinary matrix multiplication on compatible
   rectangular inputs.  Constructor and two-sided quotient congruence laws are
   native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.transpose-equivalence :as transpose-equivalence]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.transpose-equivalence :as transpose-equivalence]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -297,12 +298,17 @@
    multiply-respects-right-equivalence-spec
    multiply-respects-equivalence-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      transpose-equivalence/extend-environment
-      (support/extend-with :finite-matrix-multiply
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose-equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-multiply (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.multiply))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

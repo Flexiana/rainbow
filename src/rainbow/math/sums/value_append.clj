@@ -3,7 +3,8 @@
    sum F (b+a) ~ sum F a + sum (fn i. F(i+a)) b.
    All Nat lengths, including zero; no sign or boundedness assumptions.
    Equality is the existing signed-rational equivalence, not raw-pair Eq."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s
              :refer [nat zero family call at sum add eqv refl sym trans]]
@@ -23,7 +24,15 @@
                                  (call 'signed/add-associative a b c)))) 'b))))
 
 (def theorem-specs [append-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env s/extend-environment associative/extend-environment (support/extend-with :expr-sum-value-append theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env s/extend-environment associative/extend-environment
-      (support/extend-with :expr-sum-value-append theorem-specs)))
+  (module/install-module env 'rainbow.math.sums.value-append))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

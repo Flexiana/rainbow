@@ -27,7 +27,8 @@
   Native and axiom-free; chains the finite-sum toolkit (list-sum monotone,
   map-sum respects/scale-right, Fubini) plus multiply right-monotone/associative/
   commutative(standalone) and d63 multiply-respects/at-most-respects."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.list-sum :as ls]
             [rainbow.math.rational.nnrat.map-sum-respects :as mr]
@@ -181,17 +182,17 @@
 (def definition-specs [])
 (def theorem-specs [weak-duality-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.list-sum rainbow.math.rational.nnrat.map-sum-respects rainbow.math.rational.nnrat.map-sum-scale rainbow.math.rational.nnrat.fubini rainbow.math.rational.nnrat.multiply-right-monotone rainbow.math.rational.nnrat.multiply-commute rainbow.math.rational.nnrat.product-reassociation])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-weak-duality (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ls/extend-environment
-      mr/extend-environment
-      sc/extend-environment
-      fu/extend-environment
-      rm/extend-environment
-      mc/extend-environment
-      pr/extend-environment
-      (support/extend-with :nnrat-lp-weak-duality
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-weak-duality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

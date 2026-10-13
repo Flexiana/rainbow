@@ -10,7 +10,8 @@
   (monus p q)+q collapses M*dq + Bb*dq = (M+Bb)*dq = A*dq using nat-monus-add-cancel
   (M+Bb=A via the at-most witness) + distributivity; the resulting cross-product equality
   is a pure monomial identity discharged by the nat-ring tactic. Axiom-free; additive."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.ring :as ring]
             [rainbow.math.nonnegative-rational :as nnrat-core]
@@ -98,11 +99,16 @@
 
 (def theorem-specs [monus-spec monus-add-cancel-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      order-equiv/extend-environment
-      natmonus/extend-environment
-      (support/extend-with :nnrat-monus theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.order-equivalence rainbow.math.nat.monus])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-monus theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.monus))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

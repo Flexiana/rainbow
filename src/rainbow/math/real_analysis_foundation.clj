@@ -22,7 +22,8 @@
     -> monotone convergence / Cauchy completeness -> limits, continuity, derivatives.
 
   Native and axiom-free; self-contained on d63 (uses only nnrat/at-most-reflexive)."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def nat (function/const* 'data/Nat []))
@@ -78,9 +79,17 @@
 (def definition-specs [nondecreasing-spec bounded-above-spec constant-spec])
 (def theorem-specs [constant-nondecreasing-spec constant-bounded-by-self-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :real-analysis-foundation (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :real-analysis-foundation
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.real-analysis-foundation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

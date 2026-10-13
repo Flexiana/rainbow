@@ -7,7 +7,8 @@
   into the corresponding cross sum multiplied by c; the verified nnrat ring
   normalizer supplies those distributive equivalences and native nnrat
   multiplication monotonicity supplies the central inequality."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.multiply-monotone :as multiply-monotone]
@@ -66,13 +67,17 @@
     (support/extend-with checked-environment :temporal-difference
                          [temporal-difference/scale-spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      extend-scale-if-missing
-      ring/extend-environment
-      multiply-monotone/extend-environment
-      (support/extend-with :signed-scale-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-scale-if-missing ring/extend-environment multiply-monotone/extend-environment (support/extend-with :signed-scale-order theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.scale-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

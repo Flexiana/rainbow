@@ -1,6 +1,7 @@
 (ns rainbow.algorithms.proofs.particle-swarm-convex-move
   "Normalized movement toward a swarm best preserves vector intervals."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.convex-combination :as convex]))
 
@@ -196,12 +197,17 @@
    convex-move-between-spec
    convex-move-between-reverse-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex/extend-environment
-      (support/extend-with :particle-swarm-convex-move
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.convex-combination])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :particle-swarm-convex-move (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.particle-swarm-convex-move))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

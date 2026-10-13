@@ -10,7 +10,8 @@
   (result lies in [lo,hi]) reuse rainbow.math.logic.clamp-range (clamp-at-most-hi,
   lo-at-most-clamp).  Rounding uses the decidable order + if-data.
   Native and axiom-free; chains clamp-range (-> nnrat-minmax) on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.minmax :as minmax]
             [rainbow.math.logic.clamp-range :as cr]))
@@ -114,12 +115,17 @@
    restricted-in-trust-hi-spec restricted-in-trust-lo-spec
    lp-round-up-example-spec lp-round-down-example-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.minmax rainbow.math.logic.clamp-range])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-projection-methods (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      cr/extend-environment
-      (support/extend-with :ahof-projection-methods
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.projection-methods))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

@@ -5,7 +5,8 @@
   associative up to NNRAT equivalence.  Its backward action on observables
   composes in the same order: (K ; L)f ~ K(Lf).  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.math.finite.markov-expectation-tower :as tower]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-expectation-tower :as tower]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -305,11 +306,16 @@
    kernel-compose-associative-spec
    kernel-observable-compose-spec])
 
-(defn extend-environment [env]
-  (-> env
-      tower/extend-environment
-      (support/extend-with
-       :finite-markov-kernel-algebra theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-expectation-tower])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-kernel-algebra theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-kernel-algebra))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

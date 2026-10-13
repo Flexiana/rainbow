@@ -19,7 +19,8 @@
   variable produce a both-sides coefficient-vector constraint. The fold over
   the variable count applies this per (lower, upper) pair, then head-splits
   and both-sides-reduces the next variable. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-affine-cross :as cross]
             [rainbow.math.rational.nnrat.farkas-reduced-vector :as reduced]))
@@ -85,13 +86,17 @@
 (def definition-specs [])
 (def theorem-specs [cross-vectors-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      cross/extend-environment
-      reduced/extend-environment
-      (support/extend-with :nnrat-farkas-cross-vectors
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-affine-cross rainbow.math.rational.nnrat.farkas-reduced-vector])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-cross-vectors (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-cross-vectors))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

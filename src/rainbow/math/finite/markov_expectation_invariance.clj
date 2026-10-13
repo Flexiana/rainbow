@@ -6,7 +6,8 @@
   normalized finite Cesaro occupation average.  These theorems connect the
   MCMC distribution laws to the reusable finite-expectation interface.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-cesaro :as cesaro]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-cesaro :as cesaro]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -190,11 +191,16 @@
    stationary-iterate-expectation-spec
    stationary-cesaro-expectation-spec])
 
-(defn extend-environment [env]
-  (-> env
-      cesaro/extend-environment
-      (support/extend-with
-       :finite-markov-expectation-invariance theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-cesaro])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-expectation-invariance theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-expectation-invariance))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

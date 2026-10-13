@@ -7,7 +7,8 @@
   collapsed endpoint.  Applying this twice proves pairwise uniqueness of all
   fixed points in the certified enclosure, without a contraction assumption.
   Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-bracket-collapse
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-bracket-collapse
              :as bracket-collapse]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -155,11 +156,16 @@
   [affine-iterate-collapsed-bracket-identifies-fixed-point-spec
    affine-iterate-collapsed-bracket-fixed-points-equivalent-spec])
 
-(defn extend-environment [env]
-  (-> env
-      bracket-collapse/extend-environment
-      (support/extend-with :finite-matrix-affine-bracket-uniqueness
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-bracket-collapse])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-bracket-uniqueness theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-bracket-uniqueness))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

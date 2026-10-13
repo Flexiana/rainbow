@@ -8,7 +8,8 @@
   If that recurrence converges to the improved policy's value, the current
   policy's value is pointwise below the improved value.  No concrete iterate or
   finite argmax occurs in a theorem statement.  Native and axiom-free on D63."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.bellman-monotone :as monotone]
@@ -396,12 +397,17 @@
                 {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (let [base (-> checked-environment
-                 monotone/extend-environment
-                 optimality-theorem/extend-environment)]
-    (reduce add-spec base (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [base (-> checked-environment monotone/extend-environment optimality-theorem/extend-environment)] (reduce add-spec base (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.policy-value-dominance))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

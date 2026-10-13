@@ -6,7 +6,8 @@
   negation law, yields scalar multiplication antitonicity on both sides.  The
   scale-difference bridge and structural pointwise lifts extend the result to
   native vectors and matrices.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.pointwise-order-laws :as order-laws]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.pointwise-order-laws :as order-laws]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -418,12 +419,17 @@
    vector-signed-scale-antitone-spec
    matrix-signed-scale-antitone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      order-laws/extend-environment
-      (support/extend-with :finite-matrix-signed-scale-antitone
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.pointwise-order-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-signed-scale-antitone theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-antitone))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

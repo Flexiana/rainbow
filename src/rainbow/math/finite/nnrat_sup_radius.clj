@@ -10,7 +10,8 @@
   member distance is below the finite radius, and any uniform pointwise bound
   bounds the radius.  Nonnegativity is structural from the zero base.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.distance :as distance]
             [rainbow.math.rational.nnrat.minmax :as minmax]))
@@ -377,12 +378,16 @@
    finite-nnrat-sup-radius-bounded-spec
    finite-nnrat-sup-radius-nonnegative-spec])
 
-(defn extend-environment [env]
-  (-> env
-      distance/extend-environment
-      minmax/extend-environment
-      (support/extend-with :finite-nnrat-sup-radius
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.distance rainbow.math.rational.nnrat.minmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-nnrat-sup-radius (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.nnrat-sup-radius))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

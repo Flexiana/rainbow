@@ -7,7 +7,8 @@
   Exact paired-trajectory and successive-residual bounds can then be promoted
   directly to rate-null results without discarding the sharper finite-horizon
   estimates.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-nnrat-exact-rate :as exact]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-nnrat-exact-rate :as exact]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -337,11 +338,16 @@
    affine-nnrat-paired-rate-null-spec
    affine-nnrat-residual-rate-null-spec])
 
-(defn extend-environment [env]
-  (-> env
-      exact/extend-environment
-      (support/extend-with
-       :finite-matrix-affine-nnrat-exact-rate-null theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-nnrat-exact-rate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-nnrat-exact-rate-null theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-nnrat-exact-rate-null))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

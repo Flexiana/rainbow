@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.fiber-unique
   "Unique existence from subsingleton predicates, applied to bijection fibers."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.sets.fiber-characterization :as characterization]))
@@ -383,10 +384,16 @@
    bijective-on-has-unique-fibers-spec
    bijective-on-equivalent-maps-to-and-unique-fibers-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      characterization/extend-environment
-      (support/extend-with :set-fiber-unique theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sets.fiber-characterization])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-fiber-unique theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.fiber-unique))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

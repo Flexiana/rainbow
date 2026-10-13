@@ -15,7 +15,8 @@
 
   Polymorphic in the index type.  Native and axiom-free; chains signed order
   monotonicity and signed limit uniqueness (for signed/add-zero-right) on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-uniqueness :as uniqueness]
             [rainbow.math.rational.signed.order-monotone :as monotone]))
@@ -187,13 +188,17 @@
   [map-sum-empty-spec map-sum-cons-spec map-sum-monotone-spec
    map-sum-nonpositive-spec map-sum-nonnegative-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      uniqueness/extend-environment
-      monotone/extend-environment
-      (support/extend-with :signed-list-sum
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.order-monotone])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-list-sum (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.list-sum))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

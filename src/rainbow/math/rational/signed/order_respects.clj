@@ -11,7 +11,8 @@
   every term of a convergent signed sequence by an equivalent term preserves the same
   limit and modulus.  Native and axiom-free; chains signed convergence (and hence
   signed-order-transitivity plus its D63 nnrat toolkit)."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.signed.convergence :as convergence]))
 
@@ -216,12 +217,17 @@
   [at-most-respects-equivalence-spec
    converges-respects-pointwise-equivalence-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convergence/extend-environment
-      (support/extend-with :signed-order-respects
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convergence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-order-respects (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.order-respects))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -17,7 +17,8 @@
     D24.9 level-k / hierarchical softmax : level-k value >= the response it improves on
 
   Native and axiom-free; chains nnrat-minmax on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.minmax :as minmax]))
 
@@ -91,11 +92,17 @@
   [minimax-inequality-spec pomg-no-deviation-spec dec-ibr-no-deviation-spec
    levelk-no-deviation-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.minmax])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-game-equilibria (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      (support/extend-with :ahof-game-equilibria
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.game-equilibria))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

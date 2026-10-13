@@ -12,7 +12,8 @@
   Fixed-point existence and executable policy evaluation remain premises or
   open implementation obligations.  Native, kernel-checked, and axiom-free on
   D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-signed-fixed-point-uniqueness
              :as uniqueness]
             [rainbow.math.logic.function :as function]
@@ -706,11 +707,16 @@
       (support/extend-with env producer missing)
       env)))
 
-(defn extend-environment [env]
-  (-> env
-      uniqueness/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-policy-optimal theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-fixed-point-uniqueness])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-policy-optimal theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-policy-optimal))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

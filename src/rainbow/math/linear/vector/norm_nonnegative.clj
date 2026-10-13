@@ -10,7 +10,8 @@
   Signed addition preserves componentwise nonnegativity by nnrat add
   monotonicity.  Squared-norm nonnegativity is then one List induction over the
   sum of component squares."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.algorithms.proofs.inner-product :as inner]
             [rainbow.math.milestone-support :as support]
@@ -171,18 +172,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply-order/extend-environment
-      (extend-specs-if-missing
-       :signed-decide-order
-       (concat decide/definition-specs decide/theorem-specs))
-      (extend-specs-if-missing
-       :nnrat-add-monotone add-monotone/theorem-specs)
-      inner/extend-environment
-      norm/extend-environment
-      (support/extend-with :vector-norm-nonnegative theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-specs-if-missing :signed-decide-order (concat decide/definition-specs decide/theorem-specs)) (extend-specs-if-missing :nnrat-add-monotone add-monotone/theorem-specs) inner/extend-environment norm/extend-environment (support/extend-with :vector-norm-nonnegative theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.norm-nonnegative))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

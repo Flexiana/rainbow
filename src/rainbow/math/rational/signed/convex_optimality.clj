@@ -28,7 +28,8 @@
 
   Native and axiom-free; chains the D63 signed order toolkit through signed
   limit uniqueness (for signed/add-zero-right) and signed order monotonicity."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-uniqueness :as uniqueness]
             [rainbow.math.rational.signed.order-monotone :as monotone]))
@@ -265,12 +266,17 @@
    certificate-sum-spec
    sum-global-minimum-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      uniqueness/extend-environment
-      monotone/extend-environment
-      (support/extend-with :signed-convex-optimality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.order-monotone])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-convex-optimality theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.convex-optimality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

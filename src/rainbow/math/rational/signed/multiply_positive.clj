@@ -4,7 +4,8 @@
   and nonzero (multiply-nonzero applied to the distinctness facts), so less-than-intro gives
   0 < a*b. The strict-positivity payoff of the general no-zero-divisors chain -- feeds the
   strict-convexity capstone (0 < w0*w1*(x-y)^2)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.multiply-nonzero :as nonzero]
             [rainbow.math.rational.signed.multiply-order :as multiply-order]
@@ -53,12 +54,16 @@
 
 (def theorem-specs [multiply-positive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nonzero/extend-environment
-      multiply-order/extend-environment
-      strict-order/extend-environment
-      (support/extend-with :signed-multiply-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply-nonzero rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.strict-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-multiply-positive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.multiply-positive))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

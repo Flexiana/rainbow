@@ -19,7 +19,8 @@
   i.e. no feasible point beats x's objective of 2.  Numbers are chosen so every
   feasibility/gap check reduces to reflexivity (y=(1,0) keeps arithmetic integral).
   Native and axiom-free; instantiates nnrat/lp-optimality-certificate."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.lp-optimality :as opt]))
 
@@ -102,11 +103,17 @@
 (def definition-specs [])
 (def theorem-specs [x-optimal-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.lp-optimality])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-example (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      opt/extend-environment
-      (support/extend-with :nnrat-lp-example
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-example))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

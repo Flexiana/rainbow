@@ -9,7 +9,8 @@
       transpose (B*C) ~ transpose C * transpose B.
 
   No premise on C is required.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.transpose-involution-positive :as involution]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.transpose-involution-positive :as involution]
             [rainbow.math.linear.matrix.transpose-multiply :as transpose-product]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
@@ -160,13 +161,17 @@
   [column-action-to-transpose-product-spec
    transpose-multiply-reverses-positive-width-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      transpose-product/extend-environment
-      involution/extend-environment
-      (support/extend-with
-       :finite-matrix-transpose-multiply-reverse theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose-multiply rainbow.math.linear.matrix.transpose-involution-positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-transpose-multiply-reverse theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.transpose-multiply-reverse))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

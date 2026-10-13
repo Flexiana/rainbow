@@ -10,7 +10,8 @@
   Carrier exhaustiveness and the exact discount gap/inverse identities remain
   explicit, matching the constructive contraction proof.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-fixed-point-uniqueness
              :as uniqueness]
             [rainbow.math.finite.policy-iteration-optimal
@@ -156,13 +157,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      uniqueness/extend-environment
-      (extend-specs-if-missing
-       :finite-policy-iteration-optimal abstract-optimality/theorem-specs)
-      (support/extend-with
-       :finite-bellman-stationary-policy-optimal theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-fixed-point-uniqueness])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :finite-policy-iteration-optimal abstract-optimality/theorem-specs) (support/extend-with :finite-bellman-stationary-policy-optimal theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-stationary-policy-optimal))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

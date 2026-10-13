@@ -8,7 +8,8 @@
   native two-list induction eliminates mismatched inputs; the cons/cons case
   splits on weights and combines signed multiplication distributivity, the tail
   induction hypothesis, and signed four-term reordering."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.algorithms.proofs.inner-product :as inner]
             [rainbow.math.milestone-support :as support]
@@ -250,41 +251,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      shape-add/extend-environment
-      signed-multiply/extend-environment
-      (extend-specs-if-missing
-       :nnrat-add-monotone add-monotone/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-multiply-commute multiply-commute/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-product-reassociation product-reassoc/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-additive-reassociation add-reassoc/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-distribute-right distribute/theorem-specs)
-      (extend-spec-if-missing
-       'signed/equivalent-symmetric :signed-equivalence-laws
-       signed-equivalence/equivalent-symmetric-spec)
-      (extend-spec-if-missing
-       'signed/add-zero-right :signed-limit-uniqueness
-       signed-zero/signed-add-zero-right-spec)
-      (extend-spec-if-missing
-       'signed/add-respects-equivalence :signed-map-sum-algebra
-       signed-add/add-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'signed/add-four-reorder :signed-map-sum-algebra
-       signed-add/add-four-reorder-spec)
-      (extend-spec-if-missing
-       'signed/equivalent-transitive :signed-map-sum-algebra
-       signed-add/equivalent-transitive-spec)
-      (extend-spec-if-missing
-       'signed/multiply-distributes-add-right :signed-distributive
-       signed-distributive/multiply-distributes-add-right-spec)
-      inner/extend-environment
-      (support/extend-with :vector-dot-additive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.shape-add rainbow.math.rational.signed.multiply])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-specs-if-missing :nnrat-add-monotone add-monotone/theorem-specs) (extend-specs-if-missing :nnrat-multiply-commute multiply-commute/theorem-specs) (extend-specs-if-missing :nnrat-product-reassociation product-reassoc/theorem-specs) (extend-specs-if-missing :nnrat-additive-reassociation add-reassoc/theorem-specs) (extend-specs-if-missing :nnrat-distribute-right distribute/theorem-specs) (extend-spec-if-missing 'signed/equivalent-symmetric :signed-equivalence-laws signed-equivalence/equivalent-symmetric-spec) (extend-spec-if-missing 'signed/add-zero-right :signed-limit-uniqueness signed-zero/signed-add-zero-right-spec) (extend-spec-if-missing 'signed/add-respects-equivalence :signed-map-sum-algebra signed-add/add-respects-equivalence-spec) (extend-spec-if-missing 'signed/add-four-reorder :signed-map-sum-algebra signed-add/add-four-reorder-spec) (extend-spec-if-missing 'signed/equivalent-transitive :signed-map-sum-algebra signed-add/equivalent-transitive-spec) (extend-spec-if-missing 'signed/multiply-distributes-add-right :signed-distributive signed-distributive/multiply-distributes-add-right-spec) inner/extend-environment (support/extend-with :vector-dot-additive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.dot-additive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -8,7 +8,8 @@
   satisfies the same bound.  The existential theorem packages that iterate as
   proof data rather than merely asserting asymptotic behavior.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-nnrat-exact-rate-null
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-nnrat-exact-rate-null
              :as exact-null]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -239,11 +240,16 @@
    affine-approximate-fixed-point-at-horizon-spec
    affine-approximate-fixed-point-exists-spec])
 
-(defn extend-environment [env]
-  (-> env
-      exact-null/extend-environment
-      (support/extend-with
-       :finite-matrix-affine-approximate-fixed-point theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-nnrat-exact-rate-null])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-approximate-fixed-point theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-approximate-fixed-point))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

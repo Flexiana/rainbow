@@ -7,7 +7,8 @@
   zero, then packages them as one conjunction of implications.  Dependency
   activation reuses the existing norm-zero development conditionally, avoiding
   competing aliases.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.gram-positive :as gram-positive]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -197,52 +198,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      gram-positive/extend-environment
-      (extend-spec-if-missing
-       'norm/norm-squared :vector-norm norm/norm-squared-spec)
-      (extend-spec-if-missing
-       'norm/norm-squared-nonnegative :vector-norm-nonnegative
-       norm-positive/norm-squared-nonnegative-spec)
-      (extend-spec-if-missing
-       'nat/multiply-succ-zero-left :nnrat-add-zero-split
-       zero-split/multiply-succ-zero-left-spec)
-      (extend-spec-if-missing
-       'nnrat/add-cancel-to-zero :nnrat-add-cancel-zero
-       add-cancel/add-cancel-to-zero-spec)
-      (extend-spec-if-missing
-       'nnrat/add-zero-right :nnrat-identities
-       identities/add-zero-right-spec)
-      (extend-spec-if-missing
-       'nnrat/add-zero-left :nnrat-identities
-       identities/add-zero-left-spec)
-      (extend-spec-if-missing
-       'nat/multiply-self-zero :nnrat-quadratic-zero
-       quadratic/multiply-self-zero-spec)
-      (extend-spec-if-missing
-       'nnrat/square-zero-reflects :nnrat-quadratic-zero
-       quadratic/square-zero-reflects-spec)
-      (extend-spec-if-missing
-       'nnrat/quadratic-equality-reflects :nnrat-quadratic-zero
-       quadratic/quadratic-equality-reflects-spec)
-      (extend-spec-if-missing
-       'signed/square-zero-reflects :signed-square-zero
-       square-zero/square-zero-reflects-spec)
-      add-reflection/extend-environment
-      (extend-spec-if-missing
-       'signed/equivalent-transitive :signed-map-sum-algebra
-       map-sum/equivalent-transitive-spec)
-      (extend-spec-if-missing
-       'vector/zero-like :vector-additive-units units/zero-like-spec)
-      (extend-spec-if-missing
-       'vector/equivalent :vector-equivalence
-       vector-equivalence/equivalent-spec)
-      (extend-spec-if-missing
-       'norm/equivalent-zero-like-of-norm-squared-zero
-       :vector-norm-zero-reflection
-       reflection/equivalent-zero-like-of-norm-squared-zero-spec)
-      (support/extend-with :finite-matrix-gram-kernel theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.gram-positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'norm/norm-squared :vector-norm norm/norm-squared-spec) (extend-spec-if-missing 'norm/norm-squared-nonnegative :vector-norm-nonnegative norm-positive/norm-squared-nonnegative-spec) (extend-spec-if-missing 'nat/multiply-succ-zero-left :nnrat-add-zero-split zero-split/multiply-succ-zero-left-spec) (extend-spec-if-missing 'nnrat/add-cancel-to-zero :nnrat-add-cancel-zero add-cancel/add-cancel-to-zero-spec) (extend-spec-if-missing 'nnrat/add-zero-right :nnrat-identities identities/add-zero-right-spec) (extend-spec-if-missing 'nnrat/add-zero-left :nnrat-identities identities/add-zero-left-spec) (extend-spec-if-missing 'nat/multiply-self-zero :nnrat-quadratic-zero quadratic/multiply-self-zero-spec) (extend-spec-if-missing 'nnrat/square-zero-reflects :nnrat-quadratic-zero quadratic/square-zero-reflects-spec) (extend-spec-if-missing 'nnrat/quadratic-equality-reflects :nnrat-quadratic-zero quadratic/quadratic-equality-reflects-spec) (extend-spec-if-missing 'signed/square-zero-reflects :signed-square-zero square-zero/square-zero-reflects-spec) add-reflection/extend-environment (extend-spec-if-missing 'signed/equivalent-transitive :signed-map-sum-algebra map-sum/equivalent-transitive-spec) (extend-spec-if-missing 'vector/zero-like :vector-additive-units units/zero-like-spec) (extend-spec-if-missing 'vector/equivalent :vector-equivalence vector-equivalence/equivalent-spec) (extend-spec-if-missing 'norm/equivalent-zero-like-of-norm-squared-zero :vector-norm-zero-reflection reflection/equivalent-zero-like-of-norm-squared-zero-spec) (support/extend-with :finite-matrix-gram-kernel theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.gram-kernel))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

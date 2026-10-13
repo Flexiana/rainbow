@@ -2,7 +2,8 @@
   "nat/square-zero-implies-zero : a*a = 0 -> a = 0. Nat.rec on a: base 0 is reflexivity; the
   successor case makes a*a a successor, so a*a=0 is succ(..)=0, refuted by zero-not-successor.
   Sub-brick (1) of the nnrat AM-GM discriminant for signed no-zero-divisors."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.infinite :as nat-infinite]
             [rainbow.math.nat.semiring :as nat-semiring]))
@@ -47,11 +48,16 @@
 
 (def theorem-specs [square-zero-implies-zero-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nat-infinite/extend-environment
-      nat-semiring/extend-environment
-      (support/extend-with :nat-square-zero theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.infinite rainbow.math.nat.semiring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-square-zero theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.square-zero))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

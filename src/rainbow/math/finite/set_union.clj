@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.set-union
   "Reusable finite/infinite union facts as native proof data."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.set :as finite-set]
@@ -309,16 +310,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (doseq [required ['set/infinite-mono 'set/finite-union-preserved
-                    'logic/classical-cases
-                    'logic/proposition-extensionality]]
-    (when-not (environment/resolve-id checked-environment required)
-      (throw (ex-info "Finite-set union dependency is unavailable"
-                      {:error/category :finite-set/union-dependency-missing
-                       :required required}))))
-  (reduce add-theorem checked-environment theorem-specs))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (doseq [required ['set/infinite-mono 'set/finite-union-preserved 'logic/classical-cases 'logic/proposition-extensionality]] (when-not (environment/resolve-id checked-environment required) (throw (ex-info "Finite-set union dependency is unavailable" {:error/category :finite-set/union-dependency-missing :required required})))) (reduce add-theorem checked-environment theorem-specs))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.set-union))
 (defn theorem-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

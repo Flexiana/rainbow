@@ -14,7 +14,8 @@
   algorithm proof (cooling factors, learning rates, importance ratios, ...)
   should be stated with `nnrat/equivalent` and proven the same way, then carried
   by `nnrat/multiply-respects-equivalence` / `nnrat/add-respects-equivalence`."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -103,8 +104,16 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
   (support/extend-with checked-environment :rational-value theorem-specs))
 
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.value))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

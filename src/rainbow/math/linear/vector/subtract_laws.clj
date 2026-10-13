@@ -5,7 +5,8 @@
   its second argument is antitone, and it respects componentwise signed
   equivalence in both arguments.  These proofs compose existing checked vector
   laws and add no recursion, definitions, axioms, or trusted-base code."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.equivalence-laws :as signed-equivalence]
@@ -128,13 +129,17 @@
      checked-environment :signed-equivalence-laws
      [signed-equivalence/negate-respects-equivalence-spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-order/extend-environment
-      extend-signed-negate-equivalence-if-missing
-      equivalence-laws/extend-environment
-      (support/extend-with :vector-subtract-laws theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.add-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment extend-signed-negate-equivalence-if-missing equivalence-laws/extend-environment (support/extend-with :vector-subtract-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.subtract-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

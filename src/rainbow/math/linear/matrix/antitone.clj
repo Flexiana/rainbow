@@ -6,7 +6,8 @@
   when the other input is nonpositive.  Transpose then lifts those laws to
   multiplication in either factor.  Theorem-only, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.mixed-sign-multiply :as mixed-sign]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.mixed-sign-multiply :as mixed-sign]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -505,10 +506,16 @@
    multiply-antitone-right-spec
    multiply-antitone-spec])
 
-(defn extend-environment [env]
-  (-> env
-      mixed-sign/extend-environment
-      (support/extend-with :finite-matrix-antitone theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.mixed-sign-multiply])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-antitone theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.antitone))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

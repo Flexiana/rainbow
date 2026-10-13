@@ -11,7 +11,8 @@
   This is a computable Cauchy-style tail certificate that assumes no supplied
   exact fixed point or completeness principle.  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-approximate-fixed-point
              :as approximate]
             [rainbow.math.linear.matrix.affine-approximate-stability
@@ -292,18 +293,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      approximate/extend-environment
-      (extend-spec-if-missing
-       'signed/add-associative
-       :signed-add-associative
-       associative/add-associative-spec)
-      (extend-specs-if-missing
-       :finite-matrix-affine-approximate-stability
-       stability/theorem-specs)
-      (support/extend-with
-       :finite-matrix-affine-tail-diameter theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-approximate-fixed-point])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/add-associative :signed-add-associative associative/add-associative-spec) (extend-specs-if-missing :finite-matrix-affine-approximate-stability stability/theorem-specs) (support/extend-with :finite-matrix-affine-tail-diameter theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-tail-diameter))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

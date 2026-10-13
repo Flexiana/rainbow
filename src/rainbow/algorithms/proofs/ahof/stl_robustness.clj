@@ -11,7 +11,8 @@
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.stl-robustness`
   prints this classification."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.math.rational.signed.stl :as dep-signed-stl]
+  (:require [rainbow.module :as module]
+            [rainbow.math.rational.signed.stl :as dep-signed-stl]
             [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
@@ -188,10 +189,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (reduce add-spec (dep-signed-stl/extend-environment checked-environment)
-          (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.stl])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce add-spec checked-environment (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.stl-robustness))
 (defn definition-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

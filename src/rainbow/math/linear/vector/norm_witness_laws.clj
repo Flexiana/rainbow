@@ -9,7 +9,8 @@
   Consequently, exact perfect-square norm witnesses transport through vector
   scaling.  They also transport through vector negation because squared norm is
   invariant under componentwise negation."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.norm-laws :as laws]))
 
@@ -156,11 +157,17 @@
    is-norm-negate-vector-spec
    is-norm-scale-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      laws/extend-environment
-      (support/extend-with :vector-norm-witness-laws theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.norm-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-norm-witness-laws theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.norm-witness-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

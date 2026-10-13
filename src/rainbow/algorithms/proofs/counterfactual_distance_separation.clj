@@ -9,7 +9,8 @@
   Vector subtraction truncates, so separation explicitly requires equal shape.
   Under that hypothesis, zero squared distance reflects each component through
   signed subtraction and yields vector/equivalent.  Native and axiom-free."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.algorithms.proofs.counterfactual :as counterfactual]
             [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
@@ -328,24 +329,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      norm-reflection/extend-environment
-      (extend-spec-if-missing
-       'signed/subtract :signed-rational signed-rational/subtract-spec)
-      (extend-spec-if-missing
-       'vector/negate :finite-vector finite-vector/negate-spec)
-      (extend-spec-if-missing
-       'vector/add :finite-vector finite-vector/add-spec)
-      (extend-spec-if-missing
-       'vector/subtract :finite-vector finite-vector/subtract-spec)
-      (extend-spec-if-missing
-       'vector/same-shape :vector-shape-cancellation shape/same-shape-spec)
-      (extend-spec-if-missing
-       'counterfactual/distance-squared :counterfactual
-       counterfactual/distance-squared-spec)
-      (support/extend-with :counterfactual-distance-separation theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.norm-zero-reflection])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/subtract :signed-rational signed-rational/subtract-spec) (extend-spec-if-missing 'vector/negate :finite-vector finite-vector/negate-spec) (extend-spec-if-missing 'vector/add :finite-vector finite-vector/add-spec) (extend-spec-if-missing 'vector/subtract :finite-vector finite-vector/subtract-spec) (extend-spec-if-missing 'vector/same-shape :vector-shape-cancellation shape/same-shape-spec) (extend-spec-if-missing 'counterfactual/distance-squared :counterfactual counterfactual/distance-squared-spec) (support/extend-with :counterfactual-distance-separation theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.counterfactual-distance-separation))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

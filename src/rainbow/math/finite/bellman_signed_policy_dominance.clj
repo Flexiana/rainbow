@@ -11,7 +11,8 @@
   budget. The earlier rejected inlined formulations remain documented as
   negative evidence. The installed lemmas are native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-operator-fixed-point-convergence
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-operator-fixed-point-convergence
              :as operator-convergence]
             [rainbow.math.finite.bellman-signed-policy-optimal
              :as policy-optimal]
@@ -1158,14 +1159,16 @@
    concrete-policy-value-below-operator-iterate-spec
    concrete-policy-value-below-optimality-fixed-point-named-spec])
 
-(defn extend-environment [env]
-  (-> env
-      policy-optimal/extend-environment
-      rate-order/extend-environment
-      operator-convergence/extend-environment
-      transition-operator/extend-environment
-      (support/extend-with :finite-bellman-signed-policy-dominance
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-policy-optimal rainbow.math.rational.signed.rate-order rainbow.math.finite.bellman-signed-operator-fixed-point-convergence rainbow.math.finite.bellman-signed-transition-operator])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-policy-dominance theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-policy-dominance))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

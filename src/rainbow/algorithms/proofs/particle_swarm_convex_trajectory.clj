@@ -1,6 +1,7 @@
 (ns rainbow.algorithms.proofs.particle-swarm-convex-trajectory
   "Finite normalized consensus trajectories remain inside invariant intervals."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.algorithms.proofs.particle-swarm-convex-move :as convex-move]))
 
@@ -290,12 +291,17 @@
    convex-trajectory-upper-bound-spec
    convex-trajectory-in-interval-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex-move/extend-environment
-      (support/extend-with :particle-swarm-convex-trajectory
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.particle-swarm-convex-move])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :particle-swarm-convex-trajectory (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.particle-swarm-convex-trajectory))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

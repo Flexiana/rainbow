@@ -6,7 +6,8 @@
   initial value, and simultaneous data/initial monotonicity are ordinary proof
   data.  The all-parameter theorem carries the exact source/destination cone
   premises required at every induction step.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-sign :as affine-sign]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-sign :as affine-sign]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -219,11 +220,16 @@
    affine-iterate-monotone-initial-spec
    affine-iterate-monotone-all-spec])
 
-(defn extend-environment [env]
-  (-> env
-      affine-sign/extend-environment
-      (support/extend-with :finite-matrix-affine-iterate
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-sign])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-iterate (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-iterate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

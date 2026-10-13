@@ -1,7 +1,8 @@
 (ns rainbow.math.sums.wspt-permutation
   "WSPT optimality over all permutation matrices, with positive processing times.
   Pairwise and prefix quantities use the existing expr-sum-value throughout."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum add mul le eqv refl sym]]
             [rainbow.math.sums.flow-cut :as a]
@@ -157,9 +158,15 @@
         (s/le-transport (add FX FX) (mul FX two) (add FY FY) (mul FY two)
           (twice-product FX) (twice-product FY) twice)))))
 (def theorem-specs [diagonal-spec pair-spec positive-spec optimal-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (reduce (fn [checked spec] (println :wspt-permutation :installing (:name spec)) (flush) (support/add-spec-shared checked :expr-sum-wspt-permutation spec)) (-> env pi/extend-environment pb/extend-environment) theorem-specs))
+
 (defn extend-environment [env]
-  (reduce (fn [checked spec]
-            (println :wspt-permutation :installing (:name spec)) (flush)
-            (support/add-spec-shared checked :expr-sum-wspt-permutation spec))
-          (-> env pi/extend-environment pb/extend-environment) theorem-specs))
+  (module/install-module env 'rainbow.math.sums.wspt-permutation))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

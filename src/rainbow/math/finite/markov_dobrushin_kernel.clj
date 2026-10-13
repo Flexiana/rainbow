@@ -5,7 +5,8 @@
   The coefficient dominates every enumerated row pair, is nonnegative, and
   is at most one for normalized stochastic rows. No mixing estimate is assumed
   or proved in this module."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-total-variation-bound :as row-bound]
             [rainbow.math.finite.nnrat-sup-distance :as finite-sup]
             [rainbow.math.logic.function :as f]
@@ -130,23 +131,16 @@
       (support/extend-with env producer [spec])))
 (defn- add-specs [env producer specs]
   (reduce #(add-if-missing %1 producer %2) env specs))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-total-variation-bound])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (add-specs :signed-rational (concat rational/definition-specs rational/theorem-specs)) (add-specs :signed-order (concat order/definition-specs order/theorem-specs)) cancellation/extend-environment (add-if-missing :signed-equivalence-laws equivalence/equivalent-symmetric-spec) (add-if-missing :signed-order-transitivity transitivity/at-most-transitive-spec) (add-if-missing :signed-order-respects respects/at-most-respects-equivalence-spec) minmax/extend-environment (add-if-missing :signed-unit-laws units/zero-at-most-one-spec) (add-specs :signed-vector-sup-distance [fold/signed-map-max-spec fold/signed-map-max-nonnegative-spec fold/signed-map-max-bounded-spec fold/signed-equivalent-of-equality-spec]) (add-if-missing :signed-geometric-bridge embedding/from-nnrat-at-most-spec) (add-if-missing :finite-nnrat-sup-distance finite-sup/signed-map-max-upper-bound-spec) (support/extend-with :finite-markov-dobrushin-kernel (concat definition-specs theorem-specs))))
+
 (defn extend-environment [env]
-  (-> env
-      row-bound/extend-environment
-      (add-specs :signed-rational (concat rational/definition-specs rational/theorem-specs))
-      (add-specs :signed-order (concat order/definition-specs order/theorem-specs))
-      cancellation/extend-environment
-      (add-if-missing :signed-equivalence-laws equivalence/equivalent-symmetric-spec)
-      (add-if-missing :signed-order-transitivity transitivity/at-most-transitive-spec)
-      (add-if-missing :signed-order-respects respects/at-most-respects-equivalence-spec)
-      minmax/extend-environment
-      (add-if-missing :signed-unit-laws units/zero-at-most-one-spec)
-      (add-specs :signed-vector-sup-distance
-                 [fold/signed-map-max-spec fold/signed-map-max-nonnegative-spec
-                  fold/signed-map-max-bounded-spec fold/signed-equivalent-of-equality-spec])
-      (add-if-missing :signed-geometric-bridge embedding/from-nnrat-at-most-spec)
-      (add-if-missing :finite-nnrat-sup-distance finite-sup/signed-map-max-upper-bound-spec)
-      (support/extend-with :finite-markov-dobrushin-kernel
-                           (concat definition-specs theorem-specs))))
+  (module/install-module env 'rainbow.math.finite.markov-dobrushin-kernel))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

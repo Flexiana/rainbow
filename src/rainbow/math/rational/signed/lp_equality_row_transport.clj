@@ -2,7 +2,8 @@
   "Generic feasibility transport from an original equality to certified actual
   positive/negative row maps and RHS entries. All candidates, arbitrary finite
   index lists; no sign, distinctness or nonemptiness assumptions."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.lp-equality-row :as row]
             [rainbow.math.rational.signed.multiply-ring :as multiply]))
@@ -90,7 +91,15 @@
                              summed 'rhs-same 'holds))))}))
 
 (def theorem-specs [actual-equality-row-equivalence-spec actual-inequality-row-equivalence-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.lp-equality-row rainbow.math.rational.signed.multiply-ring])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-lp-equality-row-transport theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env row/extend-environment multiply/extend-environment
-      (support/extend-with :signed-lp-equality-row-transport theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.lp-equality-row-transport))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

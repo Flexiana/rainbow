@@ -8,7 +8,8 @@
   positive trajectories give their indexed horizons; and pointwise-positive
   kernels are irreducible.  These are support results, not mixing-time or
   convergence-rate claims.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-point-mass :as point-mass]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-point-mass :as point-mass]
             [rainbow.math.finite.markov-reachability-witness :as witness]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -275,12 +276,16 @@
    reachable-along-positive-trajectory-spec
    pointwise-positive-implies-irreducible-spec])
 
-(defn extend-environment [env]
-  (-> env
-      witness/extend-environment
-      (support/extend-with
-       :finite-markov-reachability
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-reachability-witness])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-reachability (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-reachability))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

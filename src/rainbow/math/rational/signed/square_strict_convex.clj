@@ -8,7 +8,8 @@
   csq + var ~ csq, so var ~ 0 (equivalent-add-left-cancel), contradicting var !~ 0. The gap is
   nonzero by signed/multiply-nonzero on the (embedded, hence nonzero) weights and (x-y) !~ 0.
   Helper signed/from-nnrat-nonzero lifts nnrat w !~ 0 to fnn(w) !~ 0."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.square-convex :as square-convex]
             [rainbow.math.rational.signed.square-nonzero :as square-nonzero]
@@ -134,15 +135,16 @@
 
 (def theorem-specs [from-nnrat-nonzero-spec strict-convex-on-spec square-strict-convex-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      square-convex/extend-environment
-      square-nonzero/extend-environment
-      multiply-nonzero/extend-environment
-      nnrat-strict/extend-environment
-      subtract-reflect/extend-environment
-      add-cancel/extend-environment
-      (support/extend-with :signed-square-strict-convex theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.square-convex rainbow.math.rational.signed.square-nonzero rainbow.math.rational.signed.multiply-nonzero rainbow.math.rational.nnrat.strict-order rainbow.algorithms.proofs.counterfactual-distance-separation rainbow.math.linear.matrix.least-squares-equality])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-square-strict-convex theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.square-strict-convex))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -18,7 +18,8 @@
 
   Native and axiom-free; chains the signed multiplicative ring laws and the
   nnrat-ring tactic on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.rational.signed.multiply-ring :as signed-ring]))
@@ -135,11 +136,17 @@
    multiply-distributes-add-right-spec
    map-sum-scale-right-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      signed-ring/extend-environment
-      (support/extend-with :signed-distributive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply-ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-distributive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.distributive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -2,7 +2,8 @@
   "Formal equality-row expansion into two signed inequality rows.
   Generic in the carrier, coefficient/value maps and finite index list. This
   proves the mathematical row relation, not host array append or free-price split."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.lp-objective-negate :as sense]
             [rainbow.math.rational.signed.limit-uniqueness :as uniqueness]))
@@ -65,9 +66,16 @@
 
 (def theorem-specs [equality-row-expand-spec equality-row-contract-spec
                     equality-row-expansion-equivalence-spec])
+;; Reuse just the existing antisymmetry resident, not the limit capstone.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.lp-objective-negate])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/add-spec-shared :signed-limit-uniqueness uniqueness/signed-at-most-antisymmetric-spec) (support/extend-with :signed-lp-equality-row theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env sense/extend-environment
-      ;; Reuse just the existing antisymmetry resident, not the limit capstone.
-      (support/add-spec-shared :signed-limit-uniqueness uniqueness/signed-at-most-antisymmetric-spec)
-      (support/extend-with :signed-lp-equality-row theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.lp-equality-row))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -5,7 +5,8 @@
   the row-Gram identity, x^T AA^T x is zero exactly when A^T x is componentwise
   equivalent to its shape-preserving zero vector.  Both implications and their
   conjunction are ordinary theorem data, kernel-checked and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.row-gram :as row-gram]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.row-gram :as row-gram]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -190,10 +191,16 @@
    row-gram-action-zero-reflects-transpose-null-spec
    row-gram-action-zero-characterizes-transpose-null-spec])
 
-(defn extend-environment [env]
-  (-> env
-      row-gram/extend-environment
-      (support/extend-with :finite-matrix-row-gram-kernel theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.row-gram])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-row-gram-kernel theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.row-gram-kernel))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

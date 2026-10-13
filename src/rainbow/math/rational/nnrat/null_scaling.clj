@@ -8,7 +8,8 @@
   then rate-null of s.  Lets a geometric/harmonic error bound absorb a bounded prefactor.
   Native and axiom-free; chains nnrat-harmonic-convergence, nnrat-multiply-right-monotone,
   and nnrat-distributive on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.harmonic-convergence :as hc]
             [rainbow.math.rational.nnrat.multiply-right-monotone :as rm]
@@ -66,13 +67,17 @@
 (def definition-specs [])
 (def theorem-specs [rate-null-scaled-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.harmonic-convergence rainbow.math.rational.nnrat.multiply-right-monotone rainbow.math.rational.nnrat.distributive])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-null-scaling (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      hc/extend-environment
-      rm/extend-environment
-      dist/extend-environment
-      (support/extend-with :nnrat-null-scaling
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.null-scaling))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

@@ -10,7 +10,8 @@
   congruence, applies the inhabitant at the iterated masses (equal total
   mass rides along by preservation), and folds the factor into the
   exact rational power. Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-dobrushin-contraction :as contraction]
             [rainbow.math.finite.markov-iteration :as iteration]
             [rainbow.math.logic.function :as function]
@@ -219,23 +220,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      contraction/extend-environment
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-iterate
-       :finite-markov-iteration iteration/kernel-iterate-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-iterate-successor
-       :finite-markov-iteration iteration/kernel-iterate-successor-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-kernel-iterate-preserves-total-mass-equivalence
-       :finite-markov-iteration iteration/kernel-iterate-preserves-total-mass-spec)
-      (extend-if-missing 'nnrat/power power/extend-environment)
-      (extend-spec-if-missing
-       'nnrat/multiply-associative
-       :nnrat-product-reassociation reassociation/multiply-associative-spec)
-      (support/extend-with :finite-markov-geometric-decay theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-dobrushin-contraction])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'markov/nnrat-kernel-iterate :finite-markov-iteration iteration/kernel-iterate-spec) (extend-spec-if-missing 'markov/nnrat-kernel-iterate-successor :finite-markov-iteration iteration/kernel-iterate-successor-spec) (extend-spec-if-missing 'markov/nnrat-kernel-iterate-preserves-total-mass-equivalence :finite-markov-iteration iteration/kernel-iterate-preserves-total-mass-spec) (extend-if-missing 'nnrat/power power/extend-environment) (extend-spec-if-missing 'nnrat/multiply-associative :nnrat-product-reassociation reassociation/multiply-associative-spec) (support/extend-with :finite-markov-geometric-decay theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-geometric-decay))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

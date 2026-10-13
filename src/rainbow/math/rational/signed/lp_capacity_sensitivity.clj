@@ -5,7 +5,8 @@
   exact distances between corresponding weighted capacity terms.  This form is
   valid for signed prices.  It is a checked output-bound theorem, not a claim
   about an LP executable or its numerical implementation."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.dot-commutative :as commutative]
             [rainbow.math.linear.vector.dot-distance-bound :as dot-distance]))
@@ -130,11 +131,16 @@
   [capacity-bound-distance-spec
    capacity-bound-distance-bounded-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      dot-distance/extend-environment
-      commutative/extend-environment
-      (support/extend-with :signed-lp-capacity-sensitivity theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.dot-distance-bound rainbow.math.linear.vector.dot-commutative])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-lp-capacity-sensitivity theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.lp-capacity-sensitivity))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

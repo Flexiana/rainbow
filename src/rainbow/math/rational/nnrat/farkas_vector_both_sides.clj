@@ -30,7 +30,8 @@
   This is the vector-level analogue of nnrat/farkas-both-sides, and the
   per-row core of the coefficient-vector partition that closes the
   over-variable recursion's step. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-both-sides :as both-sides]
             [rainbow.math.rational.nnrat.farkas-form-scale :as form-scale]))
@@ -166,13 +167,17 @@
 (def definition-specs [])
 (def theorem-specs [vector-both-sides-to-lower-spec vector-both-sides-to-upper-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      both-sides/extend-environment
-      form-scale/extend-environment
-      (support/extend-with :nnrat-farkas-vector-both-sides
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-both-sides rainbow.math.rational.nnrat.farkas-form-scale])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-vector-both-sides (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-vector-both-sides))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

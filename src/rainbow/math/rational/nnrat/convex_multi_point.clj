@@ -10,7 +10,8 @@
   nnrat/map-sum-monotone to lift those pointwise bounds through the finite sum.
   Polymorphic in the index type.  Native and axiom-free; chains nnrat-list-sum
   and nnrat-multiply-monotone on D63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.list-sum :as ls]
             [rainbow.math.rational.nnrat.multiply-monotone :as mm]))
@@ -111,12 +112,17 @@
 (def theorem-specs
   [weighted-combo-at-least-spec weighted-combo-at-most-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.list-sum rainbow.math.rational.nnrat.multiply-monotone])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-convex-multi-point (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ls/extend-environment
-      mm/extend-environment
-      (support/extend-with :nnrat-convex-multi-point
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.convex-multi-point))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

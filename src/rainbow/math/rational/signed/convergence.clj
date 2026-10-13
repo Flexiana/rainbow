@@ -16,7 +16,8 @@
   signed/at-most-transitive.
 
   Native and axiom-free; chains rainbow.math.rational.signed.order-transitivity on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.signed.order-transitivity :as st]))
 
@@ -111,11 +112,17 @@
 (def definition-specs [close-spec converges-spec])
 (def theorem-specs [squeeze-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.order-transitivity])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-convergence (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      st/extend-environment
-      (support/extend-with :signed-convergence
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.signed.convergence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

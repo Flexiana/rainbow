@@ -4,7 +4,8 @@
   Bellman optimality and iteration stay opaque. Fixed-point transport uses the
   two-sided contraction theorem; iteration transport uses only propositional
   unfold theorems and equality substitution. Native and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-backup-contraction :as contraction]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-backup-contraction :as contraction]
             [rainbow.math.finite.bellman-iterate-monotone :as iterate-monotone]
             [rainbow.math.finite.bellman-optimality :as bellman-optimality]
             [rainbow.math.logic.function :as function]
@@ -1284,16 +1285,17 @@
    policy-fixed-point-below-optimality-step-spec
    policy-value-below-bellman-fixed-point-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      archimedean/extend-environment
-      bellman-optimality/extend-environment
-      contraction/extend-environment
-      iterate-monotone/extend-environment
-      general-contraction/extend-environment
-      (support/extend-with :finite-bellman-value-iteration-converges
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.archimedean rainbow.math.finite.bellman-optimality rainbow.math.finite.bellman-backup-contraction rainbow.math.finite.bellman-iterate-monotone rainbow.math.rational.nnrat.general-contraction])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-bellman-value-iteration-converges (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.bellman-value-iteration-converges))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

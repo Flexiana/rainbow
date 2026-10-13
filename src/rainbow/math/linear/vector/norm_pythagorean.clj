@@ -7,7 +7,8 @@
   norm of the orthogonal sum.  These theorem-only boundaries are the generic
   bridge from Gram positivity to least-squares optimality.  Native and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.row-gram-kernel :as row-kernel]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -186,13 +187,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      row-kernel/extend-environment
-      (extend-spec-if-missing
-       'norm/norm-squared-add :vector-norm-expansion
-       expansion/norm-squared-add-spec)
-      (support/extend-with :vector-norm-pythagorean theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.row-gram-kernel])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'norm/norm-squared-add :vector-norm-expansion expansion/norm-squared-add-spec) (support/extend-with :vector-norm-pythagorean theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.vector.norm-pythagorean))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -12,7 +12,8 @@
   bottoms out at. Proof: the empty linear form is zero by definition and
   0 + x ~ x (add-zero-left), transported by at-most-respects. Native proof
   data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-linear-form :as linear-form]
             [rainbow.math.rational.nnrat.identities :as identities]))
@@ -63,13 +64,17 @@
 (def definition-specs [])
 (def theorem-specs [eliminate-base-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      linear-form/extend-environment
-      identities/extend-environment
-      (support/extend-with :nnrat-farkas-eliminate-base
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-linear-form rainbow.math.rational.nnrat.identities])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-eliminate-base (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-eliminate-base))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

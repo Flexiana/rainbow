@@ -3,7 +3,8 @@
   A positive rational D is cancelled three times, avoiding an assumed positive
   representation of D^3. No endpoint-equivalence premise is assumed. This is
   an objective inequality theorem, not a feasibility or host-code theorem."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.rational.signed.map-sum-scale :as sum-scale]
@@ -98,10 +99,16 @@
 
 (def definition-specs [])
 (def theorem-specs [scale-positive-cube-reflects-order-spec lp-scaled-objectives-bound-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.scale-reflection rainbow.math.rational.signed.map-sum-scale])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-lp-scaling-bound theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env
-      reflection/extend-environment
-      sum-scale/extend-environment
-      (support/extend-with :signed-lp-scaling-bound theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.signed.lp-scaling-bound))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

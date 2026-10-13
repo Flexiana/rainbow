@@ -20,7 +20,8 @@
   At x=b/a and y=c/a the interval is inhabited, yielding strong duality and
   primal/dual optimality for the whole positive-coefficient scalar family.
   All declarations are native proof data and axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-alternative :as alternative]
@@ -811,13 +812,17 @@
    strong-duality-or-certificate-spec
    scalar-strong-duality-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      alternative/extend-environment
-      scale/extend-environment
-      right-monotone/extend-environment
-      (support/extend-with :nnrat-lp-strong-duality-general theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-alternative rainbow.math.rational.nnrat.order-scale rainbow.math.rational.nnrat.multiply-right-monotone])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-lp-strong-duality-general theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.lp-strong-duality-general))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

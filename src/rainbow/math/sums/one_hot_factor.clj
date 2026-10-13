@@ -2,7 +2,8 @@
   "Reusable selection factorization for arbitrary signed values. Only the inner
   selector is one-hot; the outer weights may have any sign or total. Bridges to
   the existing selector and operation-preservation theorem, with no new induction."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum mul eqv refl sym]]
             [rainbow.math.sums.flow-cut :as a]
@@ -63,11 +64,15 @@
                 (a/ring-eq mid (mul selected-F (mul av rsum)))))))
         (sym right (sum factored m) (call 'signed/expr-sum-value-scale-left base selected-F m))))))
 (def theorem-specs [product-spec right-factor-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (let [base (-> env a/extend-environment select/extend-environment) ready (reduce #(support/add-spec-shared %1 :expr-sum-one-hot-factor %2) base [bits/zero-one-nonneg-spec pi/one-hot-operation-spec])] (reduce (fn [e spec] (println :one-hot-factor :installing (:name spec)) (flush) (support/add-spec-shared e :expr-sum-one-hot-factor spec)) ready theorem-specs)))
+
 (defn extend-environment [env]
-  (let [base (-> env a/extend-environment select/extend-environment)
-        ready (reduce #(support/add-spec-shared %1 :expr-sum-one-hot-factor %2)
-                      base [bits/zero-one-nonneg-spec pi/one-hot-operation-spec])]
-    (reduce (fn [e spec]
-              (println :one-hot-factor :installing (:name spec)) (flush)
-              (support/add-spec-shared e :expr-sum-one-hot-factor spec)) ready theorem-specs)))
+  (module/install-module env 'rainbow.math.sums.one-hot-factor))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -11,7 +11,8 @@
   b <= |x| gives reciprocal|x| <= reciprocal b. In the assembly, b = |L|/2 and the
   convergent-bounded-below lower bound |L|/2 <= |s n| yield the CONSTANT bound
   |reciprocal (s n)| <= reciprocal(|L|/2) = 2/|L|. Axiom-free; additive; no LP-checker touch."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.absolute-reciprocal-times-self :as arts]
             [rainbow.math.rational.signed.reciprocal :as reciprocal]
@@ -75,15 +76,16 @@
 
 (def theorem-specs [absolute-reciprocal-at-most-of-lower-bound-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      arts/extend-environment
-      reciprocal/extend-environment
-      inverse-unique/extend-environment
-      antitone/extend-environment
-      multiply-ring/extend-environment
-      order-respects/extend-environment
-      (support/extend-with :signed-reciprocal-absolute-bound theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.absolute-reciprocal-times-self rainbow.math.rational.signed.reciprocal rainbow.math.rational.signed.inverse-unique rainbow.math.rational.signed.reciprocal-antitone rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.order-respects])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-reciprocal-absolute-bound theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.reciprocal-absolute-bound))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

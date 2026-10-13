@@ -1,6 +1,7 @@
 (ns rainbow.math.logic.infinite-transport
   "Sort-polymorphic infinitude transport and a faithful native Int model."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.type :as finite-type]
@@ -312,15 +313,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (let [added (kernel/add-inductive-block checked-environment
-                                          (int-spec checked-environment))]
-    (when-not (= :accepted (:status added))
-      (throw (ex-info "Native Int inductive block was rejected"
-                      {:result added})))
-    (reduce add-spec (:environment added)
-            (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [added (kernel/add-inductive-block checked-environment (int-spec checked-environment))] (when-not (= :accepted (:status added)) (throw (ex-info "Native Int inductive block was rejected" {:result added}))) (reduce add-spec (:environment added) (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.logic.infinite-transport))
 (defn inductive-ids [checked-environment]
   (into (sorted-map)
         (map (fn [name]

@@ -9,7 +9,8 @@
   The module also gives pointwise congruence of the step in both its mass and
   kernel arguments, and proves that a stationary normalized mass remains
   normalized after a step.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-value-optimality
              :as finite-probability]
             [rainbow.math.logic.function :as function]
@@ -480,15 +481,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      finite-probability/extend-environment
-      (extend-spec-if-missing
-       'nnrat/multiply-one-left :nnrat-identities
-       identities/multiply-one-left-spec)
-      (support/extend-with
-       :finite-markov-stationarity
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-value-optimality])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nnrat/multiply-one-left :nnrat-identities identities/multiply-one-left-spec) (support/extend-with :finite-markov-stationarity (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-stationarity))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

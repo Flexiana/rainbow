@@ -9,7 +9,8 @@
   The carrier enumeration need not be exhaustive for the fold laws themselves;
   clients that turn them into carrier-wide claims must retain an explicit
   coverage premise.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.nnrat-sup-distance :as metric-base]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.nnrat-sup-distance :as metric-base]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -287,11 +288,16 @@
    finite-signed-sup-distance-symmetric-spec
    finite-signed-sup-distance-triangle-spec])
 
-(defn extend-environment [env]
-  (-> env
-      metric-base/extend-environment
-      (support/extend-with :finite-signed-sup-distance
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.nnrat-sup-distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-signed-sup-distance (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.signed-sup-distance))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

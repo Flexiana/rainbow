@@ -15,7 +15,8 @@
   elimination round consumes, with block = eval(tail) (itself affine in the
   next variable, its head). The columnwise cross transform over these vectors
   is brick 2. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -97,10 +98,17 @@
 
 (def theorem-specs [upper-split-spec lower-split-spec])
 
-(defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :nnrat-farkas-linear-form
-                       (concat definition-specs theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :nnrat-farkas-linear-form (concat definition-specs theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-linear-form))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

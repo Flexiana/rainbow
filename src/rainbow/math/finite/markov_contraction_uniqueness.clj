@@ -15,7 +15,8 @@
   forces TV ~ 0; and the separation theorem turns a vanishing total
   variation into pointwise agreement on the carrier. Native and axiom-free
   on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-total-variation :as total-variation]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -145,22 +146,21 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      total-variation/extend-environment
-      ;; The rate-null law's own needs, each entered only if absent: the
-      ;; cross-product descent, the strict-below toolkit, and the law itself.
-      ;; The full order-scale extender is deliberately NOT invoked -- its
-      ;; unguarded upstream worlds overlap the total-variation chain.
-      (extend-if-missing 'nnrat/at-most-to-cross
-                         order-equivalence/extend-environment)
-      scale/extend-rate-null-prerequisites
-      (extend-spec-if-missing
-       'nnrat/zero-of-proper-contraction
-       :nnrat-order-scale scale/zero-of-proper-contraction-spec)
-      (support/extend-with :finite-markov-contraction-uniqueness
-                           theorem-specs)))
+;; The rate-null law's own needs, each entered only if absent: the
+;; cross-product descent, the strict-below toolkit, and the law itself.
+;; The full order-scale extender is deliberately NOT invoked -- its
+;; unguarded upstream worlds overlap the total-variation chain.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-total-variation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-if-missing 'nnrat/at-most-to-cross order-equivalence/extend-environment) scale/extend-rate-null-prerequisites (extend-spec-if-missing 'nnrat/zero-of-proper-contraction :nnrat-order-scale scale/zero-of-proper-contraction-spec) (support/extend-with :finite-markov-contraction-uniqueness theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.markov-contraction-uniqueness))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

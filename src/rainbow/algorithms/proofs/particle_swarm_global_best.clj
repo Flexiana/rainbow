@@ -1,6 +1,7 @@
 (ns rainbow.algorithms.proofs.particle-swarm-global-best
   "Verified finite-swarm global-best selection and best-so-far monotonicity."
-  (:require [rainbow.math.finite.rational-argmin :as argmin]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.rational-argmin :as argmin]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -238,12 +239,17 @@
    best-so-far-bounds-previous-spec
    best-so-far-bounds-candidate-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      argmin/extend-environment
-      (support/extend-with :particle-swarm-global-best
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.rational-argmin])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :particle-swarm-global-best (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.particle-swarm-global-best))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

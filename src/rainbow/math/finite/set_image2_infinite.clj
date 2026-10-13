@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.set-image2-infinite
   "Infinitude transport through binary images and Cartesian products."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.set :as finite-set]
@@ -595,19 +596,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (doseq [required ['set/infinite-of-injection-maps-to
-                    'set/infinite-or-finite 'set/infinite-nonempty
-                    'set/finite-image2-preserved
-                    'set/finite-product-preserved
-                    'set/infinite-product-left 'set/infinite-product-right]]
-    (when-not (environment/resolve-id checked-environment required)
-      (throw (ex-info "Infinite image/product dependency is unavailable"
-                      {:error/category
-                       :finite-set/image2-infinite-dependency-missing
-                       :required required}))))
-  (reduce add-theorem checked-environment theorem-specs))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (doseq [required ['set/infinite-of-injection-maps-to 'set/infinite-or-finite 'set/infinite-nonempty 'set/finite-image2-preserved 'set/finite-product-preserved 'set/infinite-product-left 'set/infinite-product-right]] (when-not (environment/resolve-id checked-environment required) (throw (ex-info "Infinite image/product dependency is unavailable" {:error/category :finite-set/image2-infinite-dependency-missing :required required})))) (reduce add-theorem checked-environment theorem-specs))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.set-image2-infinite))
 (defn theorem-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

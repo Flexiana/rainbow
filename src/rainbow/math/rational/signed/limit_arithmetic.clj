@@ -13,7 +13,8 @@
 
   Native and axiom-free; chains the D63 signed convergence/order toolkit through
   signed limit uniqueness (for signed/add-zero-right)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-uniqueness :as uniqueness]))
 
@@ -309,11 +310,17 @@
    close-additive-spec
    limit-sum-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      uniqueness/extend-environment
-      (support/extend-with :signed-limit-arithmetic theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-uniqueness])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-limit-arithmetic theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-arithmetic))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

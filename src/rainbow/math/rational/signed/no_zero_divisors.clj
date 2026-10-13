@@ -1,7 +1,8 @@
 (ns rainbow.math.rational.signed.no-zero-divisors
   "No-zero-divisors sub-foundation for strict convexity: nonzero facts and (building up)
   a != 0 -> b != 0 -> a*b != 0. Brick 1 first: 1 !~ 0."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.infinite :as nat-infinite]
             [rainbow.math.rational.nnrat.identities :as nnrat-identities]
@@ -77,15 +78,16 @@
 (def theorem-specs [one-not-equivalent-zero-spec signed-one-not-equivalent-zero-spec
                     zero-less-than-one-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nat-infinite/extend-environment
-      nnrat-identities/extend-environment
-      strict-order/extend-environment
-      multiply-order/extend-environment
-      equivalence-laws/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-no-zero-divisors theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.infinite rainbow.math.rational.nnrat.identities rainbow.math.rational.signed.strict-order rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.equivalence-laws rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-no-zero-divisors theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.no-zero-divisors))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

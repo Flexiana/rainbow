@@ -10,7 +10,8 @@
   preserves any componentwise order already established between two raw
   updates.  These are n-dimensional theorems, not scalar projection aliases.
   Native and axiom-free on D63."
-  (:require [rainbow.math.finite.vector :as finite-vector]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.pointwise-order-laws :as order-laws]))
@@ -156,13 +157,17 @@
    projected-step-reprojection-spec
    projected-step-monotone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      finite-vector/extend-environment
-      order-laws/extend-environment
-      (support/extend-with :vector-projected-gradient
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.vector rainbow.math.linear.vector.pointwise-order-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-projected-gradient (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.projected-gradient))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.fiber-characterization
   "Image, surjection, and injection characterized by their source fibers."
-  (:require [rainbow.math.finite.set-fiber :as fiber]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.set-fiber :as fiber]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -228,10 +229,16 @@
    surjective-on-equivalent-nonempty-fibers-spec
    injective-on-equivalent-subsingleton-fibers-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      fiber/extend-environment
-      (support/extend-with :set-fiber-characterization theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.set-fiber])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-fiber-characterization theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.fiber-characterization))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

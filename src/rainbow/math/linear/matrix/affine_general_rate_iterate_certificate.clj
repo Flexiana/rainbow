@@ -15,7 +15,8 @@
   needed and the factor is sharp.  An explicit stopping corollary accepts any
   threshold above the scaled envelope.  Theorem-only, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-general-rate-certificate
              :as general-rate]
             [rainbow.math.linear.matrix.affine-inverse-gap-certificate
@@ -272,26 +273,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      exact-rate/extend-environment
-      (extend-spec-if-missing
-       'signed/from-nnrat-respects-equivalence
-       :signed-geometric-bridge
-       bridge/from-nnrat-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'signed/from-nnrat-multiply
-       :signed-geometric-bridge
-       bridge/from-nnrat-multiply-spec)
-      (extend-specs-if-missing
-       :finite-matrix-affine-inverse-gap-certificate
-       inverse-gap/theorem-specs)
-      (extend-specs-if-missing
-       :finite-matrix-affine-general-rate-certificate
-       general-rate/theorem-specs)
-      (support/extend-with
-       :finite-matrix-affine-general-rate-iterate-certificate
-       theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-nnrat-exact-rate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/from-nnrat-respects-equivalence :signed-geometric-bridge bridge/from-nnrat-respects-equivalence-spec) (extend-spec-if-missing 'signed/from-nnrat-multiply :signed-geometric-bridge bridge/from-nnrat-multiply-spec) (extend-specs-if-missing :finite-matrix-affine-inverse-gap-certificate inverse-gap/theorem-specs) (extend-specs-if-missing :finite-matrix-affine-general-rate-certificate general-rate/theorem-specs) (support/extend-with :finite-matrix-affine-general-rate-iterate-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-general-rate-iterate-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

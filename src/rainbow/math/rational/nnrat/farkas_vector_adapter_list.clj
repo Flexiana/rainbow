@@ -23,7 +23,8 @@
   next gives the whole round's descriptor list, which the bridge fold + the
   already-proved partition turn into the next round's affine system. Native
   proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-vector-partition-fold :as vpf]
@@ -225,13 +226,17 @@
 
 (def theorem-specs [adapter-list-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      vpf/extend-environment
-      cvl/extend-environment
-      (support/extend-with :nnrat-farkas-vector-adapter-list
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-vector-partition-fold rainbow.math.rational.nnrat.farkas-cross-vectors-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-vector-adapter-list (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-vector-adapter-list))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

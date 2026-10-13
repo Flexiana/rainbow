@@ -7,7 +7,8 @@
   Directional theorems expose the minimal cancellation shape premise and iff
   theorems package both directions.  Theorem-only, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-residual-stopping
              :as residual-stopping]
             [rainbow.math.logic.function :as function]
@@ -270,14 +271,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      residual-stopping/extend-environment
-      (extend-spec-if-missing
-       'vector/subtract-left-monotone
-       :vector-subtract-laws
-       subtract-laws/subtract-left-monotone-spec)
-      (support/extend-with :finite-matrix-affine-residual-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-residual-stopping])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'vector/subtract-left-monotone :vector-subtract-laws subtract-laws/subtract-left-monotone-spec) (support/extend-with :finite-matrix-affine-residual-order theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-residual-order))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

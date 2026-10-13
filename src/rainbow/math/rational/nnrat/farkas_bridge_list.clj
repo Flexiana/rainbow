@@ -12,7 +12,8 @@
   the whole structured cross system recognized as a both-sides system --
   the mapped form of the eliminate-round's `link`. Native proof data,
   axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-cross-bridge :as bridge]))
@@ -152,12 +153,17 @@
 
 (def theorem-specs [bridge-list-necessary-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bridge/extend-environment
-      (support/extend-with :nnrat-farkas-bridge-list
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-cross-bridge])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-bridge-list (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-bridge-list))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

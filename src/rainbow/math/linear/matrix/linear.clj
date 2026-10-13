@@ -9,7 +9,8 @@
   ragged matrix.  Row-wise dot-product laws then show that the matrix action
   commutes with vector negation and nonnegative-rational scaling.  Native and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.matrix :as matrix]
             [rainbow.math.finite.vector :as finite-vector]
             [rainbow.math.logic.function :as function]
@@ -176,19 +177,17 @@
    checked-environment
    specs))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      matrix/extend-environment
-      (extend-spec-if-missing
-       'signed/scale :temporal-difference temporal-difference/scale-spec)
-      (extend-spec-if-missing
-       'vector/scale :finite-vector finite-vector/scale-spec)
-      (extend-spec-if-missing
-       'signed/scale-additive :signed-scale-additive
-       scale-additive/scale-additive-spec)
-      (extend-specs-if-missing :vector-dot-scale dot-scale/theorem-specs)
-      (support/extend-with :finite-matrix-linear theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.matrix])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/scale :temporal-difference temporal-difference/scale-spec) (extend-spec-if-missing 'vector/scale :finite-vector finite-vector/scale-spec) (extend-spec-if-missing 'signed/scale-additive :signed-scale-additive scale-additive/scale-additive-spec) (extend-specs-if-missing :vector-dot-scale dot-scale/theorem-specs) (support/extend-with :finite-matrix-linear theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.linear))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

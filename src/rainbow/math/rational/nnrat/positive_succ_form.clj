@@ -9,7 +9,8 @@
 
   The nnrat bridge is just: the cross-product of c and that make differ only by
   numerator c vs succ(pred(numerator c)), equal by the nat lemma. Axiom-free; additive."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.monus :as nnrat-monus]))
 
@@ -72,10 +73,16 @@
 
 (def theorem-specs [successor-of-predecessor-spec make-succ-of-positive-numerator-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nnrat-monus/extend-environment
-      (support/extend-with :nnrat-positive-succ-form theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.monus])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-positive-succ-form theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.positive-succ-form))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

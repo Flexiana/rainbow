@@ -5,7 +5,8 @@
   Consequently every finite iterate that starts below a certified fixed point
   remains below it, and every iterate that starts above remains above it.
   Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-equivalence :as equivalence]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-equivalence :as equivalence]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -115,11 +116,16 @@
   [affine-iterate-below-fixed-point-spec
    affine-iterate-above-fixed-point-spec])
 
-(defn extend-environment [env]
-  (-> env
-      equivalence/extend-environment
-      (support/extend-with :finite-matrix-affine-fixed-point-order
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-fixed-point-order theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-fixed-point-order))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -11,7 +11,8 @@
   nearest reuses min (dominated by both candidates); the pheromone dynamics is an
   add/multiply composition with a worked instance.
   Native and axiom-free; chains nnrat-minmax on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.minmax :as minmax]))
 
@@ -111,11 +112,17 @@
    rrt-nearest-below-left-spec rrt-nearest-below-right-spec
    star-discrepancy-bounds-box0-spec aco-pheromone-example-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.minmax])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-discrete-search (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      (support/extend-with :ahof-discrete-search
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.discrete-search))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

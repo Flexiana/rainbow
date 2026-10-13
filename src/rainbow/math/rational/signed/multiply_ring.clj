@@ -28,7 +28,8 @@
 
   Native and axiom-free; chains the nnrat-ring tactic and the signed finite-sum
   algebra (for signed equivalence transitivity) on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]
             [rainbow.math.rational.signed.map-sum-algebra :as algebra]))
@@ -185,12 +186,17 @@
    multiply-respects-spec
    multiply-zero-right-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      ring/extend-environment
-      algebra/extend-environment
-      (support/extend-with :signed-multiply-ring theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.ring rainbow.math.rational.signed.map-sum-algebra])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-multiply-ring theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.multiply-ring))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

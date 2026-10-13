@@ -9,7 +9,8 @@
 
   This is the model-level refinement boundary needed by practical MDP data.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-signed-optimal-contraction
              :as signed-contraction]
             [rainbow.math.finite.bellman-value-optimality :as nnrat-bellman]
@@ -338,30 +339,16 @@
       (support/extend-with env producer missing)
       env)))
 
-(defn extend-environment [env]
-  (-> env
-      signed-contraction/extend-environment
-      (extend-specs-if-missing
-       :nnrat-list-sum
-       (concat nnrat-sum/definition-specs nnrat-sum/theorem-specs))
-      (extend-specs-if-missing
-       :finite-bellman-value-optimality
-       [nnrat-bellman/total-mass-spec])
-      (extend-specs-if-missing
-       :signed-geometric-bridge
-       [signed-bridge/from-nnrat-respects-equivalence-spec
-        signed-bridge/from-nnrat-at-most-spec])
-      (extend-specs-if-missing
-       :nnrat-farkas-elim-list
-       [farkas-list/zero-at-most-spec])
-      (extend-specs-if-missing
-       :finite-matrix-affine-strong-row-contraction
-       [strong-row/zero-at-most-from-nnrat-spec])
-      (extend-specs-if-missing
-       :finite-matrix-affine-general-rate-certificate
-       [general-rate/from-nnrat-add-spec])
-      (support/extend-with
-       :finite-bellman-signed-transition-bridge theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-optimal-contraction])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :nnrat-list-sum (concat nnrat-sum/definition-specs nnrat-sum/theorem-specs)) (extend-specs-if-missing :finite-bellman-value-optimality [nnrat-bellman/total-mass-spec]) (extend-specs-if-missing :signed-geometric-bridge [signed-bridge/from-nnrat-respects-equivalence-spec signed-bridge/from-nnrat-at-most-spec]) (extend-specs-if-missing :nnrat-farkas-elim-list [farkas-list/zero-at-most-spec]) (extend-specs-if-missing :finite-matrix-affine-strong-row-contraction [strong-row/zero-at-most-from-nnrat-spec]) (extend-specs-if-missing :finite-matrix-affine-general-rate-certificate [general-rate/from-nnrat-add-spec]) (support/extend-with :finite-bellman-signed-transition-bridge theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-transition-bridge))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

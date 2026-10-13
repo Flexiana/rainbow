@@ -16,7 +16,8 @@
   breaks loudly rather than silently falling back to a weaker fact. A dependency
   guard in the test asserts the proof value mentions farkas-partition-list-
   covered. Native proof data, axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.farkas-reduce-align :as align]
             [rainbow.math.rational.nnrat.farkas-partition-list :as partition]
@@ -94,14 +95,17 @@
 (def definition-specs [])
 (def theorem-specs [recursion-step-covered-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      align/extend-environment
-      partition/extend-environment
-      covered/extend-environment
-      (support/extend-with :nnrat-farkas-recursion-step-covered
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-reduce-align rainbow.math.rational.nnrat.farkas-partition-list rainbow.math.rational.nnrat.farkas-partition-covered])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-recursion-step-covered (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-recursion-step-covered))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

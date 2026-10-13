@@ -20,7 +20,8 @@
   for every rational contraction rate below one, without the former
   `gamma <= 1/2` restriction and without caller-supplied quotient identities.
   Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-inverse-gap-certificate
              :as inverse-gap]
             [rainbow.math.logic.function :as function]
@@ -404,19 +405,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      inverse-gap/extend-environment
-      (extend-spec-if-missing
-       'signed/from-nnrat-respects-equivalence
-       :signed-geometric-bridge
-       bridge/from-nnrat-respects-equivalence-spec)
-      (extend-spec-if-missing
-       'signed/from-nnrat-multiply
-       :signed-geometric-bridge
-       bridge/from-nnrat-multiply-spec)
-      (support/extend-with
-       :finite-matrix-affine-general-rate-certificate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-inverse-gap-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/from-nnrat-respects-equivalence :signed-geometric-bridge bridge/from-nnrat-respects-equivalence-spec) (extend-spec-if-missing 'signed/from-nnrat-multiply :signed-geometric-bridge bridge/from-nnrat-multiply-spec) (support/extend-with :finite-matrix-affine-general-rate-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-general-rate-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

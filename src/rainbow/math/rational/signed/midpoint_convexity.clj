@@ -10,7 +10,8 @@
   multiply-left-monotone (1/2 = from-nnrat nnrat/half >= 0, v_i <= max); sum; collapse
   1/2 M + 1/2 M ~ M. Off the magnitude/reciprocal modulus (no reduction wall). Axiom-free;
   additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.minmax :as minmax]
             [rainbow.math.rational.signed.multiply-monotone :as multiply-monotone]
@@ -81,16 +82,16 @@
 
 (def theorem-specs [midpoint-at-most-max-spec midpoint-at-least-min-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      multiply-monotone/extend-environment
-      order-monotone/extend-environment
-      half-row/extend-environment
-      multiply-order/extend-environment
-      order-respects/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-midpoint-convexity theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.minmax rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.order-monotone rainbow.math.linear.matrix.half-row-sum-fixed-point-uniqueness rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.order-respects rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-midpoint-convexity theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.midpoint-convexity))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -7,7 +7,8 @@
   two six-summand cross sums.  The verified nnrat ring normalizer constructs the
   proof from existing additive laws; the kernel checks the resulting term and
   the module introduces no axioms."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.ring :as ring]))
 
@@ -47,11 +48,17 @@
 (def definition-specs [])
 (def theorem-specs [add-associative-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      ring/extend-environment
-      (support/extend-with :signed-add-associative theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-add-associative theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.add-associative))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

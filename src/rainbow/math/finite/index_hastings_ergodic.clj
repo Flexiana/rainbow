@@ -16,7 +16,8 @@
   visible (make d d) throughout; naming it behind an alias makes the
   conversion checker normalize the symbolic kernel. Native and axiom-free
   on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.index-hastings-coefficient :as index-coefficient]
             [rainbow.math.finite.markov-contraction-uniqueness :as conditional]
             [rainbow.math.finite.markov-coupling-coefficient :as coupling-coefficient]
@@ -157,81 +158,19 @@
 (defn- guard-extend [env marker extend]
   (if (environment/resolve-id env marker) env (extend env)))
 
-(defn extend-environment [env]
-  (-> env
-      ;; Their index-coefficient world enters whole (self-consistent on
-      ;; D63 by its own gate); everything from this side enters per-spec,
-      ;; guarded, so shared sub-worlds are never re-installed.
-      index-coefficient/extend-environment
-      (guard-extend 'signed/from-nnrat-at-most-reverse
-                    (fn [e] (support/add-spec
-                             e :finite-index-hastings-ergodic-support
-                             embedding/from-nnrat-at-most-reverse-spec)))
-      (guard 'nnrat/weighted-map-sum-distance-bound
-             :nnrat-weighted-map-sum-distance
-             weighted/spec)
-      (guard 'nnrat/map-sum-swap
-             :nnrat-fubini fubini/map-sum-swap-spec)
-      (guard 'markov/nnrat-kernel-step-coupling-distance-bound
-             :finite-markov-coupling-distance
-             coupling-distance/coupling-distance-bound-spec)
-      (guard 'markov/nnrat-kernel-step-positive-residual-coupling-bound
-             :finite-markov-coupling-distance
-             coupling-distance/positive-residual-coupling-bound-spec)
-      (guard 'markov/nnrat-positive-residual-coupling-total
-             :finite-markov-coupling-distance
-             coupling-distance/residual-coupling-total-spec)
-      (guard 'markov/nnrat-row-l1-at-most-twice-dobrushin-bound
-             :finite-markov-coupling-coefficient
-             coupling-coefficient/row-l1-at-most-twice-rho-spec)
-      (guard 'markov/nnrat-coupling-row-cost-at-most-dobrushin-bound
-             :finite-markov-coupling-coefficient
-             coupling-coefficient/coupling-cost-at-most-spec)
-      (guard 'markov/nnrat-kernel-step-positive-residual-contraction
-             :finite-markov-coupling-coefficient
-             coupling-coefficient/positive-residual-contraction-spec)
-      (guard 'markov/nnrat-dobrushin-contraction-estimate
-             :finite-markov-dobrushin-statement
-             statement/contraction-statement-spec)
-      (guard 'markov/nnrat-kernel-step-preserves-total-mass-equivalence
-             :finite-markov-kernel-composition
-             composition/kernel-step-preserves-total-mass-spec)
-      (guard 'markov/nnrat-kernel-step-zero-residual-contraction
-             :finite-markov-dobrushin-contraction
-             contraction/zero-residual-contraction-spec)
-      (guard 'markov/nnrat-dobrushin-contraction
-             :finite-markov-dobrushin-contraction
-             contraction/contraction-spec)
-      scale/extend-rate-null-prerequisites
-      (guard 'nnrat/zero-of-proper-contraction
-             :nnrat-order-scale scale/zero-of-proper-contraction-spec)
-      (guard 'markov/nnrat-stationary-pointwise-unique-of-proper-contraction
-             :finite-markov-contraction-uniqueness
-             conditional/stationary-unique-of-proper-contraction-spec)
-      (guard 'markov/nnrat-stationary-pointwise-unique-of-dobrushin-bound
-             :finite-markov-ergodic-uniqueness
-             uniqueness/stationary-unique-of-dobrushin-bound-spec)
-      (guard 'markov/nnrat-kernel-iterate
-             :finite-markov-iteration iteration/kernel-iterate-spec)
-      (guard 'markov/nnrat-kernel-iterate-successor
-             :finite-markov-iteration iteration/kernel-iterate-successor-spec)
-      (guard 'markov/nnrat-kernel-iterate-preserves-total-mass-equivalence
-             :finite-markov-iteration
-             iteration/kernel-iterate-preserves-total-mass-spec)
-      (guard-extend 'nnrat/power power/extend-environment)
-      (guard 'nnrat/multiply-associative
-             :nnrat-product-reassociation
-             reassociation/multiply-associative-spec)
-      (guard 'markov/nnrat-stationary-iterate-fixed
-             :finite-markov-stationary-iterate
-             fixed/stationary-iterate-fixed-spec)
-      (guard 'markov/nnrat-kernel-iterate-total-variation-decay
-             :finite-markov-geometric-decay
-             decay/iterate-total-variation-decay-spec)
-      (guard 'markov/nnrat-kernel-iterate-geometric-convergence-to-stationary
-             :finite-markov-geometric-convergence
-             geometric/iterate-converges-to-stationary-spec)
-      (support/extend-with :finite-index-hastings-ergodic theorem-specs)))
+;; Their index-coefficient world enters whole (self-consistent on
+;; D63 by its own gate); everything from this side enters per-spec,
+;; guarded, so shared sub-worlds are never re-installed.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.index-hastings-coefficient])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (guard-extend 'signed/from-nnrat-at-most-reverse (fn [e] (support/add-spec e :finite-index-hastings-ergodic-support embedding/from-nnrat-at-most-reverse-spec))) (guard 'nnrat/weighted-map-sum-distance-bound :nnrat-weighted-map-sum-distance weighted/spec) (guard 'nnrat/map-sum-swap :nnrat-fubini fubini/map-sum-swap-spec) (guard 'markov/nnrat-kernel-step-coupling-distance-bound :finite-markov-coupling-distance coupling-distance/coupling-distance-bound-spec) (guard 'markov/nnrat-kernel-step-positive-residual-coupling-bound :finite-markov-coupling-distance coupling-distance/positive-residual-coupling-bound-spec) (guard 'markov/nnrat-positive-residual-coupling-total :finite-markov-coupling-distance coupling-distance/residual-coupling-total-spec) (guard 'markov/nnrat-row-l1-at-most-twice-dobrushin-bound :finite-markov-coupling-coefficient coupling-coefficient/row-l1-at-most-twice-rho-spec) (guard 'markov/nnrat-coupling-row-cost-at-most-dobrushin-bound :finite-markov-coupling-coefficient coupling-coefficient/coupling-cost-at-most-spec) (guard 'markov/nnrat-kernel-step-positive-residual-contraction :finite-markov-coupling-coefficient coupling-coefficient/positive-residual-contraction-spec) (guard 'markov/nnrat-dobrushin-contraction-estimate :finite-markov-dobrushin-statement statement/contraction-statement-spec) (guard 'markov/nnrat-kernel-step-preserves-total-mass-equivalence :finite-markov-kernel-composition composition/kernel-step-preserves-total-mass-spec) (guard 'markov/nnrat-kernel-step-zero-residual-contraction :finite-markov-dobrushin-contraction contraction/zero-residual-contraction-spec) (guard 'markov/nnrat-dobrushin-contraction :finite-markov-dobrushin-contraction contraction/contraction-spec) scale/extend-rate-null-prerequisites (guard 'nnrat/zero-of-proper-contraction :nnrat-order-scale scale/zero-of-proper-contraction-spec) (guard 'markov/nnrat-stationary-pointwise-unique-of-proper-contraction :finite-markov-contraction-uniqueness conditional/stationary-unique-of-proper-contraction-spec) (guard 'markov/nnrat-stationary-pointwise-unique-of-dobrushin-bound :finite-markov-ergodic-uniqueness uniqueness/stationary-unique-of-dobrushin-bound-spec) (guard 'markov/nnrat-kernel-iterate :finite-markov-iteration iteration/kernel-iterate-spec) (guard 'markov/nnrat-kernel-iterate-successor :finite-markov-iteration iteration/kernel-iterate-successor-spec) (guard 'markov/nnrat-kernel-iterate-preserves-total-mass-equivalence :finite-markov-iteration iteration/kernel-iterate-preserves-total-mass-spec) (guard-extend 'nnrat/power power/extend-environment) (guard 'nnrat/multiply-associative :nnrat-product-reassociation reassociation/multiply-associative-spec) (guard 'markov/nnrat-stationary-iterate-fixed :finite-markov-stationary-iterate fixed/stationary-iterate-fixed-spec) (guard 'markov/nnrat-kernel-iterate-total-variation-decay :finite-markov-geometric-decay decay/iterate-total-variation-decay-spec) (guard 'markov/nnrat-kernel-iterate-geometric-convergence-to-stationary :finite-markov-geometric-convergence geometric/iterate-converges-to-stationary-spec) (support/extend-with :finite-index-hastings-ergodic theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.index-hastings-ergodic))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -8,7 +8,8 @@
   and the full composability certificate transports across equivalent operands.
   This is the quotient-safe precondition for later associativity.  Native and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.equivalence-shape :as equivalence-shape]
             [rainbow.math.linear.matrix.multiply-shape :as multiply-shape]
             [rainbow.math.linear.matrix.shape :as matrix-shape]
@@ -338,33 +339,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply-shape/extend-environment
-      (extend-spec-if-missing
-       'vector/same-shape-symmetric :vector-shape-cancellation
-       vector-shape/same-shape-symmetric-spec)
-      (extend-spec-if-missing
-       'vector/same-shape-transitive :vector-shape-cancellation
-       vector-shape/same-shape-transitive-spec)
-      (extend-spec-if-missing
-       'matrix/compatible-transport :finite-matrix-shape
-       matrix-shape/compatible-transport-spec)
-      (extend-spec-if-missing
-       'vector/equivalent-implies-same-shape
-       :finite-matrix-equivalence-shape
-       equivalence-shape/vector-equivalent-implies-same-shape-spec)
-      (extend-spec-if-missing
-       'matrix/equivalent-preserves-compatibility
-       :finite-matrix-equivalence-shape
-       equivalence-shape/equivalent-preserves-compatibility-spec)
-      (extend-spec-if-missing
-       'matrix/equivalent-preserves-rectangularity
-       :finite-matrix-equivalence-shape
-       equivalence-shape/equivalent-preserves-rectangularity-spec)
-      (support/extend-with :finite-matrix-composable
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.multiply-shape])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'vector/same-shape-symmetric :vector-shape-cancellation vector-shape/same-shape-symmetric-spec) (extend-spec-if-missing 'vector/same-shape-transitive :vector-shape-cancellation vector-shape/same-shape-transitive-spec) (extend-spec-if-missing 'matrix/compatible-transport :finite-matrix-shape matrix-shape/compatible-transport-spec) (extend-spec-if-missing 'vector/equivalent-implies-same-shape :finite-matrix-equivalence-shape equivalence-shape/vector-equivalent-implies-same-shape-spec) (extend-spec-if-missing 'matrix/equivalent-preserves-compatibility :finite-matrix-equivalence-shape equivalence-shape/equivalent-preserves-compatibility-spec) (extend-spec-if-missing 'matrix/equivalent-preserves-rectangularity :finite-matrix-equivalence-shape equivalence-shape/equivalent-preserves-rectangularity-spec) (support/extend-with :finite-matrix-composable (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.composable))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

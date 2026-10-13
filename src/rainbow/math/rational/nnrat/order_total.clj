@@ -15,7 +15,8 @@
   motive), true -> a <= b (nnrat/decide-at-most-true-sound), false ->
   b <= a (nnrat/decide-at-most-false-reverse). Native proof data,
   axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.finite.rational-argmax :as argmax]))
@@ -81,12 +82,17 @@
 (def definition-specs [])
 (def theorem-specs [at-most-total-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      argmax/extend-environment
-      (support/extend-with :nnrat-order-total
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.rational-argmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-order-total (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.order-total))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

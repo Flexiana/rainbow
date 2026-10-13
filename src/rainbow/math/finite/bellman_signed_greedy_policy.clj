@@ -11,7 +11,8 @@
   This is a mathematical optimal-action certificate.  It does not construct a
   fixed point, verify a policy-evaluation executable, or connect to running
   Clojure code.  Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.finite.bellman-signed-residual-certificate
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.bellman-signed-residual-certificate
              :as residual]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -221,11 +222,16 @@
    signed-greedy-policy-attains-fixed-value-spec
    signed-greedy-fixed-point-policy-certificate-spec])
 
-(defn extend-environment [env]
-  (-> env
-      residual/extend-environment
-      (support/extend-with
-       :finite-bellman-signed-greedy-policy theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-signed-residual-certificate])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-bellman-signed-greedy-policy theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-greedy-policy))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

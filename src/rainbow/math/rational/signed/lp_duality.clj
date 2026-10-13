@@ -44,7 +44,8 @@
 
   Native and axiom-free; chains the signed Fubini and associativity modules on
   D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.fubini :as fubini]
             [rainbow.math.rational.signed.multiply-associative :as assoc]))
@@ -276,12 +277,17 @@
 (def theorem-specs
   [column-bound-spec weak-duality-spec optimality-certificate-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      fubini/extend-environment
-      assoc/extend-environment
-      (support/extend-with :signed-lp-duality theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.fubini rainbow.math.rational.signed.multiply-associative])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-lp-duality theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.lp-duality))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

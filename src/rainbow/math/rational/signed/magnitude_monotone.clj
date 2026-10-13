@@ -9,7 +9,8 @@
   and from-nnrat-at-most-reverse drops it to the nnrat order. Reusable; feeds the limit-reciprocal
   assembly's positivity derivation (|s n| >= |L|/2 -> mag(s n^2) positive). Axiom-free; additive;
   does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.magnitude :as magnitude]
             [rainbow.math.rational.signed.geometric-bridge :as geometric-bridge]
@@ -42,12 +43,16 @@
 
 (def theorem-specs [magnitude-monotone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      magnitude/extend-environment
-      geometric-bridge/extend-environment
-      order-respects/extend-environment
-      (support/extend-with :signed-magnitude-monotone theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.magnitude rainbow.math.rational.signed.geometric-bridge rainbow.math.rational.signed.order-respects])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-magnitude-monotone theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.magnitude-monotone))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

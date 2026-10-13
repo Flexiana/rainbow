@@ -13,7 +13,8 @@
   absolute-of-nonnegative]. No nonzero hypothesis needed (holds structurally for all x).
   The assembly bounds 1/(x*x) via the antitone lemma applied to mag(x*x) directly, never
   forming reciprocal|x|. Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.reciprocal :as reciprocal]
             [rainbow.math.rational.signed.absolute-multiply :as absolute-multiply]
@@ -64,15 +65,16 @@
 
 (def theorem-specs [absolute-reciprocal-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      reciprocal/extend-environment
-      absolute-multiply/extend-environment
-      absolute-sign/extend-environment
-      multiply-ring/extend-environment
-      multiply-order/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-absolute-reciprocal theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.reciprocal rainbow.math.rational.signed.absolute-multiply rainbow.math.rational.signed.absolute-sign rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.multiply-order rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-absolute-reciprocal theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.absolute-reciprocal))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

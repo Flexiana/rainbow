@@ -32,7 +32,8 @@
   rainbow.math.rational.nnrat.distributive (which the rearrangement toolkit needs) both
   declare `nnrat/multiply-one-left`, and chaining two providers of one alias is
   a kernel alias conflict."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.order-difference :as difference]
             [rainbow.math.rational.signed.multiply :as multiply]))
@@ -319,13 +320,17 @@
    nonnegative-of-zero-at-most-spec
    multiplier-times-satisfied-constraint-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply/extend-environment
-      difference/extend-environment
-      (support/extend-with :signed-multiply-order
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply rainbow.math.rational.nnrat.order-difference])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-multiply-order (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.multiply-order))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

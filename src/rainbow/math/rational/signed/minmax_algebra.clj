@@ -12,7 +12,8 @@
   the reusable structural layer that robust aggregation, dynamic programming,
   and finite extrema can depend on.  Native and axiom-free on D63."
   (:refer-clojure :exclude [min max])
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-uniqueness :as uniqueness]
             [rainbow.math.rational.signed.minmax :as minmax]))
@@ -232,12 +233,17 @@
    min-monotone-spec max-monotone-spec
    min-associative-spec max-associative-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      uniqueness/extend-environment
-      minmax/extend-environment
-      (support/extend-with :signed-minmax-algebra theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.minmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-minmax-algebra theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.minmax-algebra))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -8,7 +8,8 @@
   Negating reverses signed order.  The two reversed endpoints reduce to the
   corresponding band around `-L`, so the radius and modulus are unchanged.
   Native and axiom-free; builds directly on the D63 convergence module."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convergence :as convergence]))
 
@@ -105,11 +106,17 @@
 (def definition-specs [])
 (def theorem-specs [close-negate-spec limit-negate-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convergence/extend-environment
-      (support/extend-with :signed-limit-negate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convergence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-limit-negate theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-negate))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

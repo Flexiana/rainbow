@@ -20,7 +20,8 @@
   The prefix 0..a and the suffix b..k avoid p as an intermediate, so the induction hypothesis
   bounds them by D(t, x 0, p) and D(t, p, x k). The middle a..b is a closed walk, so it is >= 0.
   The round's pivot bound closes it. The lengths split as in signed/walk-cut-length."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.nat.extremal-index :as extremal]
@@ -363,11 +364,16 @@
 
 (def theorem-specs [upper-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      attained/extend-environment
-      extremal/extend-environment
-      (support/extend-with :fw-convergence-upper theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.graph.floyd-warshall-convergence-attained rainbow.math.nat.extremal-index])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :fw-convergence-upper theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.graph.floyd-warshall-convergence-upper))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

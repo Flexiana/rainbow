@@ -17,7 +17,8 @@
   become affine lower rows in x2, eliminable by brick 5b (the A_i >= B_i
   case is the symmetric affine-upper mirror). Native proof data,
   axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.add-monotone :as add-monotone]
             [rainbow.math.rational.nnrat.additive-reassociation :as reassoc]
@@ -159,15 +160,17 @@
 (def definition-specs [])
 (def theorem-specs [both-sides-to-lower-spec both-sides-to-upper-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-monotone/extend-environment
-      reassoc/extend-environment
-      distribute/extend-environment
-      cancellation/extend-environment
-      (support/extend-with :nnrat-farkas-both-sides
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.additive-reassociation rainbow.math.rational.nnrat.distribute-right rainbow.math.rational.nnrat.add-cancellation])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-both-sides (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-both-sides))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.image-insert
   "Images commute constructively with inserting one source value."
-  (:require [rainbow.math.finite.set :as finite-set]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.set :as finite-set]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -244,10 +245,16 @@
    insert-image-subset-image-insert-spec
    image-insert-equivalent-insert-image-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      finite-set/extend-environment
-      (support/extend-with :set-image-insert theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.set])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-image-insert theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.image-insert))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

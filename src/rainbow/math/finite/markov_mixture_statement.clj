@@ -3,7 +3,8 @@
 
   This is deliberately a proposition declaration: the finite sum inequality is
   not claimed until its constructive proof is registered." 
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-dobrushin-kernel :as coefficient]))
 
@@ -26,8 +27,16 @@
 
 (def definition-specs [mixture-inequality-spec])
 (def theorem-specs [])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-dobrushin-kernel])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-mixture-statement definition-specs)))
+
 (defn extend-environment [env]
-  (-> env coefficient/extend-environment
-      (support/extend-with :finite-markov-mixture-statement definition-specs)))
+  (module/install-module env 'rainbow.math.finite.markov-mixture-statement))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

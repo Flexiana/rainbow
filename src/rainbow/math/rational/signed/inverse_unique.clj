@@ -12,7 +12,8 @@
   (multiply-reciprocal-self) give |1/(s n)| ~ reciprocal|s n|, then reciprocal-antitone
   supplies the constant bound |1/(s n)| <= reciprocal(|L|/2) = 2/|L|. Axiom-free; additive;
   does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.multiply-ring :as multiply-ring]
             [rainbow.math.rational.signed.multiply-associative :as multiply-associative]
@@ -64,13 +65,16 @@
 
 (def theorem-specs [inverse-unique-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply-ring/extend-environment
-      multiply-associative/extend-environment
-      unit-laws/extend-environment
-      equivalence-laws/extend-environment
-      (support/extend-with :signed-inverse-unique theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.multiply-associative rainbow.math.rational.signed.unit-laws rainbow.math.rational.signed.equivalence-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-inverse-unique theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.inverse-unique))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

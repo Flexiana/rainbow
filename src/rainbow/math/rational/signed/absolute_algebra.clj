@@ -7,7 +7,8 @@
   zero, and is idempotent.  These are the scalar well-definedness laws needed
   before defining signed distance and finite-vector sup metrics.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.absolute :as absolute]
             [rainbow.math.rational.signed.equivalence-laws :as equivalence]
@@ -210,12 +211,16 @@
    absolute-zero-spec
    absolute-idempotent-spec])
 
-(defn extend-environment [env]
-  (-> env
-      absolute/extend-environment
-      uniqueness/extend-environment
-      equivalence/extend-environment
-      (support/extend-with :signed-absolute-algebra theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.absolute rainbow.math.rational.signed.limit-uniqueness rainbow.math.rational.signed.equivalence-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-absolute-algebra theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.absolute-algebra))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

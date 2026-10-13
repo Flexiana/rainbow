@@ -6,7 +6,8 @@
   total transpose then proves that transpose preserves both zero lower bounds
   and matrix pointwise order, including the established ragged semantics.
   Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.positive-action :as action]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.positive-action :as action]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -422,10 +423,16 @@
    transpose-nonnegative-spec
    transpose-monotone-spec])
 
-(defn extend-environment [env]
-  (-> env
-      action/extend-environment
-      (support/extend-with :finite-matrix-transpose-order theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.positive-action])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-transpose-order theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.transpose-order))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

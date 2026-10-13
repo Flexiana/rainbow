@@ -3,7 +3,8 @@
   Proposal normalization and the executable full-support verdict discharge
   the coefficient bound. Target normalization is not needed for this bound.
   Proof terms are checked by the focused gate; no sampler correctness claim."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.finite.markov-full-support :as full-support]
@@ -73,12 +74,16 @@
 
 (def definition-specs [factor-spec])
 (def theorem-specs [factor-proper-spec coefficient-bound-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (let [env (-> env coefficient/extend-environment full-support/extend-environment) env (if (environment/resolve-id env 'mcmc/nnrat-hastings-index-canonical-kernel-rows-normalized) env (support/extend-with env :finite-index-hastings-coefficient-support [hypotheses/index-canonical-kernel-rows-normalized-spec]))] (support/extend-with env :finite-index-hastings-coefficient (concat definition-specs theorem-specs))))
+
 (defn extend-environment [env]
-  (let [env (-> env coefficient/extend-environment full-support/extend-environment)
-        env (if (environment/resolve-id env 'mcmc/nnrat-hastings-index-canonical-kernel-rows-normalized)
-              env
-              (support/extend-with env :finite-index-hastings-coefficient-support
-                [hypotheses/index-canonical-kernel-rows-normalized-spec]))]
-    (support/extend-with env :finite-index-hastings-coefficient (concat definition-specs theorem-specs))))
+  (module/install-module env 'rainbow.math.finite.index-hastings-coefficient))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -9,7 +9,8 @@
   reachability.
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.algorithms.proofs.bellman-scaled-fixed-point-uniqueness :as bellman]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -382,28 +383,16 @@
     env
     (support/extend-with env :nnrat-positive-support [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      (extend-spec-if-missing
-       'nat/multiply-right-strict-monotone-positive
-       bellman/multiply-right-strict-monotone-positive-spec)
-      (extend-spec-if-missing
-       'nat/multiply-successor-right-cancel
-       semiring/multiply-successor-right-cancel-spec)
-      (extend-spec-if-missing
-       'nat/positive-of-nonzero
-       separation/positive-of-nonzero-spec)
-      (extend-spec-if-missing
-       'nat/nonzero-of-positive
-       separation/nonzero-of-positive-spec)
-      (extend-spec-if-missing
-       'nnrat/add-commutative
-       add-monotone/add-commutative-spec)
-      (extend-spec-if-missing 'minmax/min minmax/min-spec)
-      (extend-spec-if-missing 'nnrat/reciprocal division/reciprocal-spec)
-      (extend-spec-if-missing 'nnrat/divide division/divide-spec)
-      (support/extend-with
-       :nnrat-positive (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nat/multiply-right-strict-monotone-positive bellman/multiply-right-strict-monotone-positive-spec) (extend-spec-if-missing 'nat/multiply-successor-right-cancel semiring/multiply-successor-right-cancel-spec) (extend-spec-if-missing 'nat/positive-of-nonzero separation/positive-of-nonzero-spec) (extend-spec-if-missing 'nat/nonzero-of-positive separation/nonzero-of-positive-spec) (extend-spec-if-missing 'nnrat/add-commutative add-monotone/add-commutative-spec) (extend-spec-if-missing 'minmax/min minmax/min-spec) (extend-spec-if-missing 'nnrat/reciprocal division/reciprocal-spec) (extend-spec-if-missing 'nnrat/divide division/divide-spec) (support/extend-with :nnrat-positive (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.positive))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

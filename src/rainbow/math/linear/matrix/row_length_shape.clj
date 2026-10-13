@@ -12,7 +12,8 @@
 
   The empty/nonempty mismatch cases are eliminated with Nat no-confusion, not
   assumed.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.composable :as composable]
             [rainbow.math.linear.matrix.shape :as matrix-shape]
             [rainbow.math.logic.function :as function]
@@ -489,26 +490,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      composable/extend-environment
-      (extend-spec-if-missing
-       'nat/predecessor :nat-infinite nat-infinite/predecessor-spec)
-      (extend-spec-if-missing
-       'nat/zero-not-successor :nat-infinite
-       nat-infinite/zero-not-successor-spec)
-      (extend-spec-if-missing
-       'nat/successor-injective :nat-infinite
-       nat-infinite/successor-injective-spec)
-      (extend-spec-if-missing
-       'vector/same-shape-reflexive :vector-shape-cancellation
-       vector-shape/same-shape-reflexive-spec)
-      (extend-spec-if-missing
-       'matrix/compatible-with-head-of-rectangular :finite-matrix-shape
-       matrix-shape/compatible-with-head-of-rectangular-spec)
-      (support/extend-with :finite-matrix-row-length-shape
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.composable])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'nat/predecessor :nat-infinite nat-infinite/predecessor-spec) (extend-spec-if-missing 'nat/zero-not-successor :nat-infinite nat-infinite/zero-not-successor-spec) (extend-spec-if-missing 'nat/successor-injective :nat-infinite nat-infinite/successor-injective-spec) (extend-spec-if-missing 'vector/same-shape-reflexive :vector-shape-cancellation vector-shape/same-shape-reflexive-spec) (extend-spec-if-missing 'matrix/compatible-with-head-of-rectangular :finite-matrix-shape matrix-shape/compatible-with-head-of-rectangular-spec) (support/extend-with :finite-matrix-row-length-shape (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.row-length-shape))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

@@ -5,7 +5,8 @@
   the forward bounds and the backward bounds with vector/at-most-transitive,
   then recover vector equivalence by vector/at-most-antisymmetric.  This avoids
   duplicating the underlying two-list induction."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.linear.vector.pointwise-order-laws :as order-laws]))
 
@@ -78,11 +79,17 @@
 (def definition-specs [])
 (def theorem-specs [equivalent-transitive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      order-laws/extend-environment
-      (support/extend-with :vector-equivalence-transitivity theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.vector.pointwise-order-laws])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :vector-equivalence-transitivity theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.vector.equivalence-transitivity))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

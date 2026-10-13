@@ -8,7 +8,8 @@
   commutativity and chain by transitivity. Feeds the assembly's positivity derivation
   (with magnitude-monotone: |L|/2 <= |s n| -> (|L|/2)^2 <= (s n)^2 -> mag positive).
   Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.multiply-monotone :as multiply-monotone]
             [rainbow.math.rational.signed.order-transitivity :as order-transitivity]
@@ -44,13 +45,16 @@
 
 (def theorem-specs [square-monotone-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      multiply-monotone/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      multiply-ring/extend-environment
-      (support/extend-with :signed-square-monotone theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects rainbow.math.rational.signed.multiply-ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-square-monotone theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.square-monotone))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

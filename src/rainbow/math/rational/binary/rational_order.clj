@@ -16,7 +16,8 @@
   and does NOT touch the trusted checker. It is the foundation a Bin-native checker
   (brick 5c) would wire in. Reuses `bin/at-most-reflects` and `bin/to-nat-bin-multiply`
   from rainbow.data.binary."
-  (:require [rainbow.kernel :as kernel]
+  (:require [rainbow.module :as module]
+            [rainbow.kernel :as kernel]
             [rainbow.elaborate :as elaborate]
             [rainbow.term :as term]
             [rainbow.data.binary :as binary]
@@ -357,12 +358,19 @@
                         {:error/category :bin-rational/definition-rejected :name name :result result})))
       (:environment result))))
 
-(defn extend-environment
-  "Install the Bin-native rational comparison into a Bin-extended checked environment.
-  Chain after rainbow.data.binary/extend-environment. Additive; trusted checker untouched."
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
   [checked-environment]
   (reduce add-definition checked-environment definition-specs))
 
+(defn extend-environment
+  "Install the Bin-native rational comparison into a Bin-extended checked environment.
+  Chain after rainbow.data.binary/extend-environment. Additive; trusted checker untouched." [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.binary.rational-order))
 (defn block-aliases
   "The declarations this module introduces."
   []

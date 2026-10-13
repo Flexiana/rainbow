@@ -8,7 +8,8 @@
   The triangle inequality bounds |(w0)x + (w1)y| by |(w0)x| + |(w1)y|; each term rewrites
   via |a*b| ~ |a|*|b| and |from-nnrat w| ~ from-nnrat w (weights are nonnegative) to
   (w0)|x| + (w1)|y|. Wall-free (no reciprocal); does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convex-function :as convex-fn]
             [rainbow.math.rational.signed.absolute :as absolute]
@@ -72,19 +73,16 @@
 
 (def theorem-specs [absolute-convex-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex-fn/extend-environment
-      absolute/extend-environment
-      triangle/extend-environment
-      abs-multiply/extend-environment
-      abs-sign/extend-environment
-      multiply-ring/extend-environment
-      map-sum/extend-environment
-      multiply-order/extend-environment
-      order-respects/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-absolute-convex theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convex-function rainbow.math.rational.signed.absolute rainbow.math.rational.signed.distance-triangle rainbow.math.rational.signed.absolute-multiply rainbow.math.rational.signed.absolute-sign rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.map-sum-algebra rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.order-respects rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-absolute-convex theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.absolute-convex))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

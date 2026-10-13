@@ -1,6 +1,7 @@
 (ns rainbow.math.logic.function-predicate
   "Checked native declarations for reusable higher-order function predicates."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
@@ -71,30 +72,17 @@
                       {:surface surface :result result})))
     (:term result)))
 
-(defn extend-environment [checked-environment]
-  (reduce
-   (fn [environment spec]
-     (let [type (elaborate! environment (:type spec))
-           value (elaborate! environment (:value spec))
-           added
-           (kernel/add-declaration
-            environment
-            {:rainbow/kind :definition
-             :rainbow/aliases #{(:name spec)}
-             :rainbow/universes (:universes spec)
-             :rainbow/type type :rainbow/value value
-             :rainbow/transparency :reducible
-             :rainbow/dependencies
-             (into (term/constants type) (term/constants value))
-             :rainbow/provenance
-             {:origin :native :producer :function-predicate-data}
-             :rainbow/schema-version 1})]
-       (when-not (= :accepted (:status added))
-         (throw (ex-info "Function predicate declaration rejected"
-                         {:name (:name spec) :result added})))
-       (:environment added)))
-   checked-environment predicate-specs))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (reduce (fn [environment spec] (let [type (elaborate! environment (:type spec)) value (elaborate! environment (:value spec)) added (kernel/add-declaration environment {:rainbow/kind :definition :rainbow/aliases #{(:name spec)} :rainbow/universes (:universes spec) :rainbow/type type :rainbow/value value :rainbow/transparency :reducible :rainbow/dependencies (into (term/constants type) (term/constants value)) :rainbow/provenance {:origin :native :producer :function-predicate-data} :rainbow/schema-version 1})] (when-not (= :accepted (:status added)) (throw (ex-info "Function predicate declaration rejected" {:name (:name spec) :result added}))) (:environment added))) checked-environment predicate-specs))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.logic.function-predicate))
 (defn build-environment []
   (extend-environment (proposition/build-environment)))
 

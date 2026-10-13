@@ -15,7 +15,8 @@
   finite fold is silently treated as covering a larger carrier.
 
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-value-iteration-converges
              :as bellman-convergence]
             [rainbow.math.finite.nnrat-sup-radius :as radius]
@@ -436,22 +437,16 @@
      (extend-spec-if-missing current (:name spec) milestone spec))
    env specs))
 
-(defn extend-environment [env]
-  (-> env
-      bellman-convergence/extend-environment
-      radius/extend-environment
-      (extend-specs-if-missing
-       :nnrat-add-cancellation cancellation/theorem-specs)
-      (extend-specs-if-missing
-       :nnrat-product-reassociation product-reassociation/theorem-specs)
-      (extend-spec-if-missing
-       'nnrat/zero-at-most :nnrat-farkas-elim-list
-       nnrat-bounds/zero-at-most-spec)
-      (extend-spec-if-missing
-       'nnrat/inverse-gap-residual-bound :nnrat-inverse-gap-certificate
-       inverse-gap/inverse-gap-residual-bound-spec)
-      (support/extend-with
-       :finite-bellman-residual-certificate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-value-iteration-converges rainbow.math.finite.nnrat-sup-radius])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :nnrat-add-cancellation cancellation/theorem-specs) (extend-specs-if-missing :nnrat-product-reassociation product-reassociation/theorem-specs) (extend-spec-if-missing 'nnrat/zero-at-most :nnrat-farkas-elim-list nnrat-bounds/zero-at-most-spec) (extend-spec-if-missing 'nnrat/inverse-gap-residual-bound :nnrat-inverse-gap-certificate inverse-gap/inverse-gap-residual-bound-spec) (support/extend-with :finite-bellman-residual-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-residual-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

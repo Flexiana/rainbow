@@ -20,7 +20,8 @@
   the base level -- the gateway to nnrat additive at-most cancellation (step 3) and
   signed order transitivity (step 4).  Native and axiom-free; chains
   rainbow.math.nat.at-most-cancellation (-> nat-ring) on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.nat.ring :as ring]
             [rainbow.math.nat.at-most-cancellation :as canc]))
@@ -106,11 +107,17 @@
 (def definition-specs [])
 (def theorem-specs [base-transitive-spec at-most-to-cross-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.at-most-cancellation])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-order-equivalence (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      canc/extend-environment
-      (support/extend-with :nnrat-order-equivalence
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.order-equivalence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

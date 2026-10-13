@@ -19,7 +19,8 @@
 
   Native and axiom-free; chains rainbow.math.rational.nnrat.weighted-sum (=> multiply/add
   monotone), rainbow.math.rational.nnrat.minmax, and rainbow.math.rational.nnrat.distributive."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.weighted-sum :as ws]
             [rainbow.math.rational.nnrat.minmax :as minmax]
@@ -102,13 +103,17 @@
 (def definition-specs [])
 (def theorem-specs [convex-at-most-max-spec convex-at-least-min-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.weighted-sum rainbow.math.rational.nnrat.minmax rainbow.math.rational.nnrat.distributive])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-convex (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ws/extend-environment
-      minmax/extend-environment
-      dist/extend-environment
-      (support/extend-with :nnrat-convex
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.convex))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

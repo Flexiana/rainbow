@@ -16,7 +16,8 @@
   (d arcs) and suffix (c arcs). The prefixes agree because cut = x up to a. The suffixes agree term
   by term because cut t = x (t + d) from a on (nat/walk-cut-shifted) and (i + a) + d = i + (d + a).
   The cycle is the closed walk fun t. x (t + a), so it is >= 0."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.sums.value-append :as append]
@@ -236,11 +237,16 @@
 
 (def theorem-specs [shift-arith-spec cut-below-spec cut-shifted-spec cut-length-spec cut-range-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      attained/extend-environment
-      append/extend-environment
-      (support/extend-with :walk-cycle-cut theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.graph.bellman-ford-convergence-attained rainbow.math.sums.value-append])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :walk-cycle-cut theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.graph.walk-cycle-cut))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

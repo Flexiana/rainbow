@@ -11,7 +11,8 @@
 
   Includes a small boolean-OR (dual of rainbow.math.logic.boolean-and) for reachability.
   Native and axiom-free; chains nnrat-convex (-> wsum2, minmax) on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.convex :as convex]))
 
@@ -142,11 +143,17 @@
   [or-true-left-spec backward-reach-from-successor-spec conservative-upper-example-spec
    asa-accept-not-worse-spec grammar-update-within-max-spec pipe-update-within-max-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.convex])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-reachability-eda (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex/extend-environment
-      (support/extend-with :ahof-reachability-eda
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.reachability-eda))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

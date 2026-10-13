@@ -12,7 +12,8 @@
 
   Native, axiom-free, and built on the D63 signed convergence/order and nnrat
   Archimedean toolkits."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.archimedean :as arch]
             [rainbow.math.rational.nnrat.identities :as identities]
@@ -352,13 +353,17 @@
    reciprocal-close-equivalent-spec
    limit-unique-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      arch/extend-environment
-      respects/extend-environment
-      identities/extend-environment
-      (support/extend-with :signed-limit-uniqueness theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.archimedean rainbow.math.rational.signed.order-respects rainbow.math.rational.nnrat.identities])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-limit-uniqueness theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-uniqueness))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

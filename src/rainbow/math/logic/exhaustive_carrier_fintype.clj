@@ -10,7 +10,8 @@
   The reverse direction is intentionally not claimed: propositional Fintype
   completeness cannot in general be eliminated to recover executable data.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.diagonal-spike :as exhaustive]))
@@ -129,12 +130,16 @@
   [fintype-elements-of-certified-exhaustive-carrier-spec
    type-finite-of-certified-exhaustive-carrier-spec])
 
-(defn extend-environment [env]
-  (-> env
-      exhaustive/extend-environment
-      (support/extend-with
-       :exhaustive-carrier-fintype
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.diagonal-spike])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :exhaustive-carrier-fintype (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.logic.exhaustive-carrier-fintype))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

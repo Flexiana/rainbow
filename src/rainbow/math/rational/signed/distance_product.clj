@@ -8,7 +8,8 @@
   add-monotone + transitivity combine. Axiom-free; additive.
 
   Also exports signed/distance-multiply-right-absolute : d(x*w, y*w) <= |w|*d(x,y)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance-multiply-absolute :as dma]
             [rainbow.math.rational.signed.distance-triangle :as distance-triangle]
@@ -71,12 +72,16 @@
 
 (def theorem-specs [distance-multiply-right-absolute-spec distance-product-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      dma/extend-environment
-      distance-triangle/extend-environment
-      multiply-ring/extend-environment
-      (support/extend-with :signed-distance-product theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distance-multiply-absolute rainbow.math.rational.signed.distance-triangle rainbow.math.rational.signed.multiply-ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-distance-product theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.distance-product))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

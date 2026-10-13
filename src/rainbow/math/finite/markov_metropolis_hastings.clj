@@ -7,7 +7,8 @@
   normalization, detailed balance, stationarity, and one-step mixing from every
   normalized initial mass.  Native, kernel-checked, and axiom-free on D63."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-cesaro :as cesaro]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -378,15 +379,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      cesaro/extend-environment
-      (extend-spec-if-missing
-       'nnrat/multiply-one-right :nnrat-identities
-       identities/multiply-one-right-spec)
-      (support/extend-with
-       :finite-markov-metropolis-hastings
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-cesaro])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nnrat/multiply-one-right :nnrat-identities identities/multiply-one-right-spec) (support/extend-with :finite-markov-metropolis-hastings (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-metropolis-hastings))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

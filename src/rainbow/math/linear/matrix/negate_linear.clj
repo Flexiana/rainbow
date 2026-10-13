@@ -6,7 +6,8 @@
   bridges prove that negating either factor negates the native matrix product,
   without rectangularity or compatibility premises.  Native and axiom-free on
   D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.additive-group :as group]
             [rainbow.math.linear.matrix.linear :as linear]
             [rainbow.math.logic.function :as function]
@@ -326,14 +327,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      group/extend-environment
-      (extend-spec-if-missing
-       'matrix/vector-multiply-negate :finite-matrix-linear
-       linear/vector-multiply-negate-spec)
-      (support/extend-with :finite-matrix-negate-linear theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.additive-group])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'matrix/vector-multiply-negate :finite-matrix-linear linear/vector-multiply-negate-spec) (support/extend-with :finite-matrix-negate-linear theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.negate-linear))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

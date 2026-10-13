@@ -8,7 +8,8 @@
   a+b~0, transport that bound to a<=0; 0<=a follows from nonnegativity, and
   signed antisymmetry gives a~0.  The right theorem commutes the sum and reuses
   the left theorem.  Native and axiom-free."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.at-most-cancellation :as nat-cancellation]
@@ -149,82 +150,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      (extend-spec-if-missing
-       'signed/equivalent-symmetric :signed-equivalence-laws
-       equivalence/equivalent-symmetric-spec)
-      (extend-spec-if-missing
-       'nnrat/add-commutative :nnrat-commutative
-       commutative/add-commutative-spec)
-      (extend-spec-if-missing
-       'signed/add-commutative :nnrat-commutative
-       commutative/signed-add-commutative-spec)
-      (extend-spec-if-missing
-       'signed/equivalent-to-at-most :signed-unit-laws
-       unit/equivalent-to-at-most-spec)
-      (extend-spec-if-missing
-       'signed/zero-at-most-of-nonnegative :signed-multiply-order
-       multiply-order/zero-at-most-of-nonnegative-spec)
-      (extend-spec-if-missing
-       'nat/at-most-add-right-cancel :nat-at-most-cancellation
-       nat-cancellation/add-right-cancel-spec)
-      (extend-spec-if-missing
-       'nat/at-most-add-left-cancel :nat-at-most-cancellation
-       nat-cancellation/add-left-cancel-order-spec)
-      (extend-spec-if-missing
-       'nat/sum-zero-left :nat-at-most-cancellation
-       nat-cancellation/sum-zero-left-spec)
-      (extend-spec-if-missing
-       'nat/at-most-multiply-right-cancel :nat-at-most-cancellation
-       nat-cancellation/multiply-right-cancel-spec)
-      (extend-spec-if-missing
-       'nnrat/base-at-most-transitive :nnrat-order-equivalence
-       order-equivalence/base-transitive-spec)
-      (extend-spec-if-missing
-       'nnrat/at-most-to-cross :nnrat-order-equivalence
-       order-equivalence/at-most-to-cross-spec)
-      (extend-spec-if-missing
-       'nnrat/base-at-most-add-right-cancel :nnrat-add-cancellation
-       cancellation/base-add-cancel-spec)
-      (extend-spec-if-missing
-       'nnrat/at-most-add-right-cancel :nnrat-add-cancellation
-       cancellation/add-right-cancel-spec)
-      (extend-spec-if-missing
-       'nnrat/add-associative :nnrat-additive-reassociation
-       reassociation/add-associative-spec)
-      (extend-spec-if-missing
-       'nnrat/add-four-reorder :nnrat-additive-reassociation
-       reassociation/add-four-reorder-spec)
-      (extend-spec-if-missing
-       'nnrat/add-right-monotone-base :nnrat-add-monotone
-       nnrat-monotone/add-right-monotone-base-spec)
-      (extend-spec-if-missing
-       'nnrat/add-right-monotone :nnrat-add-monotone
-       nnrat-monotone/add-right-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/add-left-monotone :nnrat-add-monotone
-       nnrat-monotone/add-left-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/add-monotone :nnrat-add-monotone
-       nnrat-monotone/add-monotone-spec)
-      (extend-spec-if-missing
-       'signed/at-most-transitive :signed-order-transitivity
-       transitivity/at-most-transitive-spec)
-      (extend-spec-if-missing
-       'signed/add-left-monotone :signed-order-monotone
-       monotone/add-left-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/add-zero-right :nnrat-identities
-       identities/add-zero-right-spec)
-      (extend-spec-if-missing
-       'signed/add-zero-right :signed-limit-uniqueness
-       uniqueness/signed-add-zero-right-spec)
-      (extend-spec-if-missing
-       'signed/at-most-antisymmetric :signed-limit-uniqueness
-       uniqueness/signed-at-most-antisymmetric-spec)
-      (support/extend-with :signed-add-zero-reflection theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/equivalent-symmetric :signed-equivalence-laws equivalence/equivalent-symmetric-spec) (extend-spec-if-missing 'nnrat/add-commutative :nnrat-commutative commutative/add-commutative-spec) (extend-spec-if-missing 'signed/add-commutative :nnrat-commutative commutative/signed-add-commutative-spec) (extend-spec-if-missing 'signed/equivalent-to-at-most :signed-unit-laws unit/equivalent-to-at-most-spec) (extend-spec-if-missing 'signed/zero-at-most-of-nonnegative :signed-multiply-order multiply-order/zero-at-most-of-nonnegative-spec) (extend-spec-if-missing 'nat/at-most-add-right-cancel :nat-at-most-cancellation nat-cancellation/add-right-cancel-spec) (extend-spec-if-missing 'nat/at-most-add-left-cancel :nat-at-most-cancellation nat-cancellation/add-left-cancel-order-spec) (extend-spec-if-missing 'nat/sum-zero-left :nat-at-most-cancellation nat-cancellation/sum-zero-left-spec) (extend-spec-if-missing 'nat/at-most-multiply-right-cancel :nat-at-most-cancellation nat-cancellation/multiply-right-cancel-spec) (extend-spec-if-missing 'nnrat/base-at-most-transitive :nnrat-order-equivalence order-equivalence/base-transitive-spec) (extend-spec-if-missing 'nnrat/at-most-to-cross :nnrat-order-equivalence order-equivalence/at-most-to-cross-spec) (extend-spec-if-missing 'nnrat/base-at-most-add-right-cancel :nnrat-add-cancellation cancellation/base-add-cancel-spec) (extend-spec-if-missing 'nnrat/at-most-add-right-cancel :nnrat-add-cancellation cancellation/add-right-cancel-spec) (extend-spec-if-missing 'nnrat/add-associative :nnrat-additive-reassociation reassociation/add-associative-spec) (extend-spec-if-missing 'nnrat/add-four-reorder :nnrat-additive-reassociation reassociation/add-four-reorder-spec) (extend-spec-if-missing 'nnrat/add-right-monotone-base :nnrat-add-monotone nnrat-monotone/add-right-monotone-base-spec) (extend-spec-if-missing 'nnrat/add-right-monotone :nnrat-add-monotone nnrat-monotone/add-right-monotone-spec) (extend-spec-if-missing 'nnrat/add-left-monotone :nnrat-add-monotone nnrat-monotone/add-left-monotone-spec) (extend-spec-if-missing 'nnrat/add-monotone :nnrat-add-monotone nnrat-monotone/add-monotone-spec) (extend-spec-if-missing 'signed/at-most-transitive :signed-order-transitivity transitivity/at-most-transitive-spec) (extend-spec-if-missing 'signed/add-left-monotone :signed-order-monotone monotone/add-left-monotone-spec) (extend-spec-if-missing 'nnrat/add-zero-right :nnrat-identities identities/add-zero-right-spec) (extend-spec-if-missing 'signed/add-zero-right :signed-limit-uniqueness uniqueness/signed-add-zero-right-spec) (extend-spec-if-missing 'signed/at-most-antisymmetric :signed-limit-uniqueness uniqueness/signed-at-most-antisymmetric-spec) (support/extend-with :signed-add-zero-reflection theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.add-zero-reflection))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

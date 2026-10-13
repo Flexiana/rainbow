@@ -7,7 +7,8 @@
   lifts complete the same laws; value subtraction carries an exact-shape
   premise because native subtraction zips its two inputs.  Native and axiom-free
   on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.signed-scale-congruence :as congruence]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -658,24 +659,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      congruence/extend-environment
-      (extend-spec-if-missing
-       'signed/multiply-distributes-add-right :signed-distributive
-       distributive/multiply-distributes-add-right-spec)
-      (extend-spec-if-missing
-       'signed/multiply-negate-left :vector-dot-negate
-       dot-negate/multiply-negate-left-spec)
-      (extend-spec-if-missing
-       'signed/multiply-negate-right :vector-dot-negate
-       dot-negate/multiply-negate-right-spec)
-      (extend-spec-if-missing
-       'signed/subtract-respects-equivalence :vector-dot-subtract
-       dot-subtract/subtract-respects-equivalence-spec)
-      (support/extend-with :finite-matrix-signed-scale-subtract
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-congruence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/multiply-distributes-add-right :signed-distributive distributive/multiply-distributes-add-right-spec) (extend-spec-if-missing 'signed/multiply-negate-left :vector-dot-negate dot-negate/multiply-negate-left-spec) (extend-spec-if-missing 'signed/multiply-negate-right :vector-dot-negate dot-negate/multiply-negate-right-spec) (extend-spec-if-missing 'signed/subtract-respects-equivalence :vector-dot-subtract dot-subtract/subtract-respects-equivalence-spec) (support/extend-with :finite-matrix-signed-scale-subtract theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-subtract))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

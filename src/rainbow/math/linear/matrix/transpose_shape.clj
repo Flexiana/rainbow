@@ -8,7 +8,8 @@
   compatibility and rectangularity under that certificate, and finally that
   transpose sends every rectangular matrix to a rectangular matrix.  Native
   and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.shape :as matrix-shape]
             [rainbow.math.linear.matrix.transpose-equivalence :as transpose-equivalence]
             [rainbow.math.logic.function :as function]
@@ -649,36 +650,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      transpose-equivalence/extend-environment
-      (extend-spec-if-missing
-       'vector/same-shape :vector-shape-cancellation
-       vector-shape/same-shape-spec)
-      (extend-spec-if-missing
-       'vector/same-shape-symmetric :vector-shape-cancellation
-       vector-shape/same-shape-symmetric-spec)
-      (extend-spec-if-missing
-       'vector/same-shape-transitive :vector-shape-cancellation
-       vector-shape/same-shape-transitive-spec)
-      (extend-spec-if-missing
-       'matrix/compatible :finite-matrix-shape
-       matrix-shape/compatible-spec)
-      (extend-spec-if-missing
-       'matrix/rectangular :finite-matrix-shape
-       matrix-shape/rectangular-spec)
-      (extend-spec-if-missing
-       'matrix/compatible-head-shape :finite-matrix-shape
-       matrix-shape/compatible-head-shape-spec)
-      (extend-spec-if-missing
-       'matrix/compatible-transport :finite-matrix-shape
-       matrix-shape/compatible-transport-spec)
-      (extend-spec-if-missing
-       'matrix/rectangular-tail :finite-matrix-shape
-       matrix-shape/rectangular-tail-spec)
-      (support/extend-with :finite-matrix-transpose-shape
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose-equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'vector/same-shape :vector-shape-cancellation vector-shape/same-shape-spec) (extend-spec-if-missing 'vector/same-shape-symmetric :vector-shape-cancellation vector-shape/same-shape-symmetric-spec) (extend-spec-if-missing 'vector/same-shape-transitive :vector-shape-cancellation vector-shape/same-shape-transitive-spec) (extend-spec-if-missing 'matrix/compatible :finite-matrix-shape matrix-shape/compatible-spec) (extend-spec-if-missing 'matrix/rectangular :finite-matrix-shape matrix-shape/rectangular-spec) (extend-spec-if-missing 'matrix/compatible-head-shape :finite-matrix-shape matrix-shape/compatible-head-shape-spec) (extend-spec-if-missing 'matrix/compatible-transport :finite-matrix-shape matrix-shape/compatible-transport-spec) (extend-spec-if-missing 'matrix/rectangular-tail :finite-matrix-shape matrix-shape/rectangular-tail-spec) (support/extend-with :finite-matrix-transpose-shape (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.transpose-shape))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

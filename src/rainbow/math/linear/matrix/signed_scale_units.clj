@@ -5,7 +5,8 @@
   factor, sends zero to shaped zero, and sends one to the original value.
   Structural lifts complete these module laws for vectors and matrices without
   shape premises.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.signed-scale-algebra :as algebra]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -393,21 +394,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      algebra/extend-environment
-      (extend-spec-if-missing
-       'signed/multiply-zero-left :signed-distributive
-       distributive/multiply-zero-left-spec)
-      (extend-spec-if-missing
-       'signed/multiply-distributes-add-right :signed-distributive
-       distributive/multiply-distributes-add-right-spec)
-      (extend-spec-if-missing
-       'signed/multiply-one-left :signed-unit-laws
-       unit-laws/multiply-one-left-spec)
-      (support/extend-with :finite-matrix-signed-scale-units
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-algebra])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/multiply-zero-left :signed-distributive distributive/multiply-zero-left-spec) (extend-spec-if-missing 'signed/multiply-distributes-add-right :signed-distributive distributive/multiply-distributes-add-right-spec) (extend-spec-if-missing 'signed/multiply-one-left :signed-unit-laws unit-laws/multiply-one-left-spec) (support/extend-with :finite-matrix-signed-scale-units theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-units))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

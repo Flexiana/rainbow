@@ -26,7 +26,8 @@
   target and proposal normalization premises.  This remains a theorem about
   mathematical kernels, not an executable sampler.  Native, kernel-checked,
   and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-stationarity :as stationarity]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -1641,118 +1642,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      minmax/extend-environment
-      separation/extend-environment
-      stationarity/extend-environment
-      (extend-spec-if-missing
-       'nnrat/multiply-one-right :finite-markov-hastings-flow-support
-       identities/multiply-one-right-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-zero-left :finite-markov-hastings-flow-support
-       identities/multiply-zero-left-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-zero-right :finite-markov-hastings-flow-support
-       identities/multiply-zero-right-spec)
-      (extend-spec-if-missing
-       'nnrat/add-zero-left :finite-markov-hastings-flow-support
-       identities/add-zero-left-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-monotone-base :finite-markov-hastings-flow-support
-       multiply-monotone/multiply-monotone-base-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-monotone :finite-markov-hastings-flow-support
-       multiply-monotone/multiply-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/map-sum-monotone :finite-markov-hastings-flow-support
-       list-sum/map-sum-monotone-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-associative :finite-markov-hastings-flow-support
-       reassociation/multiply-associative-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-swap-right :finite-markov-hastings-flow-support
-       reassociation/multiply-swap-right-spec)
-      (extend-spec-if-missing
-       'nnrat/at-most-multiply-left-cancel :finite-markov-hastings-flow-support
-       order-scale/at-most-multiply-left-cancel-spec)
-      (extend-spec-if-missing
-       'nnrat/multiply-divide-cancel :finite-markov-hastings-flow-support
-       order-scale/multiply-divide-cancel-spec)
-      (extend-spec-if-missing
-       'nnrat/at-most-multiply-left-normalize-lower
-       :finite-markov-hastings-flow-support
-       order-scale/normalize-lower-spec)
-      (extend-spec-if-missing
-       'nat/add-distance-of-at-most
-       :finite-markov-hastings-flow-support
-       ordered-distance/nat-add-distance-of-at-most-spec)
-      (extend-spec-if-missing
-       'nnrat/add-distance-of-at-most
-       :finite-markov-hastings-flow-support
-       ordered-distance/nnrat-add-distance-of-at-most-spec)
-      (extend-spec-if-missing
-       'nnrat/add-associative
-       :finite-markov-hastings-flow-support
-       add-reassociation/add-associative-spec)
-      (extend-spec-if-missing
-       'nnrat/add-swap-right
-       :finite-markov-hastings-flow-support
-       add-reassociation/add-swap-right-spec)
-      (extend-spec-if-missing
-       'nnrat/add-four-reorder
-       :finite-markov-hastings-flow-support
-       add-reassociation/add-four-reorder-spec)
-      (extend-spec-if-missing
-       'nnrat/map-sum-add
-       :finite-markov-hastings-flow-support
-       sum-additive/map-sum-add-spec)
-      (extend-spec-if-missing
-       'finite/certified-equality-decision
-       :finite-markov-hastings-flow-support
-       diagonal-spike/certified-equality-decision-spec)
-      (extend-spec-if-missing
-       'finite/certified-exhaustive-carrier
-       :finite-markov-hastings-flow-support
-       diagonal-spike/certified-exhaustive-carrier-spec)
-      (extend-spec-if-missing
-       'finite/certified-equality-of-exhaustive-carrier
-       :finite-markov-hastings-flow-support
-       diagonal-spike/certified-equality-of-exhaustive-carrier-spec)
-      (extend-spec-if-missing
-       'finite/coverage-of-exhaustive-carrier
-       :finite-markov-hastings-flow-support
-       diagonal-spike/coverage-of-exhaustive-carrier-spec)
-      (extend-spec-if-missing
-       'finite/nnrat-diagonal-spike
-       :finite-markov-hastings-flow-support
-       diagonal-spike/diagonal-spike-spec)
-      (extend-spec-if-missing
-       'finite/nnrat-diagonal-spike-zero-of-different
-       :finite-markov-hastings-flow-support
-       diagonal-spike/diagonal-spike-zero-of-different-spec)
-      (extend-spec-if-missing
-       'finite/equality-decidable-of-certified-decision
-       :finite-markov-hastings-flow-support
-       diagonal-spike/equality-decidable-of-certified-decision-spec)
-      (extend-spec-if-missing
-       'finite/nnrat-diagonal-spike-mass-of-equal
-       :finite-markov-hastings-flow-support
-       diagonal-spike/diagonal-spike-mass-of-equal-spec)
-      (extend-spec-if-missing
-       'finite/nnrat-map-sum-diagonal-spike-zero-of-not-member
-       :finite-markov-hastings-flow-support
-       diagonal-spike/map-sum-diagonal-spike-zero-of-not-member-spec)
-      (extend-spec-if-missing
-       'finite/nnrat-map-sum-diagonal-spike-of-member-no-duplicates
-       :finite-markov-hastings-flow-support
-       diagonal-spike/map-sum-diagonal-spike-of-member-no-duplicates-spec)
-      (extend-spec-if-missing
-       'finite/nnrat-finset-diagonal-spike-total
-       :finite-markov-hastings-flow-support
-       diagonal-spike/finset-diagonal-spike-total-spec)
-      (support/extend-with :finite-markov-hastings-flow
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.minmax rainbow.math.rational.nnrat.metric-separation rainbow.math.finite.markov-stationarity])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nnrat/multiply-one-right :finite-markov-hastings-flow-support identities/multiply-one-right-spec) (extend-spec-if-missing 'nnrat/multiply-zero-left :finite-markov-hastings-flow-support identities/multiply-zero-left-spec) (extend-spec-if-missing 'nnrat/multiply-zero-right :finite-markov-hastings-flow-support identities/multiply-zero-right-spec) (extend-spec-if-missing 'nnrat/add-zero-left :finite-markov-hastings-flow-support identities/add-zero-left-spec) (extend-spec-if-missing 'nnrat/multiply-monotone-base :finite-markov-hastings-flow-support multiply-monotone/multiply-monotone-base-spec) (extend-spec-if-missing 'nnrat/multiply-monotone :finite-markov-hastings-flow-support multiply-monotone/multiply-monotone-spec) (extend-spec-if-missing 'nnrat/map-sum-monotone :finite-markov-hastings-flow-support list-sum/map-sum-monotone-spec) (extend-spec-if-missing 'nnrat/multiply-associative :finite-markov-hastings-flow-support reassociation/multiply-associative-spec) (extend-spec-if-missing 'nnrat/multiply-swap-right :finite-markov-hastings-flow-support reassociation/multiply-swap-right-spec) (extend-spec-if-missing 'nnrat/at-most-multiply-left-cancel :finite-markov-hastings-flow-support order-scale/at-most-multiply-left-cancel-spec) (extend-spec-if-missing 'nnrat/multiply-divide-cancel :finite-markov-hastings-flow-support order-scale/multiply-divide-cancel-spec) (extend-spec-if-missing 'nnrat/at-most-multiply-left-normalize-lower :finite-markov-hastings-flow-support order-scale/normalize-lower-spec) (extend-spec-if-missing 'nat/add-distance-of-at-most :finite-markov-hastings-flow-support ordered-distance/nat-add-distance-of-at-most-spec) (extend-spec-if-missing 'nnrat/add-distance-of-at-most :finite-markov-hastings-flow-support ordered-distance/nnrat-add-distance-of-at-most-spec) (extend-spec-if-missing 'nnrat/add-associative :finite-markov-hastings-flow-support add-reassociation/add-associative-spec) (extend-spec-if-missing 'nnrat/add-swap-right :finite-markov-hastings-flow-support add-reassociation/add-swap-right-spec) (extend-spec-if-missing 'nnrat/add-four-reorder :finite-markov-hastings-flow-support add-reassociation/add-four-reorder-spec) (extend-spec-if-missing 'nnrat/map-sum-add :finite-markov-hastings-flow-support sum-additive/map-sum-add-spec) (extend-spec-if-missing 'finite/certified-equality-decision :finite-markov-hastings-flow-support diagonal-spike/certified-equality-decision-spec) (extend-spec-if-missing 'finite/certified-exhaustive-carrier :finite-markov-hastings-flow-support diagonal-spike/certified-exhaustive-carrier-spec) (extend-spec-if-missing 'finite/certified-equality-of-exhaustive-carrier :finite-markov-hastings-flow-support diagonal-spike/certified-equality-of-exhaustive-carrier-spec) (extend-spec-if-missing 'finite/coverage-of-exhaustive-carrier :finite-markov-hastings-flow-support diagonal-spike/coverage-of-exhaustive-carrier-spec) (extend-spec-if-missing 'finite/nnrat-diagonal-spike :finite-markov-hastings-flow-support diagonal-spike/diagonal-spike-spec) (extend-spec-if-missing 'finite/nnrat-diagonal-spike-zero-of-different :finite-markov-hastings-flow-support diagonal-spike/diagonal-spike-zero-of-different-spec) (extend-spec-if-missing 'finite/equality-decidable-of-certified-decision :finite-markov-hastings-flow-support diagonal-spike/equality-decidable-of-certified-decision-spec) (extend-spec-if-missing 'finite/nnrat-diagonal-spike-mass-of-equal :finite-markov-hastings-flow-support diagonal-spike/diagonal-spike-mass-of-equal-spec) (extend-spec-if-missing 'finite/nnrat-map-sum-diagonal-spike-zero-of-not-member :finite-markov-hastings-flow-support diagonal-spike/map-sum-diagonal-spike-zero-of-not-member-spec) (extend-spec-if-missing 'finite/nnrat-map-sum-diagonal-spike-of-member-no-duplicates :finite-markov-hastings-flow-support diagonal-spike/map-sum-diagonal-spike-of-member-no-duplicates-spec) (extend-spec-if-missing 'finite/nnrat-finset-diagonal-spike-total :finite-markov-hastings-flow-support diagonal-spike/finset-diagonal-spike-total-spec) (support/extend-with :finite-markov-hastings-flow (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-hastings-flow))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

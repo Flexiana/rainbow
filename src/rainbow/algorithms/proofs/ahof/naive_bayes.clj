@@ -20,7 +20,8 @@
   Scope (measured by the kernel): this module has 4 worked instances (statements about specific values).
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.naive-bayes`
   prints this classification."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.algorithms.proofs.list-product :as list-product]
             [rainbow.algorithms.proofs.argmax-index :as argmax-index]
             [rainbow.math.logic.function :as function]))
@@ -125,13 +126,17 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      list-product/extend-environment
-      argmax-index/extend-environment
-      (support/extend-with :ahof-naive-bayes
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.list-product rainbow.algorithms.proofs.argmax-index])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-naive-bayes (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.naive-bayes))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

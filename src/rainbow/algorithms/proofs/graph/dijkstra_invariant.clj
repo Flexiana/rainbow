@@ -22,7 +22,8 @@
   p first leaves the settled set at some x f (nat/least-witness), and
   L(t, p) <= L(t, x f) <= prefix <= whole walk, by argmin, the walk bound and nonnegative weights.
   Settled labels never change (R8 with W >= 0 and D), which keeps C."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.nat.extremal-index :as extremal]
@@ -454,12 +455,16 @@
 
 (def theorem-specs [walk-bound-spec stable-spec relaxed-step-spec order-step-spec source-step-spec final-step-spec invariant-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      cycle-cut/extend-environment
-      extremal/extend-environment
-      append/extend-environment
-      (support/extend-with :dijkstra-invariant theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.graph.walk-cycle-cut rainbow.math.nat.extremal-index rainbow.math.sums.value-append])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :dijkstra-invariant theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.graph.dijkstra-invariant))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

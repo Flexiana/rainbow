@@ -7,7 +7,8 @@
   cancels the common offset exactly, and the order corollary transfers any
   linear-action distance bound to the affine map.  Native, kernel-checked, and
   axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.affine-order :as affine]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.affine-order :as affine]
             [rainbow.math.linear.matrix.linear :as linear]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -117,12 +118,16 @@
   [affine-action-sup-distance-cancels-offset-spec
    affine-action-sup-distance-bounded-spec])
 
-(defn extend-environment [env]
-  (-> env
-      affine/extend-environment
-      linear/extend-environment
-      translation/extend-environment
-      (support/extend-with :finite-matrix-affine-sup-distance theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-order rainbow.math.linear.matrix.linear rainbow.math.rational.signed.vector-sup-translation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-matrix-affine-sup-distance theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-sup-distance))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

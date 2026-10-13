@@ -5,7 +5,8 @@
   that sum. Scalar domination by a+b lifts through the finite sum, giving
   L1(mu,nu) <= mass(mu)+mass(nu). Two unit masses therefore give TV <= 1.
   These bounds do not assert contraction or convergence."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-total-variation :as variation]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -164,12 +165,16 @@
 (defn- extend-if-missing [env marker extend]
   (if (environment/resolve-id env marker) env (extend env)))
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-total-variation])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-if-missing 'nnrat/map-sum-add additive/extend-environment) (extend-if-missing 'nnrat/multiply-monotone multiply/extend-environment) (support/extend-with :finite-markov-total-variation-bound (concat definition-specs theorem-specs))))
+
 (defn extend-environment [env]
-  (-> env
-      variation/extend-environment
-      (extend-if-missing 'nnrat/map-sum-add additive/extend-environment)
-      (extend-if-missing 'nnrat/multiply-monotone multiply/extend-environment)
-      (support/extend-with :finite-markov-total-variation-bound
-                           (concat definition-specs theorem-specs))))
+  (module/install-module env 'rainbow.math.finite.markov-total-variation-bound))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

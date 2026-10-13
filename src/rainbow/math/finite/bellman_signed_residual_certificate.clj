@@ -14,7 +14,8 @@
   This verifies mathematical certificates, not an executable solver.  State
   coverage and fixed-point existence remain explicit premises.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-signed-value-iteration-general-converges
              :as bellman]
             [rainbow.math.linear.matrix.affine-inverse-gap-certificate
@@ -513,17 +514,16 @@
       (support/extend-with env producer missing)
       env)))
 
-(defn extend-environment [env]
-  (-> env
-      metric/extend-environment
-      bellman/extend-environment
-      (extend-specs-if-missing
-       :signed-additive-distance additive-distance/theorem-specs)
-      (extend-specs-if-missing
-       :finite-matrix-affine-inverse-gap-certificate
-       [inverse-gap/inverse-gap-residual-bound-spec])
-      (support/extend-with
-       :finite-bellman-signed-residual-certificate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.signed-sup-distance rainbow.math.finite.bellman-signed-value-iteration-general-converges])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-specs-if-missing :signed-additive-distance additive-distance/theorem-specs) (extend-specs-if-missing :finite-matrix-affine-inverse-gap-certificate [inverse-gap/inverse-gap-residual-bound-spec]) (support/extend-with :finite-bellman-signed-residual-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-residual-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

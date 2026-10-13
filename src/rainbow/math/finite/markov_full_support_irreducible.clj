@@ -8,7 +8,8 @@
   the concrete positive-horizon prerequisite for a future period theorem. The
   result does not assert aperiodicity, convergence, a spectral gap, or a
   mixing-time bound. Native and axiom-free on D63."
-  (:require [rainbow.math.finite.markov-aperiodicity :as aperiodicity]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.markov-aperiodicity :as aperiodicity]
             [rainbow.math.finite.markov-full-support :as full-support]
             [rainbow.math.finite.markov-reachability :as reachability]
             [rainbow.math.finite.markov-reachability-witness :as witness]
@@ -211,26 +212,19 @@
    index-hastings-return-at-one-spec
    index-hastings-aperiodic-spec])
 
-(defn extend-environment [env]
-  ;; Install full support first, then only the reachability declarations whose
-  ;; prerequisites its point-mass cone already supplied. This avoids replaying
-  ;; overlapping dependency modules while retaining a standalone proof gate.
-  (-> env
-      full-support/extend-environment
-      (support/extend-with
-       :finite-markov-reachability-witness witness/theorem-specs)
-      (support/extend-with
-       :finite-markov-reachability
-       (concat reachability/definition-specs reachability/theorem-specs))
-      (support/extend-with
-       :finite-markov-return-time
-       (concat return-time/definition-specs return-time/theorem-specs))
-      divisibility/extend-environment
-      (support/extend-with
-       :finite-markov-aperiodicity
-       (concat aperiodicity/definition-specs aperiodicity/theorem-specs))
-      (support/extend-with
-       :finite-markov-full-support-irreducible theorem-specs)))
+;; Install full support first, then only the reachability declarations whose
+;; prerequisites its point-mass cone already supplied. This avoids replaying
+;; overlapping dependency modules while retaining a standalone proof gate.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-full-support])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-markov-reachability-witness witness/theorem-specs) (support/extend-with :finite-markov-reachability (concat reachability/definition-specs reachability/theorem-specs)) (support/extend-with :finite-markov-return-time (concat return-time/definition-specs return-time/theorem-specs)) divisibility/extend-environment (support/extend-with :finite-markov-aperiodicity (concat aperiodicity/definition-specs aperiodicity/theorem-specs)) (support/extend-with :finite-markov-full-support-irreducible theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-full-support-irreducible))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

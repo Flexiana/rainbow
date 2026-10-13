@@ -15,7 +15,8 @@
   envelope is then vacuous but true), and the rate-null packaging in the
   analysis vocabulary is deliberately deferred until a consumer needs
   it. Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.markov-geometric-decay :as decay]
             [rainbow.math.finite.markov-stationarity :as stationarity]
             [rainbow.math.finite.markov-stationary-iterate :as fixed]
@@ -151,21 +152,20 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      decay/extend-environment
-      ;; Brick 1 and the stationarity predicate enter per-spec: the decay
-      ;; chain already carries the contraction world, and re-entering the
-      ;; stationarity/composition/iteration extenders wholesale would
-      ;; re-install shared upstreams.
-      (extend-spec-if-missing
-       'markov/nnrat-stationary
-       :finite-markov-stationarity stationarity/stationary-spec)
-      (extend-spec-if-missing
-       'markov/nnrat-stationary-iterate-fixed
-       :finite-markov-stationary-iterate fixed/stationary-iterate-fixed-spec)
-      (support/extend-with :finite-markov-geometric-convergence
-                           theorem-specs)))
+;; Brick 1 and the stationarity predicate enter per-spec: the decay
+;; chain already carries the contraction world, and re-entering the
+;; stationarity/composition/iteration extenders wholesale would
+;; re-install shared upstreams.
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.markov-geometric-decay])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'markov/nnrat-stationary :finite-markov-stationarity stationarity/stationary-spec) (extend-spec-if-missing 'markov/nnrat-stationary-iterate-fixed :finite-markov-stationary-iterate fixed/stationary-iterate-fixed-spec) (support/extend-with :finite-markov-geometric-convergence theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.markov-geometric-convergence))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

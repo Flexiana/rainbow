@@ -6,7 +6,8 @@
   Both sides reduce to the same Grothendieck pair: negation swaps the positive
   and negative sums, while adding the two negated inputs builds those same sums.
   Signed equivalence reflexivity therefore supplies the proof."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
 (def signed (function/const* 'signed/SignedRational []))
@@ -36,10 +37,17 @@
 (def definition-specs [])
 (def theorem-specs [negate-additive-spec])
 
-(defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :signed-negate-additive
-                       theorem-specs))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :signed-negate-additive theorem-specs))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.negate-additive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

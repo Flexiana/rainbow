@@ -11,7 +11,8 @@
   index admitted by a source convergence proof, the committed
   `analysis/close-scale-nonnegative` theorem gives the corresponding band with
   center, radius, and sequence value all multiplied by `from-nnrat c`."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-scale :as scale]))
 
@@ -191,12 +192,17 @@
    limit-const-spec
    scaled-sequence-close-to-scaled-limit-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      scale/extend-environment
-      (support/extend-with :signed-limit-scalar-laws
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-scale])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-limit-scalar-laws (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-scalar-laws))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

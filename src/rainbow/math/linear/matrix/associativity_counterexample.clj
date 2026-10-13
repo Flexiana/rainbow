@@ -6,7 +6,8 @@
   nonempty-middle premise of matrix/multiply-associative-nonempty-middle is
   mathematically necessary for the total row-list encoding, not merely a proof
   artifact.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.composable-transpose :as transpose-composable]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.composable-transpose :as transpose-composable]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -170,13 +171,17 @@
    counter-right-evaluates-spec
    counter-not-associative-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      transpose-composable/extend-environment
-      (support/extend-with
-       :finite-matrix-associativity-counterexample
-       (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.composable-transpose])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-associativity-counterexample (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.associativity-counterexample))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

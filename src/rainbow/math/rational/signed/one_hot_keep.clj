@@ -14,7 +14,8 @@
   strengthened induction as signed/one-hot-attained with the order reversed: a sum of nonpositive
   terms is <= 0, and two nonpositive terms adding to ~ 0 are both ~ 0. That last step is proved
   here from the order laws (0 ~ a + b <= a + 0 ~ a, then antisymmetry)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.signed.one-hot-attained :as one-hot]))
@@ -225,10 +226,16 @@
 
 (def theorem-specs [nonpositive-strengthened-spec keep-attained-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      one-hot/extend-environment
-      (support/extend-with :signed-one-hot-keep theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.one-hot-attained])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-one-hot-keep theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.one-hot-keep))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

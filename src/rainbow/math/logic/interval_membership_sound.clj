@@ -11,7 +11,8 @@
   interval bounds -- the universal guarantee behind the AHoF interval/reachability/box
   membership rows (V40, V41, V33, V34, V59, ...), which the catalog only exercised on
   worked instances. Native and axiom-free; chains rainbow.math.logic.boolean-and."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))
 
 (def zero-level [:zero])
@@ -65,9 +66,17 @@
 
 (def theorem-specs [contains-sound-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (support/extend-with checked-environment :interval-membership-sound (concat definition-specs theorem-specs)))
+
 (defn extend-environment [checked-environment]
-  (support/extend-with checked-environment :interval-membership-sound
-                       (concat definition-specs theorem-specs)))
+  (module/install-module checked-environment 'rainbow.math.logic.interval-membership-sound))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

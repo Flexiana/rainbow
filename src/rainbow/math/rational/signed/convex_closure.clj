@@ -13,7 +13,8 @@
   (a*(W*v) ~ W*(a*v)). Off the magnitude/reciprocal modulus -- no division, so no
   reduction wall (unlike n-point Jensen, whose weight renormalization needs a reciprocal).
   Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convex-function :as convex-fn]
             [rainbow.math.rational.signed.distributive :as distributive]
@@ -178,21 +179,16 @@
 
 (def theorem-specs [convex-sum-spec convex-nonneg-scale-spec convex-max-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convex-fn/extend-environment
-      distributive/extend-environment
-      action-scale/extend-environment
-      multiply-associative/extend-environment
-      multiply-ring/extend-environment
-      map-sum/extend-environment
-      multiply-monotone/extend-environment
-      order-monotone/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      minmax/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-convex-closure theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convex-function rainbow.math.rational.signed.distributive rainbow.math.linear.matrix.action-scale rainbow.math.rational.signed.multiply-associative rainbow.math.rational.signed.multiply-ring rainbow.math.rational.signed.map-sum-algebra rainbow.math.rational.signed.multiply-monotone rainbow.math.rational.signed.order-monotone rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects rainbow.math.rational.signed.minmax rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-convex-closure theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.convex-closure))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

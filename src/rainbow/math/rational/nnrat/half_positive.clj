@@ -4,7 +4,8 @@
   num(0)*den(half) to zero), so it is refuted exactly like nnrat/one-not-equivalent-zero -- no
   multiply lemmas needed, keeping the dependency chain minimal (farkas only, for zero-at-most).
   Provides the positive symmetric weight for strict-convexity minimizer uniqueness."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.farkas-elim-list :as farkas]))
 
@@ -40,10 +41,16 @@
 
 (def theorem-specs [half-positive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      farkas/extend-environment
-      (support/extend-with :nnrat-half-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-half-positive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.half-positive))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -14,7 +14,8 @@
   Requires prefix-sum/scan-from, algebra/nat-add, data/List.rec,
   equality/reflexive, equality/congruent-function (all in the D63 checkpoint
   plus the prefix-sum module)."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.algorithms.proofs.prefix-sum :as prefix-sum]
             [rainbow.math.logic.function :as function]))
 
@@ -132,12 +133,17 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      prefix-sum/extend-environment
-      (support/extend-with :scan-length
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.algorithms.proofs.prefix-sum])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :scan-length (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.logic.scan-length))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

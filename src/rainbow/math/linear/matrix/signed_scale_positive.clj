@@ -6,7 +6,8 @@
   nonnegative-factor monotonicity, this proves that signed scaling preserves
   scalar and entrywise vector/matrix zero lower bounds.  Native and axiom-free
   on D63."
-  (:require [rainbow.math.linear.matrix.add-order :as order]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.add-order :as order]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -329,12 +330,17 @@
    vector-signed-scale-nonnegative-spec
    matrix-signed-scale-nonnegative-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      order/extend-environment
-      (support/extend-with :finite-matrix-signed-scale-positive
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.add-order])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-signed-scale-positive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-positive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

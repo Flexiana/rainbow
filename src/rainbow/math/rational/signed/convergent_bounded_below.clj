@@ -17,7 +17,8 @@
 
   Env chain: signed-convergence, signed-additive-distance, signed-distance-triangle,
   signed-recovery-laws (as convergent-bounded), plus signed-distance (distance-symmetric)."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.convergence :as convergence]
             [rainbow.math.rational.signed.additive-distance :as additive-distance]
@@ -95,14 +96,16 @@
 
 (def theorem-specs [convergent-bounded-below-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      convergence/extend-environment
-      additive-distance/extend-environment
-      distance-triangle/extend-environment
-      recovery-laws/extend-environment
-      distance/extend-environment
-      (support/extend-with :signed-convergent-bounded-below theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.convergence rainbow.math.rational.signed.additive-distance rainbow.math.rational.signed.distance-triangle rainbow.math.rational.signed.recovery-laws rainbow.math.rational.signed.distance])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-convergent-bounded-below theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.convergent-bounded-below))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

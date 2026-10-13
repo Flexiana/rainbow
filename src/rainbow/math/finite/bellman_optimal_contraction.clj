@@ -13,7 +13,8 @@
   preserved by finite argmax.  Its optimality-step specialization transports
   through value/nnrat-optimality-step-unfold, keeping the reducible argmax
   implementation opaque to the proof.  Native and axiom-free on D63."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.value-iteration :as fvi]
@@ -418,12 +419,17 @@
                 {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (let [base (-> checked-environment
-                 fvi/extend-environment
-                 add-monotone/extend-environment)]
-    (reduce add-spec base theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [base (-> checked-environment fvi/extend-environment add-monotone/extend-environment)] (reduce add-spec base theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.bellman-optimal-contraction))
 (defn theorem-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

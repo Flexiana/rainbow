@@ -6,7 +6,8 @@
   the joint law to matrix/transpose.  Consequently transpose is well-defined
   on the quotient represented by matrix/equivalent, including the explicit
   total semantics for ragged matrices.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.equivalence-shape :as equivalence-shape]
             [rainbow.math.linear.matrix.transpose :as transpose]
             [rainbow.math.logic.function :as function]
@@ -534,14 +535,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      transpose/extend-environment
-      (extend-spec-if-missing
-       'matrix/equivalent-transitive :finite-matrix-equivalence-shape
-       equivalence-shape/matrix-equivalent-transitive-spec)
-      (support/extend-with :finite-matrix-transpose-equivalence theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'matrix/equivalent-transitive :finite-matrix-equivalence-shape equivalence-shape/matrix-equivalent-transitive-spec) (support/extend-with :finite-matrix-transpose-equivalence theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.transpose-equivalence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

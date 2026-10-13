@@ -6,7 +6,8 @@
   milestone proves factor congruence, value congruence, and their joint form for
   the scalar scale-difference operation, then lifts the same family through
   vectors and matrices.  Native and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.signed-scale-units :as units]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -561,18 +562,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      units/extend-environment
-      (extend-spec-if-missing
-       'signed/multiply-left-respects-equivalence :signed-multiply-ring
-       signed-ring/multiply-left-respects-spec)
-      (extend-spec-if-missing
-       'signed/multiply-right-respects-equivalence :signed-multiply-ring
-       signed-ring/multiply-right-respects-spec)
-      (support/extend-with :finite-matrix-signed-scale-congruence
-                           theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-units])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/multiply-left-respects-equivalence :signed-multiply-ring signed-ring/multiply-left-respects-spec) (extend-spec-if-missing 'signed/multiply-right-respects-equivalence :signed-multiply-ring signed-ring/multiply-right-respects-spec) (support/extend-with :finite-matrix-signed-scale-congruence theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-congruence))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

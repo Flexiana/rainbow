@@ -32,7 +32,8 @@
   required. The new source-row reconstruction results do not silently change
   this predicate or its consumers. Native proof data, axiom-free. See
   the design notes."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-vector-round :as vr]
@@ -221,14 +222,17 @@
 
 (def theorem-specs [step-spec feasible-step-spec eliminate-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      vr/extend-environment
-      vuc/extend-environment
-      elim/extend-environment
-      (support/extend-with :nnrat-farkas-vector-step
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-vector-round rainbow.math.rational.nnrat.farkas-vector-unit-column rainbow.math.rational.nnrat.farkas-eliminate-all])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-vector-step (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-vector-step))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

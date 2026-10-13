@@ -8,7 +8,8 @@
   compose farkas-elim-list extension and projection in both directions.  There
   are no coupling constraints in this bounded milestone.  Native and axiom-free."
   (:refer-clojure :exclude [reduced])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-elim-list :as elim-list]))
@@ -289,12 +290,17 @@
 
 (def theorem-specs [extends-spec projects-spec solvable-iff-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      elim-list/extend-environment
-      (support/extend-with :nnrat-farkas-elim-two-var
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-elim-two-var (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-elim-two-var))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

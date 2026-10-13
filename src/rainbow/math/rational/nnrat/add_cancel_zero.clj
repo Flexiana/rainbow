@@ -14,7 +14,8 @@
   Native and axiom-free; chains nnrat-add-zero-split (for multiply-succ-zero-left)
   and nat-ring on d63."
   (:refer-clojure :exclude [numerator denominator])
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.nat.ring :as ring]
             [rainbow.math.rational.nnrat.add-zero-split :as zs]))
@@ -76,11 +77,17 @@
 (def definition-specs [])
 (def theorem-specs [add-cancel-to-zero-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-zero-split])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-add-cancel-zero (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      zs/extend-environment
-      (support/extend-with :nnrat-add-cancel-zero
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.add-cancel-zero))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

@@ -1,6 +1,6 @@
 # The corpus
 
-Every proof module in the open core: 1159 modules, grouped by folder. Each line links to the source and
+Every proof module in the open core: 1154 modules, grouped by folder. Each line links to the source and
 quotes the first sentence of its docstring. Re-check any of them with `lein verify <namespace>`.
 This file is generated from the source tree; do not edit it by hand.
 
@@ -155,7 +155,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.finite.value-iteration`](../src/rainbow/math/finite/value_iteration.clj) | Finite Bellman optimality and bounded value iteration over exact rationals. |
 | [`rainbow.math.finite.vector`](../src/rainbow/math/finite/vector.clj) | Finite vectors over signed rationals: lists of signed-rational components with elementwise addition, negation, subtraction, and scalar scaling. |
 
-## Lemmas behind operations-research checks (`src/rainbow/math/lemmas/`, 105)
+## Lemmas behind operations-research checks (`src/rainbow/math/lemmas/`, 100)
 
 | namespace | |
 |---|---|
@@ -163,7 +163,6 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.lemmas.acf-bound`](../src/rainbow/math/lemmas/acf_bound.clj) | General lemmas: acf bound. |
 | [`rainbow.math.lemmas.aggplan-balance`](../src/rainbow/math/lemmas/aggplan_balance.clj) | General lemmas: aggplan balance. |
 | [`rainbow.math.lemmas.anova-readings`](../src/rainbow/math/lemmas/anova_readings.clj) | General lemmas: anova readings. |
-| [`rainbow.math.lemmas.arule-readings`](../src/rainbow/math/lemmas/arule_readings.clj) | General lemmas: arule readings. |
 | [`rainbow.math.lemmas.assign-dual`](../src/rainbow/math/lemmas/assign_dual.clj) | General lemmas: assign dual. |
 | [`rainbow.math.lemmas.auc-readings`](../src/rainbow/math/lemmas/auc_readings.clj) | General lemmas: auc readings. |
 | [`rainbow.math.lemmas.auction-assignment`](../src/rainbow/math/lemmas/auction_assignment.clj) | General lemmas: auction assignment. |
@@ -189,7 +188,6 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.lemmas.crash-readings`](../src/rainbow/math/lemmas/crash_readings.clj) | General lemmas: crash readings. |
 | [`rainbow.math.lemmas.credibility-readings`](../src/rainbow/math/lemmas/credibility_readings.clj) | General lemmas: credibility readings. |
 | [`rainbow.math.lemmas.dc-power-flow`](../src/rainbow/math/lemmas/dc_power_flow.clj) | General lemmas: dc power flow. |
-| [`rainbow.math.lemmas.ddb-schedule`](../src/rainbow/math/lemmas/ddb_schedule.clj) | General lemmas: ddb schedule. |
 | [`rainbow.math.lemmas.dea-efficiency`](../src/rainbow/math/lemmas/dea_efficiency.clj) | General lemmas: dea efficiency. |
 | [`rainbow.math.lemmas.durbin-bounds`](../src/rainbow/math/lemmas/durbin_bounds.clj) | General lemmas: durbin bounds. |
 | [`rainbow.math.lemmas.economic-dispatch`](../src/rainbow/math/lemmas/economic_dispatch.clj) | General lemmas: economic dispatch. |
@@ -237,7 +235,6 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.lemmas.qp-kkt`](../src/rainbow/math/lemmas/qp_kkt.clj) | General lemmas: qp kkt. |
 | [`rainbow.math.lemmas.rccp-readings`](../src/rainbow/math/lemmas/rccp_readings.clj) | General lemmas: rccp readings. |
 | [`rainbow.math.lemmas.reservoir-readings`](../src/rainbow/math/lemmas/reservoir_readings.clj) | General lemmas: reservoir readings. |
-| [`rainbow.math.lemmas.reversible-stationary`](../src/rainbow/math/lemmas/reversible_stationary.clj) | General lemmas: reversible stationary. |
 | [`rainbow.math.lemmas.rippl-readings`](../src/rainbow/math/lemmas/rippl_readings.clj) | General lemmas: rippl readings. |
 | [`rainbow.math.lemmas.salesq-readings`](../src/rainbow/math/lemmas/salesq_readings.clj) | General lemmas: salesq readings. |
 | [`rainbow.math.lemmas.sigtime-readings`](../src/rainbow/math/lemmas/sigtime_readings.clj) | General lemmas: sigtime readings. |
@@ -249,10 +246,8 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.lemmas.stochastic-dominance`](../src/rainbow/math/lemmas/stochastic_dominance.clj) | General lemmas: stochastic dominance. |
 | [`rainbow.math.lemmas.stoploss-bounds`](../src/rainbow/math/lemmas/stoploss_bounds.clj) | General lemmas: stoploss bounds. |
 | [`rainbow.math.lemmas.subgrad-duality`](../src/rainbow/math/lemmas/subgrad_duality.clj) | General lemmas: subgrad duality. |
-| [`rainbow.math.lemmas.tax-schedule`](../src/rainbow/math/lemmas/tax_schedule.clj) | General lemmas: tax schedule. |
 | [`rainbow.math.lemmas.transport-dual`](../src/rainbow/math/lemmas/transport_dual.clj) | General lemmas: transport dual. |
 | [`rainbow.math.lemmas.trigg-bound`](../src/rainbow/math/lemmas/trigg_bound.clj) | General lemmas: trigg bound. |
-| [`rainbow.math.lemmas.two-opt-local`](../src/rainbow/math/lemmas/two_opt_local.clj) | General lemmas: two opt local. |
 | [`rainbow.math.lemmas.twoline-readings`](../src/rainbow/math/lemmas/twoline_readings.clj) | General lemmas: twoline readings. |
 | [`rainbow.math.lemmas.ufl-gap`](../src/rainbow/math/lemmas/ufl_gap.clj) | General lemmas: ufl gap. |
 | [`rainbow.math.lemmas.unifpx-readings`](../src/rainbow/math/lemmas/unifpx_readings.clj) | General lemmas: unifpx readings. |

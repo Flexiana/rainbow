@@ -10,7 +10,8 @@
   `state-covered` remains explicit whenever a finite radius must supply a
   carrier-wide contraction premise.  Native, kernel-checked, and axiom-free on
   D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.bellman-residual-certificate
              :as optimality-certificate]
             [rainbow.math.logic.function :as function]
@@ -679,15 +680,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      optimality-certificate/extend-environment
-      separation/extend-environment
-      (extend-spec-if-missing
-       'nnrat/multiply-zero-right :nnrat-identities
-       identities/multiply-zero-right-spec)
-      (support/extend-with
-       :finite-bellman-policy-residual-certificate theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.bellman-residual-certificate rainbow.math.rational.nnrat.metric-separation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'nnrat/multiply-zero-right :nnrat-identities identities/multiply-zero-right-spec) (support/extend-with :finite-bellman-policy-residual-certificate theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-policy-residual-certificate))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

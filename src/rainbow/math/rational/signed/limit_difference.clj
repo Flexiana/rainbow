@@ -13,7 +13,8 @@
 
   Native and axiom-free; chains the D63 limit-arithmetic and limit-negation
   modules."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.limit-arithmetic :as arithmetic]
             [rainbow.math.rational.signed.limit-negate :as negate]))
@@ -99,12 +100,17 @@
 (def definition-specs [])
 (def theorem-specs [close-subtractive-spec limit-difference-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      arithmetic/extend-environment
-      negate/extend-environment
-      (support/extend-with :signed-limit-difference theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.limit-arithmetic rainbow.math.rational.signed.limit-negate])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-limit-difference theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.limit-difference))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

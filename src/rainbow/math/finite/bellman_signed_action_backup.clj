@@ -9,7 +9,8 @@
   A normalized row transports two-sided pointwise epsilon-closeness to
   discount*epsilon-closeness of the corresponding action backups.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.finite.signed-expectation :as expectation]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -352,18 +353,16 @@
     env
     (support/extend-with env producer [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      expectation/extend-environment
-      (extend-spec-if-missing
-       'signed/add-associative :signed-add-associative
-       associative/add-associative-spec)
-      (extend-spec-if-missing
-       'signed/at-most-respects-equivalence :signed-order-respects
-       order-respects/at-most-respects-equivalence-spec)
-      (support/extend-with
-       :finite-bellman-signed-action-backup
-       (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.signed-expectation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'signed/add-associative :signed-add-associative associative/add-associative-spec) (extend-spec-if-missing 'signed/at-most-respects-equivalence :signed-order-respects order-respects/at-most-respects-equivalence-spec) (support/extend-with :finite-bellman-signed-action-backup (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.bellman-signed-action-backup))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

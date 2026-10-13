@@ -18,7 +18,8 @@
 
   Requires nnrat/add, nnrat/multiply, nnrat/at-most, and the decidable nnrat
   order (all in the D63 checkpoint)."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-upper :as add-upper]))
@@ -129,12 +130,17 @@
 
 ;; Environment plumbing -----------------------------------------------------
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      add-upper/extend-environment
-      (support/extend-with :ahof-expected-improvement
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.add-upper])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :ahof-expected-improvement (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.algorithms.proofs.ahof.expected-improvement))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

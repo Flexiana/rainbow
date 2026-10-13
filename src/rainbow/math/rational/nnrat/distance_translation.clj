@@ -3,7 +3,8 @@
 
   The proof uses the additive-radius characterization in both directions,
   additive monotonicity, and cancellation; no truncated subtraction is assumed."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.add-cancellation :as cancellation]
             [rainbow.math.rational.nnrat.add-monotone :as monotone]
@@ -76,9 +77,15 @@
 
 (def definition-specs [])
 (def theorem-specs [distance-add-right-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.metric-separation rainbow.math.rational.nnrat.add-cancellation rainbow.math.rational.nnrat.add-monotone rainbow.math.rational.nnrat.additive-reassociation])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-distance-translation theorem-specs)))
+
 (defn extend-environment [env]
-  (-> env metric/extend-environment cancellation/extend-environment
-      monotone/extend-environment
-      reassociation/extend-environment
-      (support/extend-with :nnrat-distance-translation theorem-specs)))
+  (module/install-module env 'rainbow.math.rational.nnrat.distance-translation))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

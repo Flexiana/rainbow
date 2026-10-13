@@ -13,7 +13,8 @@
 
   Native and axiom-free; chains nnrat-order-equivalence, nat at-most
   cancellation, and the nat-ring proof-term generator on the D63 checkpoint."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.nat.ring :as ring]
             [rainbow.math.rational.nnrat.order-equivalence :as oe]))
@@ -245,11 +246,17 @@
 (def definition-specs [])
 (def theorem-specs [at-most-of-all-plus-reciprocal-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      oe/extend-environment
-      (support/extend-with :nnrat-archimedean theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.order-equivalence])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-archimedean theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.archimedean))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

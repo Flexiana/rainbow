@@ -7,7 +7,8 @@
   signed product, while exposing enough existing linear algebra to derive dot
   homogeneity without an expensive nested List induction.  Native and
   axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.composable-multiply :as bracketings]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
@@ -239,24 +240,17 @@
     checked-environment
     (support/extend-with checked-environment milestone [spec])))
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      bracketings/extend-environment
-      dot-subtract/extend-environment
-      dot-scale/extend-environment
-      shape-add/extend-environment
-      (extend-spec-if-missing
-       'signed/multiply-commutative :signed-multiply-ring
-       signed-ring/multiply-commutative-spec)
-      (extend-spec-if-missing
-       'signed/multiply-distributes-add-right :signed-distributive
-       distributive/multiply-distributes-add-right-spec)
-      (extend-spec-if-missing
-       'signed/add-respects-equivalence :signed-map-sum-algebra
-       signed-algebra/add-respects-equivalence-spec)
-      (support/extend-with :finite-matrix-action-scale
-                           (into definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.composable-multiply rainbow.math.linear.vector.dot-subtract rainbow.math.linear.vector.dot-scale rainbow.math.linear.vector.shape-add])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (extend-spec-if-missing 'signed/multiply-commutative :signed-multiply-ring signed-ring/multiply-commutative-spec) (extend-spec-if-missing 'signed/multiply-distributes-add-right :signed-distributive distributive/multiply-distributes-add-right-spec) (extend-spec-if-missing 'signed/add-respects-equivalence :signed-map-sum-algebra signed-algebra/add-respects-equivalence-spec) (support/extend-with :finite-matrix-action-scale (into definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.action-scale))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

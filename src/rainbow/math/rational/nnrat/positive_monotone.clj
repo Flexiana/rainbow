@@ -12,7 +12,8 @@
   drops the den p factor. factor-positive itself is a Nat.rec on a: base a=0 is the identity
   (both sides are strict-below 0 0), step a=succ e gives the witness directly. Axiom-free;
   additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.order-equivalence :as order-equivalence]
             [rainbow.math.rational.nnrat.positive :as positive]))
@@ -84,11 +85,16 @@
 
 (def theorem-specs [positive-of-multiply-left-spec positive-of-at-most-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      order-equivalence/extend-environment
-      positive/extend-environment
-      (support/extend-with :nnrat-positive-monotone theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.order-equivalence rainbow.math.rational.nnrat.positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-positive-monotone theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.positive-monotone))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

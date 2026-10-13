@@ -7,7 +7,8 @@
   transports the resulting upper bound.  This is the scalar induction step
   for dot-product distance estimates.  Native, kernel-checked, and axiom-free
   on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.distance-translation :as translation]
             [rainbow.math.rational.signed.distance-triangle :as triangle]))
@@ -86,11 +87,16 @@
 (def definition-specs [])
 (def theorem-specs [distance-add-spec])
 
-(defn extend-environment [env]
-  (-> env
-      triangle/extend-environment
-      translation/extend-environment
-      (support/extend-with :signed-distance-additive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.distance-triangle rainbow.math.rational.signed.distance-translation])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :signed-distance-additive theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.signed.distance-additive))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

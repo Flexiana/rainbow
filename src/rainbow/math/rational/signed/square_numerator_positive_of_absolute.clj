@@ -11,7 +11,8 @@
   bound |L|/2 <= |s n| to obtain 1 <= num(mag(s n * s n)) -- the nonzero fact
   reciprocal-difference / absolute-reciprocal-times-self / reciprocal-antitone need for s n.
   Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.square-numerator-positive :as sq-num-pos]
             [rainbow.math.rational.signed.absolute-multiply :as absolute-multiply]
@@ -72,18 +73,16 @@
 
 (def theorem-specs [square-numerator-positive-of-absolute-bound-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      sq-num-pos/extend-environment
-      absolute-multiply/extend-environment
-      absolute-sign/extend-environment
-      norm-nonneg/extend-environment
-      multiply-order/extend-environment
-      magnitude-monotone/extend-environment
-      positive-monotone/extend-environment
-      order-transitivity/extend-environment
-      order-respects/extend-environment
-      (support/extend-with :signed-square-numerator-positive-of-absolute theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.square-numerator-positive rainbow.math.rational.signed.absolute-multiply rainbow.math.rational.signed.absolute-sign rainbow.math.linear.vector.norm-nonnegative rainbow.math.rational.signed.multiply-order rainbow.math.rational.signed.magnitude-monotone rainbow.math.rational.nnrat.positive-monotone rainbow.math.rational.signed.order-transitivity rainbow.math.rational.signed.order-respects])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-square-numerator-positive-of-absolute theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.square-numerator-positive-of-absolute))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

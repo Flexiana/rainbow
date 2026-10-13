@@ -8,7 +8,8 @@
   every rectangular matrix with a nonempty first row.  This is the strongest
   valid theorem for the row-list representation: nonempty zero-width matrices
   lose their row count under transpose.  Native and axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.transpose-involution :as involution]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.transpose-involution :as involution]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -388,12 +389,17 @@
   [transpose-prepend-column-after-prepend-spec
    transpose-involutive-nonempty-width-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      involution/extend-environment
-      (support/extend-with
-       :finite-matrix-transpose-involution-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.transpose-involution])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-transpose-involution-positive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.transpose-involution-positive))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

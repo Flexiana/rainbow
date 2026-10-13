@@ -7,7 +7,8 @@
   the arbitrary-factor zero law.  Two small proof-data generators lift each
   checked scalar rule structurally to vectors and matrices.  Native and
   axiom-free on D63."
-  (:require [rainbow.math.linear.matrix.signed-scale-positive :as positive]
+  (:require [rainbow.module :as module]
+            [rainbow.math.linear.matrix.signed-scale-positive :as positive]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]))
 
@@ -350,11 +351,17 @@
    matrix-signed-scale-nonpositive-of-nonpositive-factor-spec
    matrix-signed-scale-nonnegative-of-nonpositive-factor-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      positive/extend-environment
-      (support/extend-with :finite-matrix-signed-scale-sign theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.signed-scale-positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-matrix-signed-scale-sign theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.linear.matrix.signed-scale-sign))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

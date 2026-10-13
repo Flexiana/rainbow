@@ -29,7 +29,8 @@
   output lacks source-row provenance. General n-variable elimination and dual
   extraction therefore remain unproved by this chain. Native proof data,
   axiom-free. See the design notes."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.farkas-vector-adapter-bilist :as vab]
@@ -248,15 +249,17 @@
 
 (def theorem-specs [unit-column-lower-spec unit-column-upper-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      vab/extend-environment
-      upper/extend-environment
-      lower/extend-environment
-      identities/extend-environment
-      (support/extend-with :nnrat-farkas-vector-unit-column
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.farkas-vector-adapter-bilist rainbow.math.rational.nnrat.farkas-elim-affine-list rainbow.math.rational.nnrat.farkas-elim-affine-list-lower rainbow.math.rational.nnrat.identities])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-vector-unit-column (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-vector-unit-column))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

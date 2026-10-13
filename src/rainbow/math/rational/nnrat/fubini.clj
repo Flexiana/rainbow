@@ -19,7 +19,8 @@
            (sum_j rest); add-respects-equivalence recombines.
   Polymorphic in both index types.  Native and axiom-free; chains
   nnrat-map-sum-additive on d63."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.rational.nnrat.map-sum-additive :as ma]))
 
@@ -93,11 +94,17 @@
 (def definition-specs [])
 (def theorem-specs [map-sum-swap-spec])
 
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.map-sum-additive])
+
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-fubini (concat definition-specs theorem-specs))))
+
 (defn extend-environment [checked-environment]
-  (-> checked-environment
-      ma/extend-environment
-      (support/extend-with :nnrat-fubini
-                           (concat definition-specs theorem-specs))))
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.fubini))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 (defn theorem-ids [checked-environment]

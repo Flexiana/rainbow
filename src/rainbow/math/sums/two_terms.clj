@@ -1,7 +1,8 @@
 (ns rainbow.math.sums.two-terms
   "One term, and two DISTINCT terms, are bounded by a nonnegative expr-sum-value.
   Reuses the existing sum and order. F is intentionally not named q: s/induct binds q."
-  (:require [rainbow.math.logic.function :as f]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as f]
             [rainbow.environment :as environment]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat family call at sum le below]]
@@ -97,10 +98,15 @@
         'n))))
 
 (def theorem-specs [term-bound-spec two-distinct-bound-spec])
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sums.nonneg-zero])
+
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (let [env (if (environment/resolve-id env 'signed/expr-sum-value-nonnegative-terms-zero) env env)] (reduce (fn [e spec] (println :two-terms :installing (:name spec)) (flush) (support/add-spec-shared e :expr-sum-two-terms spec)) env theorem-specs)))
+
 (defn extend-environment [env]
-  (let [env (if (environment/resolve-id env 'signed/expr-sum-value-nonnegative-terms-zero)
-              env (nonnegative/extend-environment env))]
-    (reduce (fn [e spec]
-              (println :two-terms :installing (:name spec)) (flush)
-              (support/add-spec-shared e :expr-sum-two-terms spec)) env theorem-specs)))
+  (module/install-module env 'rainbow.math.sums.two-terms))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

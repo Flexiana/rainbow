@@ -8,7 +8,8 @@
   1/(x*x) = from-nnrat (recip mmag) is nonnegative (from-nnrat of any nnrat is >= 0, since
   its negative component is 0 -- nnrat/zero-at-most), so multiply-nonnegative closes it.
   Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.reciprocal :as reciprocal]
             [rainbow.math.rational.signed.multiply-order :as multiply-order]
@@ -46,12 +47,16 @@
 
 (def theorem-specs [reciprocal-nonnegative-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      reciprocal/extend-environment
-      multiply-order/extend-environment
-      farkas/extend-environment
-      (support/extend-with :signed-reciprocal-nonnegative theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.reciprocal rainbow.math.rational.signed.multiply-order rainbow.math.rational.nnrat.farkas-elim-list])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-reciprocal-nonnegative theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.reciprocal-nonnegative))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

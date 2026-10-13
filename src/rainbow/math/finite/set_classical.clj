@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.set-classical
   "Classical finite-set transport, kept separate from the axiom-free layer."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.set :as finite-set]
@@ -756,15 +757,17 @@
                       {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (when-not (and (environment/resolve-id checked-environment
-                                        'logic/classical-cases)
-                 (environment/resolve-id checked-environment
-                                        'logic/excluded-middle))
-    (throw (ex-info "Classical finite-set transport requires activation"
-                    {:error/category :finite-set/classical-profile-required})))
-  (reduce add-theorem checked-environment theorem-specs))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (when-not (and (environment/resolve-id checked-environment 'logic/classical-cases) (environment/resolve-id checked-environment 'logic/excluded-middle)) (throw (ex-info "Classical finite-set transport requires activation" {:error/category :finite-set/classical-profile-required}))) (reduce add-theorem checked-environment theorem-specs))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.set-classical))
 (defn theorem-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

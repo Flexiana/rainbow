@@ -1,4 +1,4 @@
-(defproject org.flexiana/rainbow "1.0.0-rc.2"
+(defproject org.flexiana/rainbow "1.0.0"
   :description "Rainbow: data-oriented, kernel-checked mathematics for Clojure (Levels 1-3, open core)"
   :url "https://github.com/flexiana/rainbow"
   :license {:name "Apache-2.0" :url "https://www.apache.org/licenses/LICENSE-2.0"}

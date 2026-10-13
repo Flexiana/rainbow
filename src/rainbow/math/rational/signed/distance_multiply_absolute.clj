@@ -12,7 +12,8 @@
               d((-w)*x,(-w)*y) ~ d(w*x,w*y) [multiply-negate-left + distance-negate-both]
               while |w|~-w (absolute-of-nonpositive) rewrites (-w) to |w|.
   Axiom-free; additive; does not touch the LP checker."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.absolute-sign :as absolute-sign]
             [rainbow.math.rational.signed.distance-negate :as distance-negate]
@@ -102,13 +103,16 @@
 
 (def theorem-specs [distance-multiply-left-absolute-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      absolute-sign/extend-environment
-      distance-negate/extend-environment
-      distance-multiply/extend-environment
-      multiply-ring/extend-environment
-      (support/extend-with :signed-distance-multiply-absolute theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.absolute-sign rainbow.math.rational.signed.distance-negate rainbow.math.rational.signed.distance-multiply-nonnegative rainbow.math.rational.signed.multiply-ring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :signed-distance-multiply-absolute theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.signed.distance-multiply-absolute))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

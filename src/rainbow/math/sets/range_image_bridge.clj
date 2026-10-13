@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.range-image-bridge
   "Bridge global function ranges to images of universal source sets."
-  (:require [rainbow.math.finite.set :as finite-set]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.set :as finite-set]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -182,10 +183,16 @@
    range-equivalent-image-universal-spec
    surjective-equivalent-universal-subset-range-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      finite-set/extend-environment
-      (support/extend-with :set-range-image-bridge theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.set])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-range-image-bridge theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.range-image-bridge))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -9,7 +9,8 @@
   The optimality proof treats value/nnrat-optimality-step as opaque: all
   argmax reasoning stays behind its propositional nonexpansiveness theorem.
   Native and axiom-free on D63."
-  (:require [rainbow.elaborate :as elaborate]
+  (:require [rainbow.module :as module]
+            [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.finite.bellman-monotone :as monotone]
@@ -408,17 +409,17 @@
                 {:name (:name spec) :result result})))
     (:environment result)))
 
-(defn extend-environment [checked-environment]
-  (let [base (-> checked-environment
-                 monotone/extend-environment
-                 optimal/extend-environment
-                 map-respects/extend-environment
-                 map-scale/extend-environment
-                 multiply-commute/extend-environment)
-        normalized-expectation-base
-        (reduce add-spec base dependency-specs)]
-    (reduce add-spec normalized-expectation-base theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (let [base (-> checked-environment monotone/extend-environment optimal/extend-environment map-respects/extend-environment map-scale/extend-environment multiply-commute/extend-environment) normalized-expectation-base (reduce add-spec base dependency-specs)] (reduce add-spec normalized-expectation-base theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.bellman-backup-contraction))
 (defn theorem-ids [checked-environment]
   (into (sorted-map)
         (map (fn [spec]

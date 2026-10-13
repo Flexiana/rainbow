@@ -21,7 +21,8 @@
   folds lower bounds with max and upper bounds with min, followed by normalization
   of nonzero target-variable coefficients into these bound predicates.  Native
   and axiom-free."
-  (:require [rainbow.math.milestone-support :as support]
+  (:require [rainbow.module :as module]
+            [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.rational.nnrat.minmax :as minmax]))
@@ -248,12 +249,17 @@
 
 (def theorem-specs [extends-spec projects-spec solvable-iff-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      minmax/extend-environment
-      (support/extend-with :nnrat-farkas-elim
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.minmax])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-farkas-elim (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.farkas-elim))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 

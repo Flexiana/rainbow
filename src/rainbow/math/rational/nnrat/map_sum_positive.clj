@@ -6,7 +6,8 @@
   needs neither decidable equality nor duplicate freedom.  This is the generic
   path-term-to-positive-transition bridge for finite Markov composition.
   Native, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.nnrat.list-sum :as list-sum]
             [rainbow.math.rational.nnrat.positive :as positive]
@@ -127,12 +128,16 @@
 (def definition-specs [])
 (def theorem-specs [map-sum-positive-of-member-spec])
 
-(defn extend-environment [env]
-  (-> env
-      list-sum/extend-environment
-      positive/extend-environment
-      (support/extend-with
-       :nnrat-map-sum-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.nnrat.list-sum rainbow.math.rational.nnrat.positive])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :nnrat-map-sum-positive theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.rational.nnrat.map-sum-positive))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

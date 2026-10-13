@@ -13,7 +13,8 @@
   enumerated component is below the supremum, pointwise bounds fold globally,
   and the metric is nonnegative, symmetric, and triangular.  Native,
   kernel-checked, and axiom-free on D63."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.rational.signed.vector-sup-triangle :as sup-triangle]))
 
@@ -416,11 +417,16 @@
    finite-nnrat-sup-distance-symmetric-spec
    finite-nnrat-sup-distance-triangle-spec])
 
-(defn extend-environment [env]
-  (-> env
-      sup-triangle/extend-environment
-      (support/extend-with :finite-nnrat-sup-distance
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.rational.signed.vector-sup-triangle])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (support/extend-with :finite-nnrat-sup-distance (concat definition-specs theorem-specs))))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.finite.nnrat-sup-distance))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

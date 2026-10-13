@@ -4,7 +4,8 @@
   exists extra, succ(0)+extra = X; the proof CPS-eliminates the two witnesses, transports a*b
   along a=succ(0)+ea and the inner b=succ(0)+eb (equality/substitution), landing on
   succ(eb + ea*b), which is positive by a direct witness."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.infinite :as nat-infinite]
             [rainbow.math.nat.semiring :as nat-semiring]))
@@ -53,11 +54,16 @@
 
 (def theorem-specs [multiply-positive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nat-infinite/extend-environment
-      nat-semiring/extend-environment
-      (support/extend-with :nat-multiply-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.infinite rainbow.math.nat.semiring])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nat-multiply-positive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.nat.multiply-positive))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

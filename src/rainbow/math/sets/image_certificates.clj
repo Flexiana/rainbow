@@ -1,6 +1,7 @@
 (ns rainbow.math.sets.image-certificates
   "Constructive image/target inclusions from certified set maps."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]
             [rainbow.math.sets.inverse-certificates :as inverse]))
@@ -259,10 +260,16 @@
    image-target-equivalent-of-bijective-on-spec
    image-target-equivalent-of-inverse-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      inverse/extend-environment
-      (support/extend-with :set-image-certificates theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.sets.inverse-certificates])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :set-image-certificates theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.sets.image-certificates))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

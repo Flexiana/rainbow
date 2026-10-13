@@ -3,7 +3,8 @@
   signed no-zero-divisors: nnrat/positive p reduces to strict-below 0 (numerator p), and
   numerator(k*k) is defeq numerator k * numerator k, so this is exactly nat/multiply-positive
   on the numerator."
-  (:require [rainbow.math.logic.function :as function]
+  (:require [rainbow.module :as module]
+            [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.nat.multiply-positive :as nat-mul-pos]
             [rainbow.math.rational.nnrat.positive-monotone :as nnrat-pos]))
@@ -29,11 +30,16 @@
 
 (def theorem-specs [square-positive-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      nat-mul-pos/extend-environment
-      nnrat-pos/extend-environment
-      (support/extend-with :nnrat-square-positive theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.nat.multiply-positive rainbow.math.rational.nnrat.positive-monotone])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :nnrat-square-positive theorem-specs)))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.rational.nnrat.square-positive))
 (defn theorem-ids [checked-environment]
   (support/spec-ids checked-environment theorem-specs))

@@ -6,7 +6,8 @@
   involved vectors have the shapes required by truncating vector arithmetic.
   The two directions expose their minimal shape premises; the iff theorem
   packages both.  Theorem-only, kernel-checked, and axiom-free on D63."
-  (:require [rainbow.environment :as environment]
+  (:require [rainbow.module :as module]
+            [rainbow.environment :as environment]
             [rainbow.math.linear.matrix.affine-stabilization
              :as stabilization]
             [rainbow.math.logic.function :as function]
@@ -153,18 +154,16 @@
     env
     (support/extend-with env milestone [spec])))
 
-(defn extend-environment [env]
-  (-> env
-      stabilization/extend-environment
-      (extend-spec-if-missing
-       'vector/add-subtract-right-cancel
-       :vector-shape-cancellation
-       shape-cancellation/add-subtract-right-cancel-spec)
-      (extend-spec-if-missing
-       'vector/subtract-respects-equivalence
-       :vector-subtract-laws
-       subtract-laws/subtract-respects-equivalence-spec)
-      (support/extend-with :finite-matrix-affine-residual theorem-specs)))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.linear.matrix.affine-stabilization])
 
+(defn install
+  "Adds this module's own declarations."
+  [env]
+  (-> env (extend-spec-if-missing 'vector/add-subtract-right-cancel :vector-shape-cancellation shape-cancellation/add-subtract-right-cancel-spec) (extend-spec-if-missing 'vector/subtract-respects-equivalence :vector-subtract-laws subtract-laws/subtract-respects-equivalence-spec) (support/extend-with :finite-matrix-affine-residual theorem-specs)))
+
+(defn extend-environment [env]
+  (module/install-module env 'rainbow.math.linear.matrix.affine-residual))
 (defn definition-ids [env] (support/spec-ids env definition-specs))
 (defn theorem-ids [env] (support/spec-ids env theorem-specs))

@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.set-indexed-union
   "Constructive finite unions over finite index sets."
-  (:require [rainbow.math.finite.set :as finite-set]
+  (:require [rainbow.module :as module]
+            [rainbow.math.finite.set :as finite-set]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]))
@@ -561,12 +562,17 @@
    indexed-union-subset-universal-restricted-spec
    finite-indexed-union-spec])
 
-(defn extend-environment [checked-environment]
-  (-> checked-environment
-      finite-set/extend-environment
-      (support/extend-with :finite-set-indexed-union
-                           (concat definition-specs theorem-specs))))
+(def deps
+  "Modules this one installs on top of (see rainbow.module)."
+  '[rainbow.math.finite.set])
 
+(defn install
+  "Adds this module's own declarations."
+  [checked-environment]
+  (-> checked-environment (support/extend-with :finite-set-indexed-union (concat definition-specs theorem-specs))))
+
+(defn extend-environment [checked-environment]
+  (module/install-module checked-environment 'rainbow.math.finite.set-indexed-union))
 (defn definition-ids [checked-environment]
   (support/spec-ids checked-environment definition-specs))
 
