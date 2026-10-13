@@ -1,0 +1,58 @@
+{:precommit/schema-version 1
+ :precommit/kind :finite-sup-metric-separation
+ :precommit/source
+ {:input-checkpoint/id
+  "sha256:d508e6567db65d12e1ceec12de2d2d5d05aa874f43faa2d8ad13e20d1f5e0df0"
+  :input-exact-mathlib-mappings 1245
+  :proof-values :native-only}
+ :precommit/targets
+ [{:target/name nat/equal-zero-of-at-most-zero
+   :study/partition :development
+   :statement "n <= 0 implies n = 0 constructively"}
+  {:target/name list/nat-map-max-zero-of-memberwise-zero
+   :study/partition :development
+   :statement "a finite maximum is zero when every listed value is zero"}
+  {:target/name metric/finite-sup-zero-of-pointwise-equal
+   :study/partition :development
+   :statement "pointwise equality on the finite support implies sup-distance zero"}
+  {:target/name metric/pointwise-equal-of-finite-sup-zero
+   :study/partition :held-out
+   :statement "sup-distance zero implies pointwise equality on the finite support"}
+  {:target/name metric/finite-sup-zero-equivalent-pointwise-equal
+   :study/partition :held-out
+   :statement "sup-distance zero is equivalent to pointwise equality on the support"}
+  {:target/name metric/finite-sup-positive-of-pointwise-not-equal
+   :study/partition :transfer
+   :statement "one unequal supported point makes the finite sup-distance positive"}]
+ :precommit/representation
+ {:carrier :universe-polymorphic
+  :support :extensional-finset-with-list-enumeration
+  :distance :computational-natural-distance
+  :supremum :finite-recursive-maximum
+  :equality :support-relative-pointwise-equality}
+ :precommit/fixed-policy
+ {:search/states 32
+  :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :native-dependency-cone-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck
+  :missing-zero-separation-for-finite-sup-distance}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/metrics
+ [:new-native-results :held-out-success-rate-change
+  :median-search-states :total-search-states
+  :rainbow-compute-ms :ai-latency-ms
+  :targets-per-generalized-lemma :lemma-leverage
+  :axiom-profiles :trusted-base-delta
+  :smallest-missing-prerequisite]
+ :precommit/claim-boundaries
+ {:mathlib-mapping-credit-planned? false
+  :function-equality-outside-support-claimed? false
+  :complete-metric-fixed-point-claimed? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:6ad4d09da71c3e24ea8abc12d72d36c19eb7183f2d0c9be53d352d9a6ebd451e"}

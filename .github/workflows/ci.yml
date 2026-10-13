@@ -1,0 +1,29 @@
+# The full suite takes hours (many tests replay large checkpoints through the kernel), so CI runs what a
+# visitor most needs to see hold: the kernel tests, the trusted-base pin, and the tour's theorems re-checked.
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: DeLaGuardo/setup-clojure@13.0
+        with:
+          lein: latest
+      - name: Trusted base is 1,200 lines
+        run: test "$(cat src/rainbow/kernel.clj src/rainbow/term.clj src/rainbow/environment.clj src/rainbow/canonical.clj | wc -l)" -eq 1200
+      - name: Kernel tests
+        run: lein test rainbow.kernel-test
+      - name: Re-check the tour's theorems
+        run: >-
+          lein verify
+          rainbow.math.rational.nnrat.identities
+          rainbow.math.finite.rational-argmax
+          rainbow.math.finite.markov-ergodic-uniqueness

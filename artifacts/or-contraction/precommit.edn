@@ -1,0 +1,62 @@
+{:precommit/schema-version 1
+ :precommit/kind :finite-fixed-policy-bellman-contraction
+ :precommit/source
+ {:input-checkpoint/id "sha256:2d938b7499b62afcef8b8486476f7c3e36665d5183e1bf20f80d5ea30204c374"
+  :mathlib/version "v4.30.0"
+  :mathlib/commit "c5ea00351c28e24afc9f0f84379aa41082b1188f"
+  :foreign/proof-values :redacted}
+ :precommit/arithmetic
+ {:values :natural-numerators
+  :probability :finite-natural-masses-with-explicit-scale
+  :distance :constructive-natural-absolute-distance
+  :supremum :maximum-over-duplicate-free-finite-enumeration
+  :floating-point? false
+  :raw-fractions-claimed-as-quotient-field? false}
+ :precommit/targets
+ [{:target/name nat/distance-multiply-left
+   :study/partition :development
+   :statement "dist(k*a,k*b)=k*dist(a,b)"}
+  {:target/name list/nat-map-sum-distance-bound
+   :study/partition :development
+   :statement "pointwise distance <= e implies distance of finite sums <= length*e"}
+  {:target/name probability/expectation-distance-bound
+   :study/partition :held-out
+   :statement "pointwise value distance <= e implies expectation distance <= mass-total*e"}
+  {:target/name metric/finite-sup-upper-bound
+   :study/partition :development
+   :statement "each enumerated pointwise distance is <= the finite sup-distance"}
+  {:target/name metric/finite-sup-symmetric
+   :study/partition :development
+   :statement "finite sup-distance is symmetric"}
+  {:target/name metric/finite-sup-triangle
+   :study/partition :held-out
+   :statement "finite sup-distance satisfies the triangle inequality"}
+  {:target/name bellman/fixed-policy-pointwise-contraction
+   :study/partition :held-out
+   :statement "normalized rows bound output distance by discount*scale*epsilon"}
+  {:target/name bellman/fixed-policy-sup-contraction
+   :study/partition :transfer
+   :statement "fixed-policy Bellman contracts finite sup-distance at the explicit scaled discount"}
+  {:target/name bellman/two-state-contraction-example
+   :study/partition :transfer
+   :statement "the runnable two-state Bellman example instantiates the contraction bound"}]
+ :precommit/fixed-policy
+ {:search/states 64
+  :search/depth 96
+  :proof-source :independent-rainbow
+  :selection :dependency-ordered-native-or-chain
+  :success :kernel-checked-with-axiom-profile}
+ :precommit/baseline
+ {:native-targets-present 0
+  :proved-targets 0
+  :reason :missing-finite-sup-distance-and-distance-of-folds}
+ :precommit/primary-metrics
+ [:held-out-success-rate-change
+  :newly-solved-targets-per-generalized-lemma
+  :total-kernel-checked-proof-cost]
+ :precommit/claim-boundaries
+ {:mathematical-contraction-separated? true
+  :rainbow-evaluation-separated? true
+  :clojure-correspondence-separated? true
+  :rational-fixed-point-conclusion-claimed? false}
+ :precommit/id "sha256:02ad5ccfcf283002b9aa54990b335ce212fe8658e13f1bb92c3291a0fd21dff7"}

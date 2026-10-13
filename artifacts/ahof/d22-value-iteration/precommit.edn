@@ -1,0 +1,90 @@
+{:precommit/schema-version 1
+ :precommit/kind :ahof-d22-value-iteration
+ :precommit/source
+ {:ahof/id "D22"
+  :ahof/name "Value Iteration"
+  :ahof/source-file "catalog/02_decision_making_algorithms.md"
+  :ahof/source-commit "0f53d3bc40bbe2e110f3fda4325d205322cce53c"
+  :ahof/listing "(iterate (fn [V] (map-over-states (bellman-optimality-fn V) states)) V0)"
+  :input-checkpoint/id "sha256:84d20430df218141957be4e0c0a590e820b596629504beab337efc751ca2deb6"
+  :foreign-proof-values :not-applicable}
+ :precommit/representation
+ {:states :duplicate-free-finset-data
+  :actions :duplicate-free-finset-data
+  :transition :state-action-to-exact-rational-mass
+  :reward :state-action-to-exact-rational
+  :action-backup :reward-plus-discounted-finite-expectation
+  :optimality :finite-exact-rational-argmax-value-per-state
+  :iteration :nat-recursion-over-value-functions}
+ :precommit/targets
+ [{:target/name decision/finite-nnrat-argmax-is-member
+   :study/partition :baseline-support
+   :statement "finite rational argmax returns a declared action"}
+  {:target/name decision/finite-nnrat-argmax-dominates
+   :study/partition :baseline-support
+   :statement "finite rational argmax dominates every declared action"}
+  {:target/name nat/recursor-successor-constant
+   :study/partition :baseline-support
+   :statement "constant-family Nat iteration unfolds at successors"}
+  {:target/name value/nnrat-greedy-action
+   :study/partition :development
+   :statement "a greedy action maximizes a state-indexed rational backup"}
+  {:target/name value/nnrat-optimality-step
+   :study/partition :development
+   :statement "the Bellman optimality step returns the greedy backup value"}
+  {:target/name value/nnrat-iterate
+   :study/partition :development
+   :statement "bounded value iteration repeatedly applies Bellman optimality"}
+  {:target/name value/nnrat-greedy-action-is-admissible
+   :study/partition :held-out
+   :statement "every selected greedy action belongs to the declared action set"}
+  {:target/name value/nnrat-optimality-step-dominates
+   :study/partition :held-out
+   :statement "the optimality value dominates every declared action backup"}
+  {:target/name value/nnrat-iterate-zero
+   :study/partition :held-out
+   :statement "zero bounded iterations return the initial value"}
+  {:target/name value/nnrat-iterate-successor
+   :study/partition :held-out
+   :statement "a successor iteration equals one optimality step after its prefix"}
+  {:target/name value/nnrat-optimality-state-transfer
+   :study/partition :transfer
+   :statement "the dominance theorem specializes uniformly to another state"}
+  {:target/name ahof-d22/normalized-transition-rows
+   :study/partition :development
+   :statement "the worked state-action transition rows have exact mass one"}
+  {:target/name ahof-d22/finite-horizon-recurrence
+   :study/partition :held-out
+   :statement "the worked value sequence satisfies base and successor recurrence"}
+  {:target/name ahof-d22/greedy-actions
+   :study/partition :held-out
+   :statement "the worked second-step greedy action is admissible and dominant at both states"}
+  {:target/name ahof-d22/two-step-value
+   :study/partition :transfer
+   :statement "the worked two-step optimality values are exact at both states"}
+  {:target/name ahof-d22/value-iteration
+   :study/partition :held-out
+   :statement "the worked normalized finite MDP has certified bounded value iteration"}]
+ :precommit/fixed-policy
+ {:kernel/reductions 10000
+  :evaluation/reductions 1000000
+  :search/states 64
+  :search/depth 96
+  :success :kernel-checked-axiom-free-bounded-value-iteration}
+ :precommit/baseline
+ {:native-targets-present 3
+  :catalog-outcome :pending
+  :smallest-missing-prerequisites
+  [:state-action-bellman-backup
+   :finite-optimality-operator
+   :bounded-optimality-iteration]}
+ :precommit/claim-boundaries
+ {:finite-model-only? true
+  :bounded-iteration? true
+  :greedy-action-optimality? true
+  :infinite-limit-convergence-claimed? false
+  :unique-fixed-point-claimed? false
+  :optimal-policy-claimed? false
+  :book-clojure-correspondence-claimed? false
+  :mathlib-mapping-credit? false}
+ :precommit/id "sha256:cf98e869606a506b2fad613e1cf175df2423a0292bb6ddcd55fe81ad3069ec10"}

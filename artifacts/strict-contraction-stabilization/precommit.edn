@@ -1,0 +1,67 @@
+{:precommit/schema-version 1
+ :precommit/kind :constructive-strict-contraction-stabilization
+ :precommit/source
+ {:input-checkpoint/id
+  "sha256:c251d5ab976e105854012ac35a61d278fc18c19b3f463cabe0ad58ab849e70a0"
+  :input-exact-mathlib-mappings 1245
+  :proof-values :native-only}
+ :precommit/targets
+ [{:target/name nat/at-most-successor-cancel
+   :study/partition :development
+   :statement "successor-left <= successor-right implies left <= right"}
+  {:target/name nat/strict-below-of-strict-below-at-most-successor
+   :study/partition :development
+   :statement "x < y and y <= successor bound imply x <= bound"}
+  {:target/name function/nat-iterate-zero
+   :study/partition :development
+   :statement "generic natural iteration starts at the supplied value"}
+  {:target/name function/nat-iterate-successor
+   :study/partition :development
+   :statement "generic natural iteration applies the transform at a successor step"}
+  {:target/name nat/strictly-descending-sequence-reaches-zero-within-bound
+   :study/partition :held-out
+   :statement "a natural sequence descending whenever positive reaches zero no later than any bound on its initial value"}
+  {:target/name metric/strict-contraction-consecutive-iterate-distance-decreases
+   :study/partition :development
+   :statement "positive consecutive iterate distance strictly decreases under a strict finite-sup contraction"}
+  {:target/name metric/strict-contraction-iterate-stabilizes-within-initial-distance
+   :study/partition :held-out
+   :statement "some iterate no later than the initial finite-sup distance has zero distance to its successor"}
+  {:target/name metric/strict-contraction-has-bounded-support-fixed-point
+   :study/partition :transfer
+   :statement "a strict finite-sup contraction has a support-relative fixed point reached within its initial distance"}]
+ :precommit/representation
+ {:carrier :universe-polymorphic-finite-state-space
+  :values :natural-valued-functions
+  :iteration :constructive-natural-recursion
+  :distance :computational-natural-finite-sup-distance
+  :fixed-point :pointwise-on-declared-finite-support
+  :bound :initial-consecutive-iterate-distance}
+ :precommit/fixed-policy
+ {:search/states 32
+  :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :or-dependency-cone-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck
+  :missing-bounded-natural-descent-and-generic-iterate-stabilization}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/metrics
+ [:new-native-results :held-out-success-rate-change
+  :median-search-states :total-search-states
+  :rainbow-compute-ms :ai-latency-ms
+  :targets-per-generalized-lemma :lemma-leverage
+  :axiom-profiles :trusted-base-delta
+  :smallest-missing-prerequisite]
+ :precommit/claim-boundaries
+ {:fixed-point-uniqueness-newly-claimed? false
+  :global-function-equality-claimed? false
+  :real-or-rational-convergence-rate-claimed? false
+  :bellman-specialization-claimed? false
+  :mathlib-mapping-credit-planned? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:46cdd16212431d0bc46874d0e0fc23c40cfa68400a14f0b29212e0470e238112"}

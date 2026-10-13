@@ -1,0 +1,73 @@
+{:precommit/schema-version 1
+ :precommit/kind :nonnegative-rational-value-iteration
+ :precommit/source
+ {:input-checkpoint/id "sha256:7a182cfd5528ab322e12014c06e0a3b6411f7c315aaec49504603b762077298d"
+  :mathlib/version "v4.30.0"
+  :mathlib/commit "c5ea00351c28e24afc9f0f84379aa41082b1188f"
+  :foreign/proof-values :redacted}
+ :precommit/representation
+ {:carrier :product-of-natural-numerator-and-denominator-predecessor
+  :denominator "succ(denominator-predecessor)"
+  :zero-denominator-representable? false
+  :quotient-kernel-rule-required? false
+  :equality :cross-multiplication-equivalence
+  :canonical-reduction-required-for-computation? false}
+ :precommit/targets
+ [{:target/name nat/multiply-associative
+   :study/partition :development
+   :statement "(a*b)*c = a*(b*c)"}
+  {:target/name nat/multiply-one-right
+   :study/partition :development
+   :statement "a*1 = a"}
+  {:target/name nat/multiply-successor-right-cancel
+   :study/partition :development
+   :statement "a*(k+1)=b*(k+1) implies a=b"}
+  {:target/name nnrat/denominator-combine
+   :study/partition :development
+   :statement "succ(combine p q)=succ(p)*succ(q)"}
+  {:target/name nnrat/equivalent-reflexive
+   :study/partition :development
+   :statement "every represented nonnegative rational is equivalent to itself"}
+  {:target/name nnrat/equivalent-symmetric
+   :study/partition :held-out
+   :statement "cross-multiplication equivalence is symmetric"}
+  {:target/name nnrat/equivalent-transitive
+   :study/partition :held-out
+   :statement "cross-multiplication equivalence is transitive"}
+  {:target/name nnrat/add-respects-equivalence
+   :study/partition :development
+   :statement "fraction addition respects cross-multiplication equivalence"}
+  {:target/name nnrat/multiply-respects-equivalence
+   :study/partition :held-out
+   :statement "fraction multiplication respects cross-multiplication equivalence"}
+  {:target/name nnrat/finite-expectation-respects-equivalence
+   :study/partition :held-out
+   :statement "finite rational expectation respects pointwise equivalence"}
+  {:target/name bellman/nnrat-fixed-policy-congruent
+   :study/partition :transfer
+   :statement "the rational fixed-policy Bellman step respects pointwise equivalence"}
+  {:target/name bellman/two-state-two-step-value-iteration
+   :study/partition :transfer
+   :statement "the runnable two-state example computes two exact rational Bellman steps"}]
+ :precommit/fixed-policy
+ {:search/states 64
+  :search/depth 96
+  :proof-source :independent-rainbow
+  :selection :dependency-ordered-native-or-chain
+  :success :kernel-checked-with-axiom-profile}
+ :precommit/baseline
+ {:native-targets-present 0
+  :proved-targets 0
+  :reason :missing-scale-stable-nonnegative-rational-representation}
+ :precommit/primary-metrics
+ [:held-out-success-rate-change
+  :newly-solved-targets-per-generalized-lemma
+  :total-kernel-checked-proof-cost
+  :executable-two-step-result]
+ :precommit/claim-boundaries
+ {:nonnegative-rationals-only? true
+  :quotient-type-claimed? false
+  :canonical-lowest-terms-claimed? false
+  :fixed-point-convergence-claimed? false
+  :clojure-correspondence-claimed? false}
+ :precommit/id "sha256:1a6b3fe95cd5fab942a41c6c4e6e6cd5d51752dd2c6d09b56672ea552843b82a"}

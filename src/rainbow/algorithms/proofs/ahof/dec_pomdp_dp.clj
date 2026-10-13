@@ -1,0 +1,78 @@
+(ns rainbow.algorithms.proofs.ahof.dec-pomdp-dp
+  "AHoF D82 Dec-POMDP (Dynamic Programming): back up joint-policy values, keeping the
+  larger of two candidate joint-policy values:
+
+      prefers-joint-zero? v0 v1 = decide (v1 <= v0)
+      backup-value        v0 v1 = if (v1 <= v0) then v0 else v1
+
+  over exact rationals. Proved native and axiom-free: preference decision, max value,
+  switch. Requires audit/decide-nnrat-at-most, logic/if-data (both in the D63 checkpoint).
+
+  Scope (measured by the kernel): this module has 3 worked instances (statements about specific values).
+  None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.dec-pomdp-dp`
+  prints this classification."
+  (:require [rainbow.math.milestone-support :as support]
+            [rainbow.math.logic.function :as function]))
+
+(def zero-level [:zero])
+(def type-level [:succ zero-level])
+(def bool (function/const* 'data/Bool []))
+(def nnrat (function/const* 'nnrat/NonnegativeRational []))
+(def true-value (function/const* 'data/true []))
+(def false-value (function/const* 'data/false []))
+
+(defn- decide-at-most [l r]
+  (function/app (function/const* 'audit/decide-nnrat-at-most []) l r))
+(defn- condition [d] (function/equality type-level bool d d))
+(defn- equality [carrier left right]
+  (function/equality type-level carrier left right))
+(defn- data-nat [n]
+  (nth (iterate #(function/app (function/const* 'data/succ []) %)
+                (function/const* 'data/zero [])) n))
+(defn- fraction [num den-pred]
+  (function/app (function/const* 'nnrat/make []) (data-nat num) (data-nat den-pred)))
+(defn- pref [a b] (function/app (function/const* 'dec-pomdp/prefers-joint-zero? []) a b))
+(defn- mval [a b] (function/app (function/const* 'dec-pomdp/backup-value []) a b))
+
+(def pref-spec
+  {:name 'dec-pomdp/prefers-joint-zero? :kind :definition :universes []
+   :type (function/arrow nnrat nnrat bool)
+   :value (function/lam [['v0 nnrat] ['v1 nnrat]] (decide-at-most 'v1 'v0))})
+
+(def mval-spec
+  {:name 'dec-pomdp/backup-value :kind :definition :universes []
+   :type (function/arrow nnrat nnrat nnrat)
+   :value (function/lam [['v0 nnrat] ['v1 nnrat]]
+                        (function/app (function/const* 'logic/if-data [type-level])
+                                      nnrat (condition (decide-at-most 'v1 'v0))
+                                      (decide-at-most 'v1 'v0) 'v0 'v1))})
+
+(def definition-specs [pref-spec mval-spec])
+
+(def prefers-higher-spec
+  {:name 'dec-pomdp/prefers-higher :universes []
+   :type (equality bool (pref (fraction 3 3) (fraction 1 1)) true-value)
+   :value (function/app (function/const* 'equality/reflexive [type-level])
+                        bool (pref (fraction 3 3) (fraction 1 1)))})
+
+(def value-is-maximum-spec
+  {:name 'dec-pomdp/value-is-maximum :universes []
+   :type (equality nnrat (mval (fraction 3 3) (fraction 1 1)) (fraction 3 3))
+   :value (function/app (function/const* 'equality/reflexive [type-level])
+                        nnrat (mval (fraction 3 3) (fraction 1 1)))})
+
+(def switches-spec
+  {:name 'dec-pomdp/switches :universes []
+   :type (equality bool (pref (fraction 1 1) (fraction 3 3)) false-value)
+   :value (function/app (function/const* 'equality/reflexive [type-level])
+                        bool (pref (fraction 1 1) (fraction 3 3)))})
+
+(def theorem-specs [prefers-higher-spec value-is-maximum-spec switches-spec])
+
+(defn extend-environment [checked-environment]
+  (support/extend-with checked-environment :ahof-dec-pomdp-dp
+                       (concat definition-specs theorem-specs)))
+(defn definition-ids [checked-environment]
+  (support/spec-ids checked-environment definition-specs))
+(defn theorem-ids [checked-environment]
+  (support/spec-ids checked-environment theorem-specs))

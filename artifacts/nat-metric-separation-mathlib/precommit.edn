@@ -1,0 +1,57 @@
+{:precommit/schema-version 1
+ :precommit/kind :nat-metric-separation-mathlib
+ :precommit/source
+ {:library :mathlib
+  :version "v4.30.0"
+  :commit "c5ea00351c28e24afc9f0f84379aa41082b1188f"
+  :catalog/id "sha256:ebd3486b13af933d220504ec5bf2c33dbfc5bdd6b7e4d32a311aba0bebc2ae2d"
+  :statement-batch/id "sha256:6a6240b27aca36c6ed17d6a0ba4dc72b0cd55277b053e8dab589be360039cc15"
+  :input-checkpoint/id "sha256:74a6c74c90b482a2fb68ca95f182d7b38af53b6fde6fad50d298a4e784da78ff"
+  :proof-values :redacted}
+ :precommit/targets
+ [{:foreign/name "Nat.dist_pos_of_ne"
+   :foreign/type-fingerprint "lean-hash64:203621473"
+   :study/partition :held-out}]
+ :precommit/native-capability
+ {:development
+  [nat/positive-of-nonzero
+   nat/nonzero-of-positive
+   nat/distance-nonzero-of-not-equal]
+  :held-out
+  [nat/distance-positive-equivalent-not-equal]
+  :downstream-use
+  :strict-metric-separation-for-discrete-contraction-and-fixed-point-work}
+ :precommit/representation
+ {:strict-order :constructive-successor-plus-witness
+  :distance :computational-structural-recursion-on-naturals
+  :zero :native-natural-zero
+  :inequality :negated-intensional-equality}
+ :precommit/fixed-policy
+ {:search/states 32
+  :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :proof-redacted-held-out-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:exact-mathlib-mappings 1244
+  :target-nativeization-status :nativeized
+  :held-out-successes 0
+  :held-out-targets 1
+  :states-created 10
+  :expected-bottleneck :missing-positive-iff-nonzero-bridge}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/metrics
+ [:new-native-results :new-exact-mathlib-mappings
+  :held-out-success-rate-change :median-search-states
+  :total-search-states :rainbow-compute-ms :ai-latency-ms
+  :targets-per-generalized-lemma :lemma-leverage
+  :axiom-profiles :trusted-base-delta
+  :smallest-missing-prerequisite]
+ :precommit/claim-boundaries
+ {:lean-proof-bodies-imported? false
+  :mathlib-statements-used? true
+  :kernel-change-planned? false
+  :general-natural-literal-evaluator-claimed? false}
+ :precommit/id
+ "sha256:d51ffc925b666040593fd0f815c0cb633467c979e313fc41d6d6e79d592c5559"}

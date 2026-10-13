@@ -1,0 +1,74 @@
+{:precommit/schema-version 1
+ :precommit/kind :ahof-d17-maximum-expected-utility
+ :precommit/source
+ {:ahof/id "D17"
+  :ahof/name "Maximum Expected Utility"
+  :ahof/source-file "catalog/02_decision_making_algorithms.md"
+  :ahof/source-commit "0f53d3bc40bbe2e110f3fda4325d205322cce53c"
+  :ahof/listing "(apply max-key (fn [a] (expected-utility a outcomes probs)) actions)"
+  :input-checkpoint/id "sha256:3eab7873aa525c71a841b1f921032f11611ef83007b216e7ca0184d0e55d522b"
+  :foreign-proof-values :not-applicable}
+ :precommit/representation
+ {:actions :duplicate-free-finset-data
+  :outcomes :duplicate-free-finset-data
+  :probabilities :nonnegative-rational
+  :utilities :nonnegative-rational
+  :expected-utility :finite-rational-expectation
+  :selection :right-biased-executable-fold
+  :proof-order :chain-of-exact-cross-multiplication-inequalities}
+ :precommit/targets
+ [{:target/name nat/decide-at-most-true-sound
+   :study/partition :development
+   :statement "a ≤? b = true implies a ≤ b"}
+  {:target/name nat/decide-at-most-false-reverse
+   :study/partition :held-out
+   :statement "a ≤? b = false implies b ≤ a"}
+  {:target/name nnrat/decide-at-most-true-sound
+   :study/partition :development
+   :statement "exact rational comparison true yields rational order evidence"}
+  {:target/name nnrat/decide-at-most-false-reverse
+   :study/partition :held-out
+   :statement "exact rational comparison false yields reverse order evidence"}
+  {:target/name decision/nnrat-select-left-bound
+   :study/partition :development
+   :statement "the left score is bounded by the selected score"}
+  {:target/name decision/nnrat-select-right-bound
+   :study/partition :held-out
+   :statement "the right score is bounded by the selected score"}
+  {:target/name list/nnrat-argmax-from-bounds-initial
+   :study/partition :development
+   :statement "the fallback score is bounded by the selection fold"}
+  {:target/name list/nnrat-argmax-from-bounds-member
+   :study/partition :held-out
+   :statement "every listed score is bounded by the selection fold"}
+  {:target/name decision/finite-nnrat-argmax-is-member
+   :study/partition :transfer
+   :statement "given an in-set fallback, finite argmax returns a set member"}
+  {:target/name decision/finite-nnrat-argmax-dominates
+   :study/partition :transfer
+   :statement "finite argmax dominates every action in the finite set"}
+  {:target/name ahof-d17/probabilities-normalized
+   :study/partition :development
+   :statement "the worked finite probability mass totals exactly one"}
+  {:target/name ahof-d17/maximum-expected-utility
+   :study/partition :held-out
+   :statement "the finite expected-utility instance selects renegotiate and dominates every action"}]
+ :precommit/fixed-policy
+ {:kernel/reductions 10000
+  :evaluation/reductions 1000000
+  :search/states 64
+  :search/depth 96
+  :success :kernel-checked-axiom-free-specialization-and-evaluation}
+ :precommit/baseline
+ {:native-targets-present 0
+  :catalog-outcome :pending
+  :smallest-missing-prerequisites
+  [:decidable-order-reflection :proof-carrying-finite-argmax]}
+ :precommit/claim-boundaries
+ {:finite-model-only? true
+  :nonnegative-utility-only? true
+  :probability-normalization-required? true
+  :real-valued-utility-claimed? false
+  :book-clojure-correspondence-claimed? false
+  :mathlib-mapping-credit? false}
+ :precommit/id "sha256:ce9b40060ce7a1212f85b2194289080ff476f71bf806ccc6638cf3fb6ff6859b"}

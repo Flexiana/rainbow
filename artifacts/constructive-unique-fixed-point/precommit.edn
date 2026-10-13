@@ -1,0 +1,49 @@
+{:precommit/schema-version 1
+ :precommit/kind :constructive-unique-support-fixed-point
+ :precommit/source
+ {:input-checkpoint/id
+  "sha256:e51731dd7350fcb29e47c1829a58e2aa9d237b1174fafa1f9e9d259983aef346"
+  :input-exact-mathlib-mappings 1245
+  :proof-values :native-only}
+ :precommit/targets
+ [{:target/name metric/strict-contraction-bounded-fixed-point-agrees-with-fixed-point
+   :study/partition :development
+   :statement "a bounded iterate which is fixed on support agrees there with every other support-fixed point"}
+  {:target/name metric/strict-contraction-has-bounded-canonical-support-fixed-point
+   :study/partition :held-out
+   :statement "some iterate within the initial distance is fixed on support and agrees there with every support-fixed point"}
+  {:target/name metric/strict-contraction-support-fixed-point-exists-and-is-unique
+   :study/partition :transfer
+   :statement "a strict contraction on finite Nat sup-distance has a support-fixed point and any two such points agree on support"}]
+ :precommit/representation
+ {:carrier :universe-polymorphic-natural-valued-functions
+  :distance :computational-natural-finite-sup-distance
+  :existence :constructive-witness-from-natural-iteration
+  :uniqueness :pointwise-on-declared-finite-support
+  :canonical-witness :bounded-iterate}
+ :precommit/fixed-policy
+ {:search/states 32 :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :or-dependency-cone-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck :missing-existence-uniqueness-packaging-over-support-equivalence}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/metrics
+ [:new-native-results :held-out-success-rate-change
+  :median-search-states :total-search-states
+  :rainbow-compute-ms :ai-latency-ms
+  :targets-per-generalized-lemma :lemma-leverage
+  :axiom-profiles :trusted-base-delta
+  :smallest-missing-prerequisite]
+ :precommit/claim-boundaries
+ {:global-function-uniqueness-claimed? false
+  :support-relative-uniqueness-claimed? true
+  :bellman-specialization-claimed? false
+  :real-or-rational-convergence-rate-claimed? false
+  :mathlib-mapping-credit-planned? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:b7c1ab1ca402d89e413a7257e73686731f2bc166f2bd2ab9938a80a8a91544d5"}

@@ -1,0 +1,47 @@
+{:precommit/schema-version 1
+ :precommit/kind :nonnegative-rational-product-reassociation
+ :precommit/source
+ {:input-checkpoint/path "artifacts/ahof/o32-coordinate-search/checkpoint.edn.gz"
+  :input-checkpoint/id
+  "sha256:fc098ad8c5887176809dd41903505ff72450e88d9c65de758948f37c0741fa72"
+  :input-exact-mathlib-mappings 1245
+  :proof-values :native-only
+  :required-capabilities
+  [nnrat/multiply nnrat/equivalent nnrat/multiply-commutative
+   nat/multiply-associative nat/multiply-commutative]}
+ :precommit/targets
+ [{:target/name nnrat/multiply-associative
+   :study/partition :development
+   :statement "(a times b) times c is rationally equivalent to a times (b times c)"}
+  {:target/name nnrat/multiply-swap-right
+   :study/partition :held-out
+   :statement "(a times b) times c is rationally equivalent to (a times c) times b"}
+  {:target/name nnrat/multiply-four-reorder
+   :study/partition :transfer
+   :statement "(a times b) times (c times d) is rationally equivalent to (a times c) times (b times d)"}]
+ :precommit/representation
+ {:values :native-numerator-positive-denominator-pairs
+  :equality :cross-product-equivalence
+  :scope :commutative-semigroup-laws}
+ :precommit/fixed-policy
+ {:search/states 32 :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :or-rational-foundation-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck :missing-generic-rational-product-associativity}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/downstream-cone
+ [:finite-expectation :distribution-normalization :bellman-scaling
+  :signed-vector-products :inner-product-reassociation]
+ :precommit/claim-boundaries
+ {:addition-laws-claimed? false
+  :distributivity-claimed? false
+  :cancellation-claimed? false
+  :quotient-type-claimed? false
+  :mathlib-mapping-credit-planned? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:b17f2f26c43514d50ae225a2a9391ff0ba93c792e9422850fe96183ebc6b7832"}

@@ -1,0 +1,40 @@
+{:precommit/schema-version 1
+ :precommit/kind :nat-distance-and-order-mathlib
+ :precommit/source
+ {:library :mathlib
+  :version "v4.30.0"
+  :commit "c5ea00351c28e24afc9f0f84379aa41082b1188f"
+  :catalog/id "sha256:ebd3486b13af933d220504ec5bf2c33dbfc5bdd6b7e4d32a311aba0bebc2ae2d"
+  :statement-batch/id "sha256:678af35f91b3766600f61cf9142326ed4d91f774a8d42c9e6139adf9d8c65116"
+  :proof-values :redacted}
+ :precommit/targets
+ [{:foreign/name "Nat.instLinearOrder._proof_1"
+   :study/partition :development}
+  {:foreign/name "Nat.instLinearOrder._proof_2"
+   :study/partition :development}
+  {:foreign/name "Nat.instLinearOrder._proof_3"
+   :study/partition :development}
+  {:foreign/name "Nat.dist_comm"
+   :study/partition :development}
+  {:foreign/name "Nat.dist_succ_succ"
+   :study/partition :development}
+  {:foreign/name "Nat.dist_add_add_left"
+   :study/partition :development}
+  {:foreign/name "Nat.dist_add_add_right"
+   :study/partition :held-out}
+  {:foreign/name "Nat.dist.triangle_inequality"
+   :study/partition :held-out}
+  {:foreign/name "Nat.dist_tri_left"
+   :study/partition :transfer}
+  {:foreign/name "Nat.dist_tri_right"
+   :study/partition :transfer}]
+ :precommit/fixed-policy
+ {:search/states 32 :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :proof-redacted-bounded-batch}
+ :precommit/baseline
+ {:timing :before-nat-distance-representation
+  :expected-bottleneck :missing-distance-min-max-and-decidable-order-vocabulary}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-generalized-lemma
+ :precommit/id "sha256:356c00b91ef7ae403d6a5c70743180f7e85eb9b1bc40a13733d6e29ce2b38036"}

@@ -1,0 +1,51 @@
+{:precommit/schema-version 1
+ :precommit/kind :nnrat-additive-reassociation
+ :precommit/source
+ {:input-checkpoint/path "artifacts/vector-equivalence-laws/checkpoint.edn.gz"
+  :input-checkpoint/id
+  "sha256:62a17c10b9119f7ace0d2f06e2b79a0236b59b3a5a8d531516f696313eb483ad"
+  :input-exact-mathlib-mappings 1237
+  :proof-values :native-only
+  :baseline-capability-additions []}
+ :precommit/targets
+ [{:target/name nnrat/add-associative
+   :study/partition :development
+   :statement "nonnegative-rational addition associates up to equivalence"}
+  {:target/name nnrat/add-swap-right
+   :study/partition :held-out
+   :statement "a + (b + c) is equivalent to b + (a + c)"}
+  {:target/name nnrat/add-four-reorder
+   :study/partition :transfer
+   :statement "(a + b) + (c + d) is equivalent to (a + c) + (b + d)"}]
+ :precommit/representation
+ {:values :native-numerator-positive-denominator-pairs
+  :equality :cross-multiplication-equivalence
+  :normalization :kernel-checked-nat-semiring-proof-terms
+  :scope :additive-reassociation-and-reordering}
+ :precommit/fixed-policy
+ {:search/states 40
+  :search/depth 72
+  :proof-source :independent-rainbow
+  :selection :signed-addition-congruence-prerequisite
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck
+  :missing-general-nnrat-additive-associativity-and-reorder-laws}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/downstream-cone
+ [signed/add-respects-equivalence
+  signed/equivalent-transitive
+  vector/add-respects-equivalence
+  vector/subtract-respects-equivalence
+  bellman-reward-reassociation]
+ :precommit/claim-boundaries
+ {:additive-cancellation-claimed? false
+  :signed-addition-congruence-claimed? false
+  :vector-addition-congruence-claimed? false
+  :canonical-fraction-normalization-claimed? false
+  :mathlib-mapping-credit-planned? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:d5e561e4d8cd52cf45e3f33ad118daf2612b889b9dce898782db08914f6ee2b7"}

@@ -1,0 +1,81 @@
+{:precommit/schema-version 1
+ :precommit/kind :ahof-d21-policy-iteration
+ :precommit/source
+ {:ahof/id "D21"
+  :ahof/name "Policy Iteration"
+  :ahof/source-file "catalog/02_decision_making_algorithms.md"
+  :ahof/source-commit "0f53d3bc40bbe2e110f3fda4325d205322cce53c"
+  :ahof/listing "(iterate (comp improve evaluate) initial-policy)"
+  :input-checkpoint/id "sha256:e6c9707ece71336e68c90ad28b05808eb382ee04517662b63c85291d51e4cc2b"
+  :foreign-proof-values :not-applicable}
+ :precommit/representation
+ {:states :duplicate-free-finset-data
+  :actions :duplicate-free-finset-data
+  :policy :state-to-action
+  :evaluation :bounded-exact-rational-bellman-iteration
+  :improvement :finite-exact-rational-argmax-per-state
+  :algorithm-step :evaluate-then-improve-composition
+  :outer-iteration :nat-recursion}
+ :precommit/targets
+ [{:target/name decision/finite-nnrat-argmax-is-member
+   :study/partition :baseline-support
+   :statement "finite rational argmax returns a declared action"}
+  {:target/name decision/finite-nnrat-argmax-dominates
+   :study/partition :baseline-support
+   :statement "finite rational argmax dominates every declared action"}
+  {:target/name bellman/nnrat-value-iterate-congruent
+   :study/partition :baseline-support
+   :statement "bounded policy evaluation preserves equivalent models"}
+  {:target/name ahof-d20/policy-evaluation
+   :study/partition :baseline-support
+   :statement "the bounded finite policy-evaluation phase is certified"}
+  {:target/name policy/nnrat-improve
+   :study/partition :development
+   :statement "policy improvement selects a finite argmax action at every state"}
+  {:target/name policy/nnrat-improve-is-admissible
+   :study/partition :held-out
+   :statement "every improved action belongs to the declared action set"}
+  {:target/name policy/nnrat-improve-dominates
+   :study/partition :held-out
+   :statement "the improved action dominates every declared action pointwise"}
+  {:target/name policy/nnrat-iteration-step
+   :study/partition :development
+   :statement "one policy-iteration step composes bounded evaluation and improvement"}
+  {:target/name ahof-d21/evaluation-phase
+   :study/partition :development
+   :statement "the worked policy iteration uses the certified D20 evaluation phase"}
+  {:target/name ahof-d21/improvement-phase
+   :study/partition :held-out
+   :statement "the worked improvement chooses an admissible dominant action"}
+  {:target/name ahof-d21/policy-iteration-step
+   :study/partition :held-out
+   :statement "the worked composed step evaluates then improves the policy"}
+  {:target/name policy/nnrat-improvement-model-transfer
+   :study/partition :transfer
+   :statement "pointwise equivalent action scores yield equally dominant improved policies"}
+  {:target/name policy/nnrat-improvement-state-transfer
+   :study/partition :transfer
+   :statement "the generic improvement theorem specializes to a second finite state"}]
+ :precommit/fixed-policy
+ {:kernel/reductions 10000
+  :evaluation/reductions 1000000
+  :search/states 64
+  :search/depth 96
+  :success :kernel-checked-axiom-free-bounded-policy-iteration-step}
+ :precommit/baseline
+ {:native-targets-present 4
+  :catalog-outcome :pending
+  :smallest-missing-prerequisites
+  [:finite-policy-representation
+   :state-indexed-action-score
+   :evaluation-improvement-composition]}
+ :precommit/claim-boundaries
+ {:finite-model-only? true
+  :bounded-evaluation-phase? true
+  :one-composed-step-correctness? true
+  :termination-at-optimal-policy-claimed? false
+  :strict-policy-improvement-claimed? false
+  :infinite-limit-convergence-claimed? false
+  :book-clojure-correspondence-claimed? false
+  :mathlib-mapping-credit? false}
+ :precommit/id "sha256:db220bb3b8e931110e1d09f2f8e7944b0f06e10b0a08c27b94911e63ae794ae7"}

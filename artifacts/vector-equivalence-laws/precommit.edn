@@ -1,0 +1,56 @@
+{:precommit/schema-version 1
+ :precommit/kind :vector-equivalence-transport-laws
+ :precommit/source
+ {:input-checkpoint/path "artifacts/signed-equivalence-laws/checkpoint.edn.gz"
+  :input-checkpoint/id
+  "sha256:a5b6d17c5dabe3cd861a4d72cc6b86574ab69a27bbb82571b50f6f447845de1a"
+  :input-exact-mathlib-mappings 1237
+  :proof-values :native-only
+  :baseline-capability-additions
+  [finite-vector vector-equivalence]}
+ :precommit/targets
+ [{:target/name vector/equivalent-reflexive
+   :study/partition :development
+   :statement "every finite signed-rational vector is equivalent to itself"}
+  {:target/name vector/equivalent-symmetric
+   :study/partition :held-out
+   :statement "componentwise signed-rational vector equivalence reverses direction"}
+  {:target/name vector/map-respects-equivalence
+   :study/partition :development
+   :statement
+   "a component map preserving signed equivalence preserves vector equivalence"}
+  {:target/name vector/negate-respects-equivalence
+   :study/partition :held-out
+   :statement "componentwise negation preserves vector equivalence"}]
+ :precommit/representation
+ {:vectors :finite-lists-of-grothendieck-pair-signed-rationals
+  :equality :length-sensitive-componentwise-equivalence
+  :map :native-list-map
+  :scope :structural-equivalence-transport}
+ :precommit/fixed-policy
+ {:search/states 48
+  :search/depth 72
+  :proof-source :independent-rainbow
+  :selection :optimizer-vector-transport-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck
+  :missing-generic-list-induction-and-component-transport-laws}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/downstream-cone
+ [:optimizer-state-rewriting
+  :vector-negation-normalization
+  :vector-subtraction-equivalence
+  :metric-vector-transport
+  :counterfactual-state-composition]
+ :precommit/claim-boundaries
+ {:vector-equivalence-transitivity-claimed? false
+  :vector-addition-congruence-claimed? false
+  :scalar-multiplication-congruence-claimed? false
+  :canonical-vector-normalization-claimed? false
+  :mathlib-mapping-credit-planned? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:80734c34a6852bffe36f1dbefc85836e2dbd4c83ddcf88b6a4126946178e7c02"}

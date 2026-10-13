@@ -1,0 +1,42 @@
+{:precommit/id "sha256:92318db7a564e77020ddde7ae326430ed2a575d26fd0972a692de257b4512779"
+ :precommit/schema-version 1
+ :precommit/kind :finite-nat-enumeration-capability
+ :precommit/source
+ {:foreign/library :mathlib
+  :foreign/version "v4.30.0"
+  :foreign/commit "c5ea00351c28e24afc9f0f84379aa41082b1188f"
+  :proof-values :redacted
+  :statement-batch/id "sha256:01dc40fb1e0aadc280ba6eadac972bccc1dfd782a2d2eb3ccabc3713225c860b"
+  :checkpoint/id "sha256:8e7941431466d04d762fb21179d980aa91447f1223b8e7f6cf469f26c9495e90"
+  :curriculum/id "sha256:8e885a9b9eab6eb1811bbcd4f6daa5db90d77f21f419812188ec1f7fd22fb550"}
+ :precommit/targets
+ [{:foreign/name "Finset.card_range" :study/partition :development
+   :foreign/type-fingerprint "lean-hash64:3024926128"}
+  {:foreign/name "Finset.exists_nat_subset_range" :study/partition :transfer
+   :foreign/type-fingerprint "lean-hash64:4061429474"}
+  {:foreign/name "Finset.filter_false" :study/partition :held-out
+   :foreign/type-fingerprint "lean-hash64:621461996"}
+  {:foreign/name "Finset.mem_range._simp_1" :study/partition :held-out
+   :foreign/type-fingerprint "lean-hash64:1090060309"}
+  {:foreign/name "Finset.notMem_range_self" :study/partition :transfer
+   :foreign/type-fingerprint "lean-hash64:2432319187"}
+  {:foreign/name "Finset.range_mono" :study/partition :development
+   :foreign/type-fingerprint "lean-hash64:15883891"}
+  {:foreign/name "Finset.range_subset_range" :study/partition :development
+   :foreign/type-fingerprint "lean-hash64:369310174"}
+  {:foreign/name "Finset.range_subset_range._gcongr_1"
+   :study/partition :development
+   :foreign/type-fingerprint "lean-hash64:2928947562"}]
+ :precommit/budget
+ {:states 32 :depth 64 :wall-ms 3600000
+  :local-application-depth 4 :local-application-terms 128
+  :related-reuse-limit 18}
+ :precommit/metrics
+ [:new-native-results :new-exact-or-mappings :held-out-success-rate
+  :median-search-states :total-search-states :wall-ms :ai-latency-ms
+  :rainbow-compute-ms :targets-per-generalized-lemma :lemma-leverage
+  :axiom-profiles :trusted-base-delta :smallest-missing-prerequisite]
+ :precommit/lemma-leverage
+ {:numerator :newly-solved-held-out-targets
+  :denominator [:implementation-active-ms :rainbow-compute-ms
+                :ai-latency-ms :new-generalized-lemmas]}}

@@ -1,0 +1,73 @@
+{:precommit/schema-version 1
+ :precommit/kind :finite-bellman-scaled-fixed-point-uniqueness
+ :precommit/source
+ {:input-checkpoint/id
+  "sha256:8018dbb0dd3f0ab84ec0f054902be267ec3ad264770d393a643abde600300fc8"
+  :input-exact-mathlib-mappings 1245
+  :proof-values :native-only}
+ :precommit/targets
+ [{:target/name nat/at-most-antisymmetric
+   :study/partition :development
+   :statement "mutual natural upper bounds imply equality"}
+  {:target/name nat/at-most-strict-below-transitive
+   :study/partition :development
+   :statement "a <= b and b < c imply a < c"}
+  {:target/name nat/positive-right-of-strict-below
+   :study/partition :development
+   :statement "a < b implies 0 < b"}
+  {:target/name nat/multiply-right-strict-monotone-positive
+   :study/partition :development
+   :statement "right multiplication by a positive natural preserves strict order"}
+  {:target/name nat/recursive-max-multiply-left
+   :study/partition :development
+   :statement "natural maximum commutes with left multiplication"}
+  {:target/name list/nat-map-max-multiply-left
+   :study/partition :development
+   :statement "finite maximum folds commute with left multiplication"}
+  {:target/name metric/finite-sup-distance-multiply-left
+   :study/partition :development
+   :statement "finite sup-distance of equally scaled functions is the scaled original distance"}
+  {:target/name metric/scaled-contraction-scaled-fixed-points-have-zero-sup-distance
+   :study/partition :held-out
+   :statement "a discount-over-scale contraction has zero distance between scale-squared fixed points"}
+  {:target/name bellman/fixed-policy-scaled-fixed-points-have-zero-sup-distance
+   :study/partition :held-out
+   :statement "two scale-squared fixed points of a normalized discounted Bellman numerator have zero support distance"}
+  {:target/name bellman/fixed-policy-scaled-fixed-points-unique-on-support
+   :study/partition :transfer
+   :statement "a normalized fixed-policy Bellman numerator has at most one scale-squared fixed point on support when discount < scale"}]
+ :precommit/representation
+ {:carrier :universe-polymorphic-finite-state-space
+  :values :natural-numerators-at-input-scale
+  :bellman-output-denominator :scale-cubed
+  :fixed-point-equation :bellman-value-equals-scale-squared-times-input-value
+  :discount-condition :discount-numerator-strictly-below-scale
+  :distance :computational-natural-finite-sup-distance}
+ :precommit/fixed-policy
+ {:search/states 32
+  :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :or-dependency-cone-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck
+  :missing-strict-natural-scaling-and-finite-sup-scaling-laws}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/metrics
+ [:new-native-results :held-out-success-rate-change
+  :median-search-states :total-search-states
+  :rainbow-compute-ms :ai-latency-ms
+  :targets-per-generalized-lemma :lemma-leverage
+  :axiom-profiles :trusted-base-delta
+  :smallest-missing-prerequisite]
+ :precommit/claim-boundaries
+ {:mathlib-mapping-credit-planned? false
+  :unscaled-raw-fixed-point-claimed? false
+  :fixed-point-existence-claimed? false
+  :value-iteration-convergence-claimed? false
+  :function-equality-outside-support-claimed? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:9b2365ee9aa389077422787a69961c7a8100ad816f4f61d8bb898397a1dd5438"}

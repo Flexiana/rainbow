@@ -1,0 +1,58 @@
+{:precommit/schema-version 1
+ :precommit/kind :finite-strict-contraction-fixed-point-uniqueness
+ :precommit/source
+ {:input-checkpoint/id
+  "sha256:420f1d5223deeaf833de7c6651135eb1cd13491b67d1bc4dad73e453a84fd4b6"
+  :input-exact-mathlib-mappings 1245
+  :proof-values :native-only}
+ :precommit/targets
+ [{:target/name nat/equal-zero-of-not-positive
+   :study/partition :development
+   :statement "a natural with no positive witness is constructively zero"}
+  {:target/name list/nat-map-max-congruent-on
+   :study/partition :development
+   :statement "membership-relative pointwise equality preserves a finite maximum fold"}
+  {:target/name metric/finite-sup-congruent-on
+   :study/partition :development
+   :statement "support-relative equality of both operands preserves finite sup-distance"}
+  {:target/name metric/strict-contraction-fixed-points-have-zero-sup-distance
+   :study/partition :held-out
+   :statement "two support-relative fixed points of a strict finite-sup contraction have zero sup-distance"}
+  {:target/name metric/strict-contraction-fixed-points-unique-on-support
+   :study/partition :transfer
+   :statement "a strict finite-sup contraction has at most one fixed point on the declared support"}]
+ :precommit/representation
+ {:carrier :universe-polymorphic
+  :support :extensional-finset-with-list-enumeration
+  :distance :computational-natural-finite-sup-distance
+  :fixed-point :pointwise-on-declared-support
+  :strict-contraction
+  :positive-distance-implies-strict-decrease-on-the-same-support}
+ :precommit/fixed-policy
+ {:search/states 32
+  :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :or-dependency-cone-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck
+  :missing-support-aware-finite-fold-congruence}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/metrics
+ [:new-native-results :held-out-success-rate-change
+  :median-search-states :total-search-states
+  :rainbow-compute-ms :ai-latency-ms
+  :targets-per-generalized-lemma :lemma-leverage
+  :axiom-profiles :trusted-base-delta
+  :smallest-missing-prerequisite]
+ :precommit/claim-boundaries
+ {:mathlib-mapping-credit-planned? false
+  :fixed-point-existence-claimed? false
+  :fixed-point-convergence-claimed? false
+  :function-equality-outside-support-claimed? false
+  :bellman-instantiation-claimed? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:24838f17ee0d79b9cce57cbac69d96b7d3fd096cab49841987286068f5fd3634"}

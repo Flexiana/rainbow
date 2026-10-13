@@ -1,0 +1,77 @@
+{:precommit/schema-version 1
+ :precommit/kind :ahof-d20-fixed-policy-evaluation
+ :precommit/source
+ {:ahof/id "D20"
+  :ahof/name "Policy Evaluation"
+  :ahof/source-file "catalog/02_decision_making_algorithms.md"
+  :ahof/source-commit "0f53d3bc40bbe2e110f3fda4325d205322cce53c"
+  :ahof/listing "(iterate (fn [V] (map-over-states (bellman-backup-fn policy V) states)) V0)"
+  :input-checkpoint/id "sha256:b54a61ec2992567aeba2900b3cc0423bee827ac514de5a378dd0f89f87a09c7e"
+  :foreign-proof-values :not-applicable}
+ :precommit/representation
+ {:states :duplicate-free-finset-data
+  :transition-rows :finite-nonnegative-rational-functions
+  :rewards :nonnegative-rational
+  :discount :nonnegative-rational
+  :value-function :state-to-nonnegative-rational
+  :iteration :nat-recursion-over-fixed-policy-bellman
+  :state-map :function-introduction}
+ :precommit/targets
+ [{:target/name bellman/nnrat-fixed-policy-unfold
+   :study/partition :baseline-support
+   :statement "one fixed-policy backup unfolds to reward plus discounted finite expectation"}
+  {:target/name bellman/nnrat-value-iterate-zero
+   :study/partition :baseline-support
+   :statement "zero policy-evaluation steps return the initial value pointwise"}
+  {:target/name bellman/nnrat-fixed-policy-congruent
+   :study/partition :baseline-support
+   :statement "one backup respects pointwise rational equivalence of all inputs"}
+  {:target/name bellman/nnrat-value-iterate-successor
+   :study/partition :development
+   :statement "successor iteration equals one backup of the previous iterate pointwise"}
+  {:target/name bellman/nnrat-value-iterate-congruent
+   :study/partition :held-out
+   :statement "every finite iteration preserves pointwise equivalence of the model and initial value"}
+  {:target/name ahof-d20/finite-horizon-recurrence
+   :study/partition :development
+   :statement "the AHoF policy-evaluation function satisfies its zero and successor equations"}
+  {:target/name ahof-d20/normalized-transition-rows
+   :study/partition :development
+   :statement "the worked finite policy model has normalized transition rows"}
+  {:target/name ahof-d20/one-step-value
+   :study/partition :held-out
+   :statement "the worked policy evaluator computes the exact first-step values"}
+  {:target/name ahof-d20/two-step-value
+   :study/partition :held-out
+   :statement "the worked policy evaluator computes exact second-step values 0 and 3/2"}
+  {:target/name ahof-d20/policy-evaluation
+   :study/partition :held-out
+   :statement "the finite-horizon evaluator is normalized, recurrent, and correct on the worked instance"}
+  {:target/name bellman/nnrat-value-iterate-model-transfer
+   :study/partition :transfer
+   :statement "equivalent finite models produce equivalent iterated values"}
+  {:target/name bellman/nnrat-value-iterate-initial-transfer
+   :study/partition :transfer
+   :statement "equivalent initial value functions produce equivalent iterated values"}]
+ :precommit/fixed-policy
+ {:kernel/reductions 10000
+  :evaluation/reductions 1000000
+  :search/states 64
+  :search/depth 96
+  :success :kernel-checked-axiom-free-bounded-policy-evaluation}
+ :precommit/baseline
+ {:native-targets-present 3
+  :catalog-outcome :pending
+  :smallest-missing-prerequisites
+  [:value-iteration-successor-law
+   :finite-iteration-congruence
+   :catalog-specific-specialization]}
+ :precommit/claim-boundaries
+ {:finite-model-only? true
+  :nonnegative-reward-only? true
+  :bounded-step-correctness? true
+  :infinite-limit-convergence-claimed? false
+  :unique-fixed-point-claimed? false
+  :book-clojure-correspondence-claimed? false
+  :mathlib-mapping-credit? false}
+ :precommit/id "sha256:2838e975526bc0b45fb84b9dcc7a4bec22dc799405b3248ee8ec0e0feea6b649"}

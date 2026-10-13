@@ -1,0 +1,36 @@
+{:precommit/schema-version 1
+ :precommit/kind :finite-fixed-policy-bellman
+ :precommit/source
+ {:finite-data-checkpoint/id "sha256:73785b886e2d1e407763e099e17b465eec54674d9988a514b173054794cd87ab"
+  :mathlib/version "v4.30.0"
+  :mathlib/commit "c5ea00351c28e24afc9f0f84379aa41082b1188f"
+  :foreign/proof-values :redacted}
+ :precommit/arithmetic
+ {:representation :natural-numerators-with-explicit-positive-scale
+  :floating-point? false
+  :raw-fractions-claimed-as-quotient-field? false}
+ :precommit/targets
+ [{:target/name probability/two-state-uniform-normalized
+   :study/partition :development}
+  {:target/name probability/two-state-identity-expectation
+   :study/partition :development}
+  {:target/name markov/two-state-rows-normalized
+   :study/partition :held-out}
+  {:target/name bellman/two-state-state-one-result
+   :study/partition :development}
+  {:target/name bellman/zero-data
+   :study/partition :transfer}
+  {:target/name bellman/fixed-policy-monotone
+   :study/partition :held-out}]
+ :precommit/fixed-policy
+ {:search/states 32 :search/depth 64
+  :selection :dependency-ordered
+  :success :kernel-checked-axiom-profile-recorded}
+ :precommit/required-claims
+ {:mathematical-theorems-separated? true
+  :rainbow-evaluation-separated? true
+  :clojure-correspondence-separated? true
+  :output-satisfaction-separated? true}
+ :precommit/baseline
+ {:native-targets-present 0 :proved-targets 0}
+ :precommit/id "sha256:2bdbd050aca2b29c3b76adb667f97c00263c4ab230733b62dcfe0d316092a41b"}

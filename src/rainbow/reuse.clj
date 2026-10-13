@@ -1,0 +1,324 @@
+(ns rainbow.reuse
+  "Deterministic, policy-aware retrieval of checked theorem constants.
+
+  Retrieval is untrusted: candidates become ordinary `:const` proof terms and
+  the tactic/kernel boundary checks them in the current proof state."
+  (:require [clojure.set :as set]
+            [clojure.string :as string]
+            [rainbow.canonical :as canonical]
+            [rainbow.environment :as environment]
+            [rainbow.kernel :as kernel]
+            [rainbow.term :as term]))
+
+(def schema-version 1)
+
+(def default-policy
+  {:allowed-axioms #{}
+   :allowed-sources nil
+   :denied-dependencies #{}
+   :required-concepts #{}})
+
+(defn- ordered-level-parameters
+  "Returns universe parameters in first structural occurrence order."
+  [expression]
+  (letfn [(level-parameters [level]
+            (case (first level)
+              :zero []
+              :param [(second level)]
+              :succ (level-parameters (second level))
+              (:max :imax) (concat (level-parameters (second level))
+                                   (level-parameters (nth level 2)))))
+          (term-parameters [node]
+            (case (first node)
+              :sort (level-parameters (second node))
+              :bound []
+              :const (mapcat level-parameters (nth node 2))
+              (:app :lam :pi) (concat (term-parameters (second node))
+                                      (term-parameters (nth node 2)))
+              :let (concat (term-parameters (second node))
+                           (term-parameters (nth node 2))
+                           (term-parameters (nth node 3)))))]
+    (vec (distinct (term-parameters expression)))))
+
+(defn- canonicalize-universe-parameters [expression parameters]
+  (term/instantiate-universes
+   expression
+   (into {}
+         (map-indexed
+          (fn [index parameter]
+            [parameter [:param (symbol (str "reuse-u" index))]])
+          parameters))))
+
+(defn normalized-type-key
+  "Content key modulo both term binders and universe-parameter names."
+  ([checked-environment type]
+   (normalized-type-key checked-environment type nil))
+  ([checked-environment type universe-parameters]
+   (let [normalized (kernel/normalize checked-environment type)]
+     (when-not (= :normalized (:status normalized))
+       (throw (ex-info "Cannot index a type that does not normalize"
+                       {:error/category :reuse/normalization-failed
+                        :cause normalized})))
+     (let [normalized-type (:term normalized)
+           parameters (or universe-parameters
+                          (ordered-level-parameters normalized-type))]
+       (canonical/content-id
+        {:reuse/type
+         (canonicalize-universe-parameters normalized-type parameters)})))))
+
+(defn- alias-concepts [aliases]
+  (into #{}
+        (mapcat (fn [alias]
+                  (keep (fn [token]
+                          (when-not (string/blank? token)
+                            (keyword "alias" token)))
+                        (string/split (str alias) #"[/.-]"))))
+        aliases))
+
+(defn- shape-concepts [type]
+  (into #{}
+        (keep (fn [value]
+                (when (and (vector? value) (keyword? (first value)))
+                  (keyword "shape" (name (first value))))))
+        (tree-seq coll? seq type)))
+
+(defn- lifecycle-record [lifecycle declaration-id]
+  (let [value (get lifecycle declaration-id :active)]
+    (if (keyword? value) {:status value} value)))
+
+(defn- declaration-entry [checked-environment declaration lifecycle evidence]
+  (let [id (:rainbow/id declaration)
+        lifecycle (lifecycle-record lifecycle id)
+        type-universes
+        (ordered-level-parameters (:rainbow/type declaration))
+        concepts (into (shape-concepts (:rainbow/type declaration))
+                       (alias-concepts (:rainbow/aliases declaration)))]
+    {:reuse/declaration-id id
+     :reuse/type-key (normalized-type-key checked-environment
+                                         (:rainbow/type declaration)
+                                         type-universes)
+     :reuse/universes (:rainbow/universes declaration)
+     :reuse/type-universes type-universes
+     :reuse/aliases (:rainbow/aliases declaration)
+     :reuse/concepts concepts
+     :reuse/dependencies (:rainbow/dependencies declaration)
+     :reuse/axioms (:rainbow/axioms declaration)
+     :reuse/source (get-in declaration [:rainbow/provenance :origin] :unknown)
+     :reuse/lifecycle lifecycle
+     :reuse/evidence (merge {:successful-uses 0 :failed-uses 0}
+                            (get evidence id))}))
+
+(defn build-index
+  "Builds immutable retrieval data from checked theorem declarations.
+
+  `:include-ids` can hold out declarations from training. `:lifecycle` and
+  `:evidence` are maps keyed by declaration ID; quarantined entries remain
+  inspectable but are never returned. Universe-polymorphic constants are
+  instantiated only when their named parameters occur in the exact target."
+  ([checked-environment] (build-index checked-environment {}))
+  ([checked-environment {:keys [include-ids lifecycle evidence]
+                         :or {lifecycle {} evidence {}}}]
+   (let [included? (if include-ids (set include-ids) (constantly true))
+         candidates (->> (:rainbow.environment/order checked-environment)
+                         (map #(environment/declaration checked-environment %))
+                         (filter #(and (= :theorem (:rainbow/kind %))
+                                       (:rainbow/value %)
+                                       (included? (:rainbow/id %)))))
+         ;; A declaration whose type cannot be normalized within the kernel
+         ;; reduction budget is deterministically quarantined (with telemetry)
+         ;; rather than aborting the whole index. Retrieval is untrusted -- the
+         ;; kernel re-checks every candidate -- so dropping one from the index is
+         ;; sound; it just is not offered for reuse. Any other error still throws.
+         classified
+         (mapv (fn [declaration]
+                 (try
+                   {:entry (declaration-entry checked-environment declaration
+                                              lifecycle evidence)}
+                   (catch clojure.lang.ExceptionInfo exception
+                     (if (= :reuse/normalization-failed
+                            (:error/category (ex-data exception)))
+                       {:quarantined
+                        {:reuse/declaration-id (:rainbow/id declaration)
+                         :reuse/aliases (:rainbow/aliases declaration)
+                         :reuse/quarantine-reason :normalization-resource-limit}}
+                       (throw exception)))))
+               candidates)
+         entries (->> classified (keep :entry) (sort-by :reuse/declaration-id) vec)
+         quarantined (->> classified (keep :quarantined)
+                          (sort-by :reuse/declaration-id) vec)
+         active (filter #(= :active (get-in % [:reuse/lifecycle :status])) entries)
+         buckets (reduce (fn [result entry]
+                           (update result (:reuse/type-key entry)
+                                   (fnil conj []) (:reuse/declaration-id entry)))
+                         (sorted-map) active)
+         base {:reuse/schema-version schema-version
+               :reuse/environment-id (environment/environment-id checked-environment)
+               :reuse/entries entries
+               :reuse/by-type buckets
+               :reuse/quarantined quarantined}]
+     (assoc base :reuse/id (canonical/content-id base)))))
+
+(defn- eligible? [entry policy]
+  (and (= :active (get-in entry [:reuse/lifecycle :status]))
+       (set/subset? (:reuse/axioms entry) (:allowed-axioms policy))
+       (or (nil? (:allowed-sources policy))
+           (contains? (:allowed-sources policy) (:reuse/source entry)))
+       (empty? (set/intersection (:reuse/dependencies entry)
+                                 (:denied-dependencies policy)))
+       (set/subset? (:required-concepts policy) (:reuse/concepts entry))))
+
+(defn- term-level-params [value]
+  (cond
+    (and (vector? value) (= :sort (first value)))
+    (term/level-params (second value))
+
+    (and (vector? value) (= :const (first value)))
+    (into #{} (mapcat term/level-params) (nth value 2))
+
+    (coll? value)
+    (into #{} (mapcat term-level-params) value)
+
+    :else #{}))
+
+(defn- reusable-in-target? [entry target-levels]
+  (set/subset? (set (:reuse/universes entry)) target-levels))
+
+(defn- reuse-term
+  ([entry]
+   (term/constant (:reuse/declaration-id entry)
+                  (mapv (fn [parameter] [:param parameter])
+                        (:reuse/universes entry))))
+  ([entry target-universes]
+   (let [substitution (zipmap (:reuse/type-universes entry)
+                              target-universes)
+         levels (mapv substitution (:reuse/universes entry))]
+     (when (and (= (count (:reuse/type-universes entry))
+                   (count target-universes))
+                (every? some? levels))
+       (term/constant (:reuse/declaration-id entry)
+                      (mapv (fn [parameter] [:param parameter]) levels))))))
+
+(defn query
+  "Returns exact normalized-type matches in deterministic semantic order.
+
+  Ranking exposes separate evidence components rather than an opaque score.
+  Every returned `:reuse/term` still requires tactic and kernel checking."
+  ([index checked-environment target] (query index checked-environment target {}))
+  ([index checked-environment target policy]
+   (let [policy (merge default-policy policy)
+         environment-id (environment/environment-id checked-environment)]
+     (if-not (= environment-id (:reuse/environment-id index))
+       {:status :rejected
+        :error/category :reuse/environment-mismatch
+        :expected (:reuse/environment-id index)
+        :actual environment-id
+        :candidates []}
+       (let [target-universes (ordered-level-parameters target)
+             type-key (normalized-type-key checked-environment target
+                                           target-universes)
+             entries-by-id (into {} (map (juxt :reuse/declaration-id identity))
+                                 (:reuse/entries index))
+             target-dependencies (term/constants target)
+             candidates
+             (->> (get-in index [:reuse/by-type type-key] [])
+                  (map entries-by-id)
+                  (filter #(eligible? % policy))
+                  (filter #(= (count (:reuse/type-universes %))
+                              (count target-universes)))
+                  (map (fn [entry]
+                         (let [score {:exact-normalized-type 1
+                                      :concept-overlap
+                                      (count (set/intersection
+                                              (:required-concepts policy)
+                                              (:reuse/concepts entry)))
+                                      :dependency-overlap
+                                      (count (set/intersection target-dependencies
+                                                               (:reuse/dependencies entry)))
+                                      :successful-uses
+                                      (get-in entry [:reuse/evidence :successful-uses] 0)
+                                      :failed-uses
+                                      (get-in entry [:reuse/evidence :failed-uses] 0)}]
+                           {:reuse/declaration-id (:reuse/declaration-id entry)
+                            :reuse/term (reuse-term entry target-universes)
+                            :reuse/score score
+                            :reuse/concepts (:reuse/concepts entry)
+                            :reuse/dependencies (:reuse/dependencies entry)
+                            :reuse/axioms (:reuse/axioms entry)
+                            :reuse/source (:reuse/source entry)})))
+                  (sort-by (fn [candidate]
+                             (let [score (:reuse/score candidate)]
+                               [(- (:exact-normalized-type score))
+                                (- (:concept-overlap score))
+                                (- (:dependency-overlap score))
+                                (- (:successful-uses score))
+                                (:failed-uses score)
+                                (:reuse/declaration-id candidate)])))
+                  vec)]
+         {:status :matched
+          :reuse/type-key type-key
+          :candidates candidates
+          :examined (count (get-in index [:reuse/by-type type-key] []))
+         :returned (count candidates)})))))
+
+(defn query-related
+  "Ranks checked theorem constants as bounded global application seeds.
+
+  This does not assert that a theorem proves the target. It retrieves only
+  policy-eligible declarations sharing type-shape or constant dependencies;
+  prefix synthesis and the kernel remain responsible for every application."
+  ([index checked-environment target]
+   (query-related index checked-environment target {}))
+  ([index checked-environment target {:keys [limit] :as options}]
+   (let [policy (merge default-policy (dissoc options :limit))
+         environment-id (environment/environment-id checked-environment)]
+     (if-not (= environment-id (:reuse/environment-id index))
+       {:status :rejected
+        :error/category :reuse/environment-mismatch
+        :expected (:reuse/environment-id index)
+        :actual environment-id
+        :candidates []}
+       (let [target-levels (term-level-params target)
+             target-dependencies (term/constants target)
+             target-concepts (shape-concepts target)
+             candidates
+             (->> (:reuse/entries index)
+                  (filter #(eligible? % policy))
+                  (filter #(reusable-in-target? % target-levels))
+                  (map (fn [entry]
+                         (let [score
+                               {:concept-overlap
+                                (count (set/intersection
+                                        target-concepts
+                                        (:reuse/concepts entry)))
+                                :dependency-overlap
+                                (count (set/intersection
+                                        target-dependencies
+                                        (:reuse/dependencies entry)))
+                                :successful-uses
+                                (get-in entry [:reuse/evidence
+                                               :successful-uses] 0)
+                                :failed-uses
+                                (get-in entry [:reuse/evidence
+                                               :failed-uses] 0)}]
+                           {:reuse/declaration-id (:reuse/declaration-id entry)
+                            :reuse/term (reuse-term entry)
+                            :reuse/score score
+                            :reuse/axioms (:reuse/axioms entry)
+                            :reuse/source (:reuse/source entry)})))
+                  (filter (fn [candidate]
+                            (let [score (:reuse/score candidate)]
+                              (or (pos? (:dependency-overlap score))
+                                  (>= (:concept-overlap score) 3)))))
+                  (sort-by (fn [candidate]
+                             (let [score (:reuse/score candidate)]
+                               [(- (:dependency-overlap score))
+                                (- (:concept-overlap score))
+                                (- (:successful-uses score))
+                                (:failed-uses score)
+                                (:reuse/declaration-id candidate)])))
+                  (take (or limit 16))
+                  vec)]
+         {:status :matched
+          :candidates candidates
+          :examined (count (:reuse/entries index))
+          :returned (count candidates)})))))

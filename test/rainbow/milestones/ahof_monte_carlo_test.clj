@@ -1,0 +1,63 @@
+(ns rainbow.milestones.ahof-monte-carlo-test
+  (:require [clojure.test :refer [deftest is]]
+            [rainbow.milestones.ahof-monte-carlo :as milestone]
+            [rainbow.checkpoint :as checkpoint]
+            [rainbow.curriculum.applied-higher-order-functions :as ahof]
+            [rainbow.environment :as environment]
+            [rainbow.kernel :as kernel]))
+
+(deftest v26-report-checkpoint-and-ledger-credit-replay
+  (let [loaded (milestone/load-report milestone/report-path)
+        report (:report loaded)
+        checkpoint (checkpoint/load-checkpoint milestone/checkpoint-path)
+        ledger (:ledger (ahof/load-ledger ahof/ledger-path))
+        v26 (first (filter #(= "V26" (:ahof/id %))
+                           (:ahof-ledger/algorithms ledger)))]
+    (is (= :replayed (:status loaded)))
+    (is (= :passed (:status report)))
+    (is (= :replayed (:status checkpoint)))
+    (is (= :proved (:ahof/outcome v26)))
+    (is (= (:evidence/id report)
+           (get-in v26 [:ahof/evidence 0 :evidence/id])))
+    (is (= {:before [0 4] :after [4 4]}
+           (get-in report [:results :held-out])))
+    (is (= {:after [1 1]} (get-in report [:results :transfer])))
+    (is (= 9 (get-in report [:results :newly-solved-native-results])))
+    (is (= :none (:trusted-base-delta report)))
+    (is (every? empty? (vals (:axiom-profiles report))))))
+
+(deftest v26-certificates-remain-kernel-checked
+  (let [checkpoint (checkpoint/load-checkpoint milestone/checkpoint-path)
+        checked-environment (:environment checkpoint)]
+    (doseq [name '[estimation/nnrat-indicator
+                   estimation/failure-count
+                   estimation/monte-carlo-frequency
+                   estimation/indicator-failure
+                   estimation/indicator-success
+                   estimation/count-empty
+                   ahof-v26/count-is-one
+                   ahof-v26/estimate-is-quarter
+                   ahof-v26/monte-carlo]]
+      (let [id (environment/resolve-id checked-environment name)
+            declaration (environment/declaration checked-environment id)]
+        (is (string? id) (str name))
+        (is (= #{} (kernel/axioms checked-environment id)) (str name))
+        (is (= :checked
+               (:status
+                (kernel/check checked-environment
+                              (:rainbow/value declaration)
+                              (:rainbow/type declaration)
+                              (set (:rainbow/universes declaration)))))
+            (str name))))))
+
+(deftest worked-estimate-keeps-proof-and-execution-claims-distinct
+  (let [report (:report (milestone/load-report milestone/report-path))]
+    (is (= :normalized (get-in report [:evaluation :status])))
+    (is (= 1 (get-in report [:evaluation :clojure-reference :failure-count])))
+    (is (= 1/4 (get-in report [:evaluation :clojure-reference
+                               :failure-frequency])))
+    (is (= :proved (get-in report [:claim-boundaries :empirical-frequency])))
+    (is (= :tested-structural-observation
+           (get-in report [:claim-boundaries :clojure-correspondence])))
+    (is (= :not-claimed
+           (get-in report [:claim-boundaries :sampling-distribution])))))

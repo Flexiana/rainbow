@@ -1,0 +1,43 @@
+{:precommit/schema-version 1
+ :precommit/kind :signed-rational-equivalence-laws
+ :precommit/source
+ {:input-checkpoint/path "artifacts/ahof/o32-coordinate-search/checkpoint.edn.gz"
+  :input-checkpoint/id
+  "sha256:fc098ad8c5887176809dd41903505ff72450e88d9c65de758948f37c0741fa72"
+  :input-exact-mathlib-mappings 1237
+  :proof-values :native-only
+  :baseline-capability-additions
+  [nnrat/add-commutative nnrat/multiply-commutative signed/add-commutative]}
+ :precommit/targets
+ [{:target/name signed/equivalent-symmetric
+   :study/partition :development
+   :statement "signed rational equivalence reverses direction"}
+  {:target/name signed/negate-respects-equivalence
+   :study/partition :held-out
+   :statement "negation preserves signed rational equivalence"}]
+ :precommit/representation
+ {:values :grothendieck-pairs-of-nonnegative-rationals
+  :equality :additive-cross-equivalence
+  :scope :equivalence-transport}
+ :precommit/fixed-policy
+ {:search/states 32 :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :signed-and-vector-proof-transport-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck :missing-signed-equivalence-transport-laws}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/downstream-cone
+ [:vector-equivalence-symmetry :signed-vector-rewriting
+  :optimizer-state-normalization :counterfactual-proof-composition]
+ :precommit/claim-boundaries
+ {:transitivity-claimed? false
+  :signed-addition-congruence-claimed? false
+  :canonical-normalization-claimed? false
+  :quotient-type-claimed? false
+  :mathlib-mapping-credit-planned? false
+  :kernel-change-planned? false}
+ :precommit/id
+ "sha256:726f89eceaef2314d5fe28155176f4e0a1c76390a9eeebc2532ccf8165db48cb"}

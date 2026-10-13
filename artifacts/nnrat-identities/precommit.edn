@@ -1,0 +1,49 @@
+{:precommit/schema-version 1
+ :precommit/kind :nonnegative-rational-identities
+ :precommit/source
+ {:input-checkpoint/id
+  "sha256:e51731dd7350fcb29e47c1829a58e2aa9d237b1174fafa1f9e9d259983aef346"
+  :input-exact-mathlib-mappings 1245
+  :proof-values :native-only
+  :required-post-checkpoint-capabilities
+  [nnrat/reciprocal nnrat/divide nnrat/add-commutative
+   nnrat/multiply-commutative]}
+ :precommit/targets
+ [{:target/name nnrat/add-zero-right :study/partition :development
+   :statement "a + 0 is rationally equivalent to a"}
+  {:target/name nnrat/add-zero-left :study/partition :development
+   :statement "0 + a is rationally equivalent to a"}
+  {:target/name nnrat/multiply-one-right :study/partition :development
+   :statement "a times 1 is rationally equivalent to a"}
+  {:target/name nnrat/multiply-one-left :study/partition :development
+   :statement "1 times a is rationally equivalent to a"}
+  {:target/name nnrat/multiply-zero-right :study/partition :development
+   :statement "a times 0 is rationally equivalent to 0"}
+  {:target/name nnrat/multiply-zero-left :study/partition :development
+   :statement "0 times a is rationally equivalent to 0"}
+  {:target/name nnrat/reciprocal-one :study/partition :held-out
+   :statement "the reciprocal of 1 is rationally equivalent to 1"}
+  {:target/name nnrat/divide-one-right :study/partition :transfer
+   :statement "a divided by 1 is rationally equivalent to a"}]
+ :precommit/representation
+ {:values :native-numerator-positive-denominator-pairs
+  :equality :cross-product-equivalence
+  :arithmetic :exact-natural-pair-operations
+  :division :multiplication-by-total-reciprocal}
+ :precommit/fixed-policy
+ {:search/states 32 :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :or-rational-foundation-before-lemma-installation
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:targets-present 0
+  :expected-bottleneck :missing-generic-rational-neutral-and-absorbing-laws}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/claim-boundaries
+ {:quotient-type-claimed? false
+  :field-structure-claimed? false
+  :division-by-zero-law-claimed? false
+  :mathlib-mapping-credit-planned? false
+  :kernel-change-planned? false}
+ :precommit/id "sha256:e9d01fba92fed5409de44e83bad93fe1c46e267dd6bce392d5c5593e7e8fa8df"}

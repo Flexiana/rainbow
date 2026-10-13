@@ -1,0 +1,67 @@
+{:precommit/schema-version 1
+ :precommit/kind :nat-distance-core-mathlib
+ :precommit/source
+ {:library :mathlib
+  :version "v4.30.0"
+  :commit "c5ea00351c28e24afc9f0f84379aa41082b1188f"
+  :catalog/id "sha256:ebd3486b13af933d220504ec5bf2c33dbfc5bdd6b7e4d32a311aba0bebc2ae2d"
+  :statement-batch/id "sha256:3b585bed5922a329d04fc03aa0bcee13cf917f307b8c75768bfa52e5dc613c07"
+  :input-checkpoint/id "sha256:7c5bd478b4e8404b8e1100ee6c91a3cb086f3d8a74e5d9bbf784a055a7736e9f"
+  :proof-values :redacted}
+ :precommit/targets
+ [{:foreign/name "Nat.dist_zero_left"
+   :foreign/type-fingerprint "lean-hash64:1490983295"
+   :study/partition :development}
+  {:foreign/name "Nat.dist_self"
+   :foreign/type-fingerprint "lean-hash64:3927350683"
+   :study/partition :development}
+  {:foreign/name "Nat.eq_of_dist_eq_zero"
+   :foreign/type-fingerprint "lean-hash64:2025567797"
+   :study/partition :development}
+  {:foreign/name "Nat.dist_zero_right"
+   :foreign/type-fingerprint "lean-hash64:976261944"
+   :study/partition :held-out}
+  {:foreign/name "Nat.dist_eq_zero"
+   :foreign/type-fingerprint "lean-hash64:2564671092"
+   :study/partition :held-out}
+  {:foreign/name "Nat.dist_mul_right"
+   :foreign/type-fingerprint "lean-hash64:1993718483"
+   :study/partition :transfer}
+  {:foreign/name "Nat.dist_mul_left"
+   :foreign/type-fingerprint "lean-hash64:3506002487"
+   :study/partition :transfer}]
+ :precommit/representation
+ {:distance :computational-structural-recursion-on-naturals
+  :zero :native-natural-zero
+  :equality :intensional-equality-with-constructive-reflection
+  :multiplication :native-natural-multiplication
+  :foreign-literals :typed-natural-zero-only}
+ :precommit/fixed-policy
+ {:search/states 32
+  :search/depth 64
+  :proof-source :independent-rainbow
+  :selection :proof-redacted-bounded-batch
+  :allowed-axioms #{}}
+ :precommit/baseline
+ {:exact-mathlib-mappings 1237
+  :native-general-theorems-present 2
+  :present-theorems
+  [nat/distance-multiply-left nat/distance-multiply-right]
+  :expected-bottleneck
+  :typed-natural-zero-literal-nativeization}
+ :precommit/primary-metric
+ :newly-solved-held-out-targets-per-total-introduction-cost
+ :precommit/metrics
+ [:new-native-results :new-exact-mathlib-mappings
+  :held-out-success-rate-change :median-search-states
+  :total-search-states :rainbow-compute-ms :ai-latency-ms
+  :targets-per-generalized-lemma :lemma-leverage
+  :axiom-profiles :trusted-base-delta
+  :smallest-missing-prerequisite]
+ :precommit/claim-boundaries
+ {:lean-proof-bodies-imported? false
+  :mathlib-statements-used? true
+  :kernel-change-planned? false
+  :general-natural-literal-evaluator-claimed? false}
+ :precommit/id
+ "sha256:ced8a64d31070362d5011ea5a2fb9e7d76ea89390fbcf153ccd88012bf18d08a"}
