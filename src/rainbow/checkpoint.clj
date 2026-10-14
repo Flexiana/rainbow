@@ -81,5 +81,8 @@
                   {:status :rejected
                    :error/category :day54/checkpoint-read-failed
                    :message (.getMessage throwable)}))]
-          (swap! replay-cache assoc key result)
+          ;; A rejection can be transient (I/O or a smaller reduction budget).
+          ;; Only completed successful replays are reusable.
+          (when (= :replayed (:status result))
+            (swap! replay-cache assoc key result))
           result))))

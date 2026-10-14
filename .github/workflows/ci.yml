@@ -22,7 +22,7 @@ jobs:
       - name: Kernel tests
         run: lein test rainbow.kernel-test
       - name: Verifier and coverage guard regression tests
-        run: lein test rainbow.main-test rainbow.module-test rainbow.coverage.guard-test rainbow.coverage.total-test
+        run: lein test rainbow.main-test rainbow.checkpoint-cache-test rainbow.module-test rainbow.coverage.guard-test rainbow.coverage.total-test
       - name: Re-check the tour's theorems
         run: >-
           lein verify

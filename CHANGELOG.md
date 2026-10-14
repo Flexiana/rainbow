@@ -6,6 +6,7 @@ All notable changes to Rainbow's open core. The project follows
 ## [Unreleased]
 
 ### Fixed
+- Checkpoint retries no longer reuse rejected results after transient I/O failures or insufficient budgets.
 - Proof-bundle export preserves new aliases attached to proofs already present in its base.
 - Verification fails when a bundle command names no files or a bundle names no claims.
   Unreadable bundles are reported individually so later files still get checked.
