@@ -44,7 +44,10 @@
 
 (defn save-environment! [environment path]
   (let [artifact (environment-artifact environment)]
-    (spit path (str (pr-str artifact) "\n"))
+    (binding [*print-namespace-maps* false
+              *print-length* nil *print-level* nil
+              *print-meta* false *print-dup* false *print-readably* true]
+      (spit path (str (pr-str artifact) "\n")))
     {:status :saved
      :path (str path)
      :environment-id (:rainbow.artifact/environment-id artifact)

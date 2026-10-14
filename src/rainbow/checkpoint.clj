@@ -60,13 +60,17 @@
     (store/expand (edn/read-string (slurp path)))))
 
 (defn- write-value! [path value]
-  (let [file (io/file (str path))]
-    (.mkdirs (.getParentFile file))
+  (let [file (io/file (str path))
+        serialized (binding [*print-namespace-maps* false
+                             *print-length* nil *print-level* nil
+                             *print-meta* false *print-dup* false *print-readably* true]
+                     (str (pr-str value) "\n"))]
+    (when-let [parent (.getParentFile file)] (.mkdirs parent))
     (if (.endsWith (str path) ".gz")
       (with-open [output (GZIPOutputStream. (io/output-stream file))
                   writer (io/writer output)]
-        (.write writer (str (pr-str value) "\n")))
-      (spit file (str (pr-str value) "\n")))))
+        (.write writer serialized))
+      (spit file serialized))))
 
 (def ^:private replay-cache (atom {}))
 

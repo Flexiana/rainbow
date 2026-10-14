@@ -6,6 +6,7 @@ All notable changes to Rainbow's open core. The project follows
 ## [Unreleased]
 
 ### Fixed
+- Environment and checkpoint writers ignore diagnostic print limits; checkpoints can use bare filenames.
 - Bundle files preserve reserved symbol aliases and complete EDN under diagnostic print settings.
 - Bundles containing new inductive blocks use schema 2 with ordered, atomic block entries.
   Ordinary bundles retain schema 1; both schemas are checked, and ambiguous payloads are rejected.
