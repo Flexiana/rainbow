@@ -3,6 +3,7 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.history.direct-term-corpus :as corpus]
+            [rainbow.kernel :as kernel]
             [rainbow.main :as main]))
 
 (def ^:private empty-env (environment/empty-environment))
@@ -46,6 +47,28 @@
     (doseq [claims [nil {} []]]
       (testing (pr-str claims)
         (is (false? (:ok? (main/check-bundle (assoc (bundle) :claims claims)))))))))
+
+(deftest bundles-preserve-new-aliases-for-existing-declarations
+  (let [base @checked-env
+        original (:name (first corpus/proofs))
+        id (environment/resolve-id base original)
+        declaration (environment/declaration base id)
+        result (kernel/add-declaration base (update declaration :rainbow/aliases conj 'exported/identity))
+        exported (main/proof-bundle {:checkpoint "alias-base" :modules []
+                                    :base-env base :env (:environment result)
+                                    :claims ['exported/identity]})]
+    (is (= :accepted (:status result)))
+    (is (= (environment/environment-id base)
+           (environment/environment-id (:environment result)))
+        "adding an alias does not change the semantic environment ID")
+    (is (= 1 (count (:declarations exported))))
+    (with-redefs [checkpoint/load-checkpoint
+                  (fn [path]
+                    (assert (= "alias-base" path))
+                    {:status :replayed :environment base})]
+      (let [replayed (main/check-bundle exported)]
+        (is (true? (:ok? replayed)))
+        (is (= id (get-in replayed [:claims 'exported/identity :resolved])))))))
 
 (deftest bundles-still-reject-invalid-evidence
   (with-redefs [checkpoint/load-checkpoint replay-base]

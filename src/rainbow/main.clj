@@ -150,18 +150,22 @@
 (defn proof-bundle
   "A self-contained, re-checkable record of declarations proved on top of a public
   base: the base (a checkpoint plus the proof modules installed on it, in order),
-  every declaration `env` has that `base-env` does not (in installation order),
+  every new declaration or added declaration alias (in installation order),
   and the claims -- aliases with their ids and axiom closures. The declarations
   carry their proof terms, so the bundle can be checked by the kernel alone,
   without whatever program generated them."
   [{:keys [checkpoint modules base-env env claims meta reductions]}]
-  (let [base-ids (set (keys (:rainbow.environment/declarations base-env)))
-        new-ids (remove base-ids (:rainbow.environment/order env))]
+  (let [exported-ids (filter (fn [id]
+                               (let [before (environment/declaration base-env id)
+                                     after (environment/declaration env id)]
+                                 (or (nil? before)
+                                     (not= (:rainbow/aliases before) (:rainbow/aliases after)))))
+                             (:rainbow.environment/order env))]
     {:rainbow.bundle/schema-version 1
      :base {:checkpoint checkpoint
             :modules (mapv str modules)
             :environment-id (environment/environment-id base-env)}
-     :declarations (mapv #(environment/declaration env %) new-ids)
+     :declarations (mapv #(environment/declaration env %) exported-ids)
      :claims (into (sorted-map)
                    (for [alias claims
                          :let [id (environment/resolve-id env alias)]]

@@ -6,6 +6,7 @@ All notable changes to Rainbow's open core. The project follows
 ## [Unreleased]
 
 ### Fixed
+- Proof-bundle export preserves new aliases attached to proofs already present in its base.
 - Verification fails when a bundle command names no files or a bundle names no claims.
   Unreadable bundles are reported individually so later files still get checked.
 - Module verification checks that each advertised alias resolves to the supplied proof ID
