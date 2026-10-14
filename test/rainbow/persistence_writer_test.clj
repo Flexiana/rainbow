@@ -5,6 +5,9 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.checkpoint.frontier :as frontier]
             [rainbow.history.direct-term-corpus :as corpus]
+            [rainbow.data.inductive :as inductive]
+            [rainbow.environment :as environment]
+            [rainbow.kernel :as kernel]
             [rainbow.persistence :as persistence]))
 
 (deftest environment-save-ignores-diagnostic-print-limits
@@ -47,3 +50,25 @@
           (is (= {:value [1 2 3]}
                  (do (writer file {:value [1 2 3]}) (reader file))))
           (finally (.delete file)))))))
+
+(deftest re-aliased-inductive-blocks-survive-persistence
+  (let [first-result (kernel/add-inductive-block (environment/empty-environment)
+                                                 inductive/bool-spec)
+        renamed (-> inductive/bool-spec
+                    (assoc :block/alias 'persisted/Bool)
+                    (assoc-in [:block/constructors 0 :constructor/alias] 'persisted/false)
+                    (assoc-in [:block/constructors 1 :constructor/alias] 'persisted/true))
+        second-result (kernel/add-inductive-block (:environment first-result) renamed)
+        before (:environment second-result)
+        artifact (persistence/environment-artifact before)
+        replayed (persistence/replay-artifact artifact)]
+    (is (= :accepted (:status first-result)))
+    (is (= :accepted (:status second-result)))
+    (is (= :replayed (:status replayed)) (pr-str (:error replayed)))
+    (is (= (:rainbow.environment/aliases before)
+           (:rainbow.environment/aliases (:environment replayed))))
+    (is (= 2 (count (distinct (:rainbow.artifact/inductive-blocks artifact)))))
+    (is (= artifact (persistence/environment-artifact (:environment replayed))))
+    (is (= :rejected (:status (persistence/replay-artifact
+                              (update-in artifact [:rainbow.artifact/entries 0 :entry/value]
+                                         assoc :rainbow/id "sha256:forged")))))))

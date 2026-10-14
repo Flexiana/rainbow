@@ -7,34 +7,57 @@
 
 (def artifact-schema-version 1)
 
+(defn- block-alias-variants [environment aliases-by-id block-id]
+  ;; Adding another alias set for an existing block retains navigation aliases,
+  ;; but its stored spec/member metadata describes only the most recent set.
+  ;; Reconstruct disjoint alias sets, keeping that latest set last. Every emitted
+  ;; variant still goes through add-inductive-block during replay.
+  (let [block (environment/block environment block-id)
+        spec (:block/spec block)
+        members (butlast (:block/member-ids block))
+        latest (into [(:block/alias spec)] (map :constructor/alias (:block/constructors spec)))
+        aliases (mapv (fn [id current]
+                        (conj (vec (sort-by str (disj (get aliases-by-id id #{}) current)))
+                              current))
+                      members latest)]
+    (when-not (apply = (map count aliases))
+      (throw (ex-info "Inductive member alias sets have inconsistent sizes"
+                      {:block-id block-id})))
+    (mapv (fn [i]
+            (-> spec
+                (assoc :rainbow/id block-id :block/alias (get-in aliases [0 i]))
+                (update :block/constructors
+                        (fn [constructors]
+                          (mapv (fn [j constructor]
+                                  (assoc constructor :constructor/alias (get-in aliases [(inc j) i])))
+                                (range) constructors)))))
+          (range (count (first aliases))))))
+
 (defn environment-artifact [environment]
-  (let [declarations
-        (into []
-              (keep (fn [id]
-                      (let [declaration (environment/declaration environment id)]
-                        (when-not (:rainbow/block-id declaration) declaration))))
-              (:rainbow.environment/order environment))
-        blocks (mapv (fn [id]
-                       (let [block (environment/block environment id)]
-                         (assoc (:block/spec block) :rainbow/id id)))
-                     (:rainbow.environment/block-order environment))
+  (let [aliases-by-id (reduce-kv (fn [m alias id] (update m id (fnil conj #{}) alias))
+                                 {} (:rainbow.environment/aliases environment))
+        block-ids (distinct (:rainbow.environment/block-order environment))
+        variants (into {} (map (fn [id] [id (block-alias-variants environment aliases-by-id id)])
+                               block-ids))
+        declarations (into []
+                           (comp (map #(environment/declaration environment %))
+                                 (remove :rainbow/block-id))
+                           (distinct (:rainbow.environment/order environment)))
+        blocks (into [] (mapcat variants) block-ids)
         entries
         (into []
-              (keep (fn [id]
-                      (let [declaration (environment/declaration environment id)]
-                        (cond
-                          (not (:rainbow/block-id declaration))
-                          {:entry/kind :declaration :entry/value declaration}
+              (mapcat (fn [id]
+                        (let [declaration (environment/declaration environment id)]
+                          (cond
+                            (not (:rainbow/block-id declaration))
+                            [{:entry/kind :declaration :entry/value declaration}]
 
-                          (= :inductive (:rainbow/member-key declaration))
-                          (let [block (environment/block environment
-                                                         (:rainbow/block-id declaration))]
-                            {:entry/kind :inductive-block
-                             :entry/value (assoc (:block/spec block)
-                                                 :rainbow/id (:rainbow/id block))})
+                            (= :inductive (:rainbow/member-key declaration))
+                            (mapv #(hash-map :entry/kind :inductive-block :entry/value %)
+                                  (get variants (:rainbow/block-id declaration)))
 
-                          :else nil))))
-              (:rainbow.environment/order environment))]
+                            :else []))))
+              (distinct (:rainbow.environment/order environment)))]
     {:rainbow.artifact/schema-version artifact-schema-version
      :rainbow.artifact/kind :checked-environment
      :rainbow.artifact/environment-id (environment/environment-id environment)

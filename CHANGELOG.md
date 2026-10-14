@@ -6,6 +6,7 @@ All notable changes to Rainbow's open core. The project follows
 ## [Unreleased]
 
 ### Fixed
+- Re-aliased inductive blocks retain every navigation alias across environment save and kernel replay.
 - Chunked suite runs require a successful process exit and executed tests; invalid chunk sizes and empty resumes are refused.
 - Module installers reject malformed environment results before marking dependencies installed.
 - Interrupted checkpoint packing keeps complete, expandable files and supports retry; gzip writes replace files atomically.
