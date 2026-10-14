@@ -1,4 +1,2 @@
-;; Proof modules not yet under a test (generated). Their standalone install repeats shared dependency installs
-;; thousands of times under the current module format; declarative module dependencies (1.0.0) remove that and
-;; this list must then be empty. Until then, every proof module must be reached by a test or listed here.
+;; No proof modules may be pending in a release. The coverage guard rejects any entries.
 #{}

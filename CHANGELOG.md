@@ -3,6 +3,16 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Verification fails when a bundle command names no files or a bundle names no claims.
+  Unreadable bundles are reported individually so later files still get checked.
+- Module verification checks that each advertised alias resolves to the supplied proof ID
+  and that installers return declaration environments.
+- The coverage inventory reads complete namespace imports, rejects pending modules and
+  empty discovery, and runs in CI alongside verifier and dependency-installer regression tests.
+
 ## [1.0.0] - 2026-10-13
 
 ### Changed

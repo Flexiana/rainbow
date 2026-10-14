@@ -21,6 +21,8 @@ jobs:
         run: test "$(cat src/rainbow/kernel.clj src/rainbow/term.clj src/rainbow/environment.clj src/rainbow/canonical.clj | wc -l)" -eq 1200
       - name: Kernel tests
         run: lein test rainbow.kernel-test
+      - name: Verifier and coverage guard regression tests
+        run: lein test rainbow.main-test rainbow.module-test rainbow.coverage.guard-test rainbow.coverage.total-test
       - name: Re-check the tour's theorems
         run: >-
           lein verify

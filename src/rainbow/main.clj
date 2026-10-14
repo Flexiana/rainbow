@@ -71,24 +71,33 @@
           ids-fn (or (ns-resolve ns-sym 'theorem-ids) (ns-resolve ns-sym 'definition-ids))]
       (cond
         (nil? extend) {:namespace ns-sym :error "no extend-environment (not a proof module)"}
-        (nil? ids-fn) (do (extend base)  ; installs others' theorems (a tactic or a bundle): installing is the check
-                          {:namespace ns-sym :theorems [] :bundle? true})
         :else
         (let [env (extend base)]
-          {:namespace ns-sym
-           :theorems (vec (for [[name id] (ids-fn env)]
-                            {:name name :id id
-                             :status (recheck env id)
-                             :axioms (kernel/axioms env id)
-                             ;; :for-all when the statement quantifies over data, :instance when it is a
-                             ;; statement about specific values (a worked instance)
-                             ;; :for-all quantifies over data; :unfolding does too but holds by reflexivity
-                             ;; (a definition unfolded); :instance is about specific values
-                             :scope (let [d (environment/declaration env id)]
-                                      (cond
-                                        (not (quantifies-over-data? env (:rainbow/type d) (set (:rainbow/universes d)))) :instance
-                                        (proof-is-reflexivity? env (:rainbow/value d)) :unfolding
-                                        :else :for-all))}))})))
+          (when-not (and (map? env)
+                         (= environment/schema-version (:rainbow.environment/schema-version env))
+                         (map? (:rainbow.environment/declarations env))
+                         (map? (:rainbow.environment/aliases env))
+                         (vector? (:rainbow.environment/order env)))
+            (throw (ex-info "extend-environment did not return a declaration environment" {:namespace ns-sym})))
+          (if (nil? ids-fn)
+            ;; Installs others' theorems (a tactic or a bundle): installing is the check.
+            {:namespace ns-sym :theorems [] :bundle? true}
+            {:namespace ns-sym
+             :theorems (vec (for [[name id] (ids-fn env)]
+                              {:name name :id id
+                               :status (if (and id (= id (environment/resolve-id env name)))
+                                         (recheck env id)
+                                         :alias-mismatch)
+                               :axioms (kernel/axioms env id)
+                               ;; :for-all when the statement quantifies over data, :instance when it is a
+                               ;; statement about specific values (a worked instance)
+                               ;; :for-all quantifies over data; :unfolding does too but holds by reflexivity
+                               ;; (a definition unfolded); :instance is about specific values
+                               :scope (let [d (environment/declaration env id)]
+                                        (cond
+                                          (not (quantifies-over-data? env (:rainbow/type d) (set (:rainbow/universes d)))) :instance
+                                          (proof-is-reflexivity? env (:rainbow/value d)) :unfolding
+                                          :else :for-all))}))}))))
     (catch Throwable t
       {:namespace ns-sym
        :error (str (.getMessage t) " "
@@ -174,10 +183,13 @@
   recorded id with its recorded axiom closure."
   ([bundle] (check-bundle bundle nil))
   ([bundle reductions]
-   (binding [kernel/*reduction-budget* (max kernel/*reduction-budget*
-                                            (or reductions 0)
-                                            (or (get-in bundle [:check :reductions]) 0))]
-     (check-bundle* bundle))))
+   (try
+     (binding [kernel/*reduction-budget* (max kernel/*reduction-budget*
+                                              (or reductions 0)
+                                              (or (get-in bundle [:check :reductions]) 0))]
+       (check-bundle* bundle))
+     (catch Throwable t
+       {:ok? false :error (.getMessage t)}))))
 
 (defn- kernel-reason
   "The most informative kernel category in a (nested) rejection: a budget
@@ -195,10 +207,14 @@
 
 (defn- check-bundle* [bundle]
   (try
-    (if-not (contains? supported-bundle-schemas (:rainbow.bundle/schema-version bundle))
+    (cond
+      (not (contains? supported-bundle-schemas (:rainbow.bundle/schema-version bundle)))
       {:ok? false :error (str "not a proof bundle this version understands: :rainbow.bundle/schema-version is "
                               (pr-str (:rainbow.bundle/schema-version bundle))
                               ", expected one of " (pr-str supported-bundle-schemas))}
+      (not (and (map? (:claims bundle)) (seq (:claims bundle))))
+      {:ok? false :error "a proof bundle must name at least one claim in a :claims map"}
+      :else
     (let [{:keys [checkpoint modules environment-id]} (:base bundle)
           loaded (checkpoint/load-checkpoint checkpoint)]
       (if-not (= :replayed (:status loaded))
@@ -245,20 +261,28 @@
 
 (defn- verify-bundles-main [args]
   ;; mapv, not for: every bundle is checked and reported even after one fails
-  (let [[reductions paths] (if (= "--reductions" (first args))
-                             [(Long/parseLong (second args)) (drop 2 args)]
-                             [nil args])]
-  (every? true?
-          (mapv (fn [path]
-            (let [{:keys [ok? error claims]} (check-bundle (edn/read-string (slurp path)) reductions)]
-              (println (if ok? "OK   " "FAIL ") path (if error (str "-- " error) ""))
-              (doseq [[alias {:keys [status axioms problems]}] claims]
-                (println (format "       %-9s %s%s%s" (some-> status name) alias
-                                 (if (seq axioms) (str "  axioms: " (pr-str (sort axioms))) "  axiom-free")
-                                 (if (seq problems) (str "  -- " (string/join "; " problems)) ""))))
-              (flush)
-              (boolean ok?)))
-                paths))))
+  (try
+    (let [[reductions paths] (if (= "--reductions" (first args))
+                               [(Long/parseLong (second args)) (drop 2 args)]
+                               [nil args])]
+      (when (empty? paths)
+        (throw (ex-info "usage: lein verify --bundle [--reductions N] <bundle> ..." {})))
+      (every? true?
+              (mapv (fn [path]
+                      (let [{:keys [ok? error claims]}
+                            (try (check-bundle (edn/read-string (slurp path)) reductions)
+                                 (catch Throwable t {:ok? false :error (.getMessage t)}))]
+                        (println (if ok? "OK   " "FAIL ") path (if error (str "-- " error) ""))
+                        (doseq [[alias {:keys [status axioms problems]}] claims]
+                          (println (format "       %-9s %s%s%s" (some-> status name) alias
+                                           (if (seq axioms) (str "  axioms: " (pr-str (sort axioms))) "  axiom-free")
+                                           (if (seq problems) (str "  -- " (string/join "; " problems)) ""))))
+                        (flush)
+                        (boolean ok?)))
+                    paths)))
+    (catch Throwable t
+      (println "FAIL --" (.getMessage t))
+      false)))
 
 ;; ---------------------------------------------------------------- reproduce
 
