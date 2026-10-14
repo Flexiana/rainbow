@@ -149,6 +149,37 @@
                    (assoc-in b [:declarations 0 :rainbow/value] [:bound 0])]]
         (is (false? (:ok? (main/check-bundle bad))))))))
 
+(deftest bundle-writer-preserves-reserved-symbol-aliases
+  (let [base @checked-env
+        id (environment/resolve-id base (:name (first corpus/proofs)))
+        aliases '#{exported/true exported/false exported/nil}
+        added (kernel/add-declaration
+               base (update (environment/declaration base id) :rainbow/aliases into aliases))
+        b (main/proof-bundle {:checkpoint "writer-base" :modules [] :base-env base
+                              :env (:environment added) :claims aliases})
+        file (java.io.File/createTempFile "rainbow-bundle-" ".edn")]
+    (is (= :accepted (:status added)))
+    (try
+      (binding [*print-namespace-maps* true]
+        (main/write-bundle! file b))
+      (let [read-back (edn/read-string (slurp file))]
+        (is (= aliases (set (keys (:claims read-back)))))
+        (with-redefs [checkpoint/load-checkpoint (fn [_] {:status :replayed :environment base})]
+          (is (true? (:ok? (main/check-bundle read-back))))))
+      (finally (.delete file)))))
+
+(deftest bundle-writer-is-independent-of-diagnostic-print-settings
+  (let [b (with-meta (assoc (bundle) :meta {:description "a proof with spaces"
+                                          :nested [1 [2 [3]]]})
+                    {:diagnostic true})
+        file (java.io.File/createTempFile "rainbow-bundle-" ".edn")]
+    (try
+      (binding [*print-length* 1 *print-level* 1 *print-meta* true
+                *print-readably* false]
+        (main/write-bundle! file b))
+      (is (= b (edn/read-string (slurp file))))
+      (finally (.delete file)))))
+
 (deftest malformed-budgets-return-a-failure-result
   (with-redefs [checkpoint/load-checkpoint replay-base]
     (is (false? (:ok? (main/check-bundle (assoc (bundle) :check {:reductions "bad"})))))

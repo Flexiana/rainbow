@@ -196,7 +196,12 @@
      (if blocks? entries (mapv :entry/value entries)))))
 
 (defn write-bundle! [path bundle]
-  (spit path (str (pr-str bundle) "\n")))
+  ;; Persist complete EDN regardless of the caller's diagnostic print settings.
+  ;; Namespace-map lifting turns e.g. exported/true keys into Boolean true on read.
+  (binding [*print-namespace-maps* false
+            *print-length* nil *print-level* nil
+            *print-meta* false *print-dup* false *print-readably* true]
+    (spit path (str (pr-str bundle) "\n"))))
 
 (declare check-bundle*)
 
