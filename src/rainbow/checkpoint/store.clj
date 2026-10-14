@@ -15,6 +15,8 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io])
   (:import (java.io PushbackReader)
+           (java.nio.file Files CopyOption StandardCopyOption)
+           (java.nio.file.attribute FileAttribute)
            (java.security MessageDigest)
            (java.util.zip GZIPInputStream GZIPOutputStream)))
 
@@ -25,12 +27,28 @@
               reader (PushbackReader. (io/reader input))]
     (edn/read reader)))
 
+(defn- edn-string [value]
+  (binding [*print-namespace-maps* false
+            *print-length* nil *print-level* nil
+            *print-meta* false *print-dup* false *print-readably* true]
+    (pr-str value)))
+
 (defn- write-gz! [path value]
-  (let [file (io/file (str path))]
-    (some-> (.getParentFile file) .mkdirs)
-    (with-open [output (GZIPOutputStream. (io/output-stream file) 65536)
-                writer (io/writer output)]
-      (.write writer (str (pr-str value) "\n")))))
+  (let [serialized (str (edn-string value) "\n")
+        file (.getAbsoluteFile (io/file (str path)))
+        parent (.getParentFile file)]
+    (.mkdirs parent)
+    (let [temporary (Files/createTempFile (.toPath parent) ".rainbow-store-" ".tmp"
+                                          (make-array FileAttribute 0))]
+      (try
+        (with-open [output (GZIPOutputStream. (io/output-stream (.toFile temporary)) 65536)
+                    writer (io/writer output)]
+          (.write writer serialized))
+        ;; Fail safely if atomic replacement is unsupported; never truncate the old file.
+        (Files/move temporary (.toPath file)
+                    (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE
+                                            StandardCopyOption/REPLACE_EXISTING]))
+        (finally (Files/deleteIfExists temporary))))))
 
 (def ^:private cache (atom nil))
 
@@ -109,7 +127,7 @@
   (let [found (volatile! {})
         packed (map-checkpoint value
                        (fn [element]
-                         (let [ref (sha256 (pr-str element))]
+                         (let [ref (sha256 (edn-string element))]
                            (vswap! found assoc ref element)
                            {:rainbow.store/ref ref})))]
     [packed @found]))
@@ -122,14 +140,15 @@
   place and writes the store with exactly the declarations they reference.
   A file that is already packed is left as it is and only contributes its
   references; each newly packed file is checked to expand back to the value it
-  replaced before it is written. Idempotent."
+  replaced before it is written. The store is published before new references;
+  interrupted writes leave complete, expandable checkpoints. Idempotent."
   []
   (let [files (->> (file-seq (io/file "artifacts"))
                    (filter #(= "checkpoint.edn.gz" (.getName ^java.io.File %)))
                    (sort-by str))
         old (store)
         entries (volatile! {})
-        packed-now (volatile! 0)]
+        pending (volatile! [])]
     (doseq [f files]
       (let [value (read-gz f)]
         (if (every? reference? (elements value))   ; fully packed: only collect its references
@@ -143,11 +162,15 @@
             (when-not (= value (map-checkpoint packed #(resolve-reference found %)))
               (throw (ex-info "packing does not round-trip" {:file (str f)})))
             (vswap! entries merge found)
-            (vswap! packed-now inc)
-            (write-gz! f packed)))))
+            (vswap! pending conj [f packed])))))
+    ;; Retain old references until every checkpoint has been replaced. A failed
+    ;; replacement can then be retried with either the old or new checkpoint.
+    (write-gz! store-path (merge old @entries))
+    (reset! cache nil)
+    (doseq [[file packed] @pending] (write-gz! file packed))
     (write-gz! store-path @entries)
     (reset! cache nil)
-    {:checkpoints (count files) :packed-now @packed-now :distinct-declarations (count @entries)}))
+    {:checkpoints (count files) :packed-now (count @pending) :distinct-declarations (count @entries)}))
 
 (defn -main [& _]
   (println (pr-str (pack-all!)))
