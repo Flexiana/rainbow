@@ -6,6 +6,8 @@ All notable changes to Rainbow's open core. The project follows
 ## [Unreleased]
 
 ### Fixed
+- Bundles containing new inductive blocks use schema 2 with ordered, atomic block entries.
+  Ordinary bundles retain schema 1; both schemas are checked, and ambiguous payloads are rejected.
 - Checkpoint retries no longer reuse rejected results after transient I/O failures or insufficient budgets.
 - Proof-bundle export preserves new aliases attached to proofs already present in its base.
 - Verification fails when a bundle command names no files or a bundle names no claims.

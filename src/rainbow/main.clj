@@ -147,25 +147,43 @@
 
 ;; ---------------------------------------------------------------- proof bundles
 
+(defn- bundle-entries [env ids]
+  (second
+   (reduce (fn [[blocks entries] id]
+             (let [declaration (environment/declaration env id)]
+               (if-let [block-id (:rainbow/block-id declaration)]
+                 (if (contains? blocks block-id)
+                   [blocks entries]
+                   [(conj blocks block-id)
+                    (conj entries {:entry/kind :inductive-block
+                                   :entry/value (assoc (:block/spec (environment/block env block-id))
+                                                       :rainbow/id block-id)})])
+                 [blocks (conj entries {:entry/kind :declaration :entry/value declaration})])))
+           [#{} []] ids)))
+
 (defn proof-bundle
   "A self-contained, re-checkable record of declarations proved on top of a public
   base: the base (a checkpoint plus the proof modules installed on it, in order),
   every new declaration or added declaration alias (in installation order),
   and the claims -- aliases with their ids and axiom closures. The declarations
   carry their proof terms, so the bundle can be checked by the kernel alone,
-  without whatever program generated them."
+  without whatever program generated them. Ordinary declarations use schema 1.
+  A bundle adding inductive blocks uses schema 2's ordered :entries, so each
+  block is checked atomically before declarations that use its members."
   [{:keys [checkpoint modules base-env env claims meta reductions]}]
   (let [exported-ids (filter (fn [id]
                                (let [before (environment/declaration base-env id)
                                      after (environment/declaration env id)]
                                  (or (nil? before)
                                      (not= (:rainbow/aliases before) (:rainbow/aliases after)))))
-                             (:rainbow.environment/order env))]
-    {:rainbow.bundle/schema-version 1
+                             (distinct (:rainbow.environment/order env)))
+        entries (bundle-entries env exported-ids)
+        blocks? (some #(= :inductive-block (:entry/kind %)) entries)]
+    (assoc
+     {:rainbow.bundle/schema-version (if blocks? 2 1)
      :base {:checkpoint checkpoint
             :modules (mapv str modules)
             :environment-id (environment/environment-id base-env)}
-     :declarations (mapv #(environment/declaration env %) exported-ids)
      :claims (into (sorted-map)
                    (for [alias claims
                          :let [id (environment/resolve-id env alias)]]
@@ -173,7 +191,9 @@
      ;; the kernel reduction budget the declarations were checked under. A budget is a resource limit, not
      ;; trust: a larger one only lets the check run longer, it cannot make a false proof pass.
      :check {:reductions (or reductions kernel/*reduction-budget*)}
-     :meta meta}))
+      :meta meta}
+     (if blocks? :entries :declarations)
+     (if blocks? entries (mapv :entry/value entries)))))
 
 (defn write-bundle! [path bundle]
   (spit path (str (pr-str bundle) "\n")))
@@ -183,7 +203,8 @@
 (defn check-bundle
   "Replays a proof bundle through the kernel: the base checkpoint must replay, the
   named modules install on it to the recorded environment id, every declaration
-  is re-checked by kernel/add-declaration, and every claim resolves to its
+  is re-checked by kernel/add-declaration (inductive blocks by add-inductive-block),
+  and every claim resolves to its
   recorded id with its recorded axiom closure."
   ([bundle] (check-bundle bundle nil))
   ([bundle reductions]
@@ -207,7 +228,23 @@
     (or (some #{:kernel/resource-limit} categories)
         (peek categories))))
 
-(def supported-bundle-schemas #{1})
+(def supported-bundle-schemas #{1 2})
+
+(defn- bundle-payload-error [bundle]
+  (case (:rainbow.bundle/schema-version bundle)
+    1 (cond
+        (contains? bundle :entries) "schema 1 uses :declarations, not :entries"
+        (not (vector? (:declarations bundle))) "schema 1 requires a :declarations vector")
+    2 (cond
+        (contains? bundle :declarations) "schema 2 uses :entries, not :declarations"
+        (not (vector? (:entries bundle))) "schema 2 requires an :entries vector")
+    nil))
+
+(defn- replay-bundle-entry [env {:entry/keys [kind value]}]
+  (case kind
+    :declaration (kernel/add-declaration env value)
+    :inductive-block (kernel/add-inductive-block env value)
+    {:status :rejected :error {:error/category :bundle/unknown-entry-kind :kind kind}}))
 
 (defn- check-bundle* [bundle]
   (try
@@ -218,6 +255,8 @@
                               ", expected one of " (pr-str supported-bundle-schemas))}
       (not (and (map? (:claims bundle)) (seq (:claims bundle))))
       {:ok? false :error "a proof bundle must name at least one claim in a :claims map"}
+      (bundle-payload-error bundle)
+      {:ok? false :error (bundle-payload-error bundle)}
       :else
     (let [{:keys [checkpoint modules environment-id]} (:base bundle)
           loaded (checkpoint/load-checkpoint checkpoint)]
@@ -230,14 +269,18 @@
                            (:environment loaded) modules)]
           (if-not (= environment-id (environment/environment-id base))
             {:ok? false :error "the base modules did not reproduce the recorded environment id"}
-            (let [result (reduce (fn [env declaration]
-                                   (let [r (kernel/add-declaration env declaration)]
+            (let [entries (if (= 2 (:rainbow.bundle/schema-version bundle))
+                            (:entries bundle)
+                            (mapv #(hash-map :entry/kind :declaration :entry/value %) (:declarations bundle)))
+                  result (reduce (fn [env entry]
+                                   (let [r (replay-bundle-entry env entry)]
                                      (if (= :accepted (:status r))
                                        (:environment r)
-                                       (reduced {:rejected (:rainbow/id declaration) :cause r}))))
-                                 base (:declarations bundle))]
+                                       (reduced {:rejected (or (get-in entry [:entry/value :rainbow/id]) :unnamed)
+                                                 :cause r}))))
+                                 base entries)]
               (if (:rejected result)
-                {:ok? false :error (str "kernel rejected declaration " (:rejected result)
+                {:ok? false :error (str "kernel rejected bundle entry " (:rejected result)
                                         (when-let [why (kernel-reason (:cause result))] (str " (" why ")"))
                                         (when (= :kernel/resource-limit (kernel-reason (:cause result)))
                                           (str "; the reduction budget was " kernel/*reduction-budget*
