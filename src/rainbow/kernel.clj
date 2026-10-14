@@ -565,33 +565,31 @@
              "Unsupported node in inductive type AST" {:ast ast}))
   ast)
 
-(defn- normalize-block-type-ast [ast universe-index known]
-  (case (first ast)
-    :var (or (get known (second ast))
-             (reject! :kernel/unknown-block-variable
-                      "Unknown variable while normalizing inductive type"
-                      {:ast ast :known (keys known)}))
-    :sort [:sort (normalize-block-level (second ast) universe-index)]
-    :const [:const (second ast)
-            (mapv #(normalize-block-level % universe-index) (nth ast 2))]
-    :app (into [:app (normalize-block-type-ast (second ast)
-                                               universe-index known)]
-               (map #(normalize-block-type-ast % universe-index known)
-                    (drop 2 ast)))
-    :pi (let [[_ bindings body] ast]
-          (loop [scope known
-                 index 0
-                 remaining bindings
-                 normalized []]
-            (if-let [[name type-ast] (first remaining)]
-              (recur (assoc scope name [:bound index])
-                     (inc index) (next remaining)
-                     (conj normalized
-                           (normalize-block-type-ast type-ast universe-index
-                                                     scope)))
-              [:pi normalized
-               (normalize-block-type-ast body universe-index scope)])))
-    :self [:self]))
+(defn- normalize-block-type-ast
+  ([ast universe-index known] (normalize-block-type-ast ast universe-index known 0))
+  ([ast universe-index known depth]
+   (case (first ast)
+     :var (or (get known (second ast))
+              (reject! :kernel/unknown-block-variable
+                       "Unknown variable while normalizing inductive type"
+                       {:ast ast :known (keys known)}))
+     :sort [:sort (normalize-block-level (second ast) universe-index)]
+     :const [:const (second ast)
+             (mapv #(normalize-block-level % universe-index) (nth ast 2))]
+     :app (into [:app (normalize-block-type-ast (second ast) universe-index known depth)]
+                (map #(normalize-block-type-ast % universe-index known depth) (drop 2 ast)))
+     :pi (let [[_ bindings body] ast]
+           ;; Absolute binder positions must continue across nested Pis. Resetting
+           ;; to zero aliases outer and inner variables in the content identity.
+           (loop [scope known index depth remaining bindings normalized []]
+             (if-let [[name type-ast] (first remaining)]
+               (recur (assoc scope name [:bound index])
+                      (inc index) (next remaining)
+                      (conj normalized
+                            (normalize-block-type-ast type-ast universe-index scope index)))
+               [:pi normalized
+                (normalize-block-type-ast body universe-index scope index)])))
+     :self [:self])))
 
 (defn- validate-block-spec! [spec]
   (let [universes (:block/universes spec)

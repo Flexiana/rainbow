@@ -5,19 +5,26 @@ This file lists that code. Everything not on this list is checked BY it: the
 mathematics, the tactics that build proofs, the proof search -- a bug anywhere
 else produces a rejected proof, never an accepted false one.
 
-## The kernel: 1,200 lines
+## The kernel: 1,198 lines
 
 | file | lines | role |
 |---|---|---|
-| `src/rainbow/kernel.clj` | 915 | type checking, definitional equality, reduction, inductive types and recursors, universe levels |
+| `src/rainbow/kernel.clj` | 913 | type checking, definitional equality, reduction, inductive types and recursors, universe levels |
 | `src/rainbow/term.clj` | 196 | the term language: binders, substitution, de Bruijn indices |
 | `src/rainbow/environment.clj` | 48 | declarations stored by content id; name resolution |
 | `src/rainbow/canonical.clj` | 41 | canonical encoding and the content hash that names every declaration |
-| **total** | **1200** | |
+| **total** | **1198** | |
 
 The size is pinned: a release test (`v1_release_test`) fails if these four files
 change length, so growth in the trusted base is always a visible, deliberate
 decision.
+
+The nested inductive-binder identity repair changes content IDs for affected
+blocks. Earlier kernels could conflate distinct field types and accept an
+axiom-free proof of False. Rebuild affected blocks and their dependents, and
+replay proof artifacts with the repaired kernel; a pre-repair pass is not a
+soundness clearance. Unaffected IDs retain their encoding. Regression tests
+exercise the original false-proof construction and require its rejection.
 
 ## Below the kernel
 
