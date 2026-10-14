@@ -29,6 +29,12 @@ results="${2:-target/suite-chunks.tsv}"
 # passed. RAINBOW_START_CHUNK=5 skips straight to chunk 5 using the same chunk
 # numbering, so chunk 5 means the same forty namespaces it meant last time.
 start_chunk="${RAINBOW_START_CHUNK:-1}"
+for value in "$chunk_size" "$start_chunk"; do
+  if [[ ! "$value" =~ ^[1-9][0-9]{0,8}$ ]]; then
+    echo "chunk size and start chunk must be integers from 1 to 999999999" >&2
+    exit 2
+  fi
+done
 script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 rainbow_dir="$(dirname -- "$script_dir")"
 cd "$rainbow_dir"
@@ -37,9 +43,6 @@ cd "$rainbow_dir"
 # no headroom is a chunk that will be terminated
 min_free_pages="${RAINBOW_MIN_FREE_PAGES:-98304}"   # 1.5GB at 16KiB pages
 wait_limit_seconds="${RAINBOW_HEADROOM_WAIT:-600}"
-
-mkdir -p "$(dirname -- "$results")"
-: > "$results"
 
 # Per-chunk logs are named after the RESULTS FILE, not a fixed path. Two runs of
 # this script share target/, and a fixed `suite-chunk-N.log` means a second run
@@ -109,6 +112,13 @@ if [ "$total" -eq 0 ]; then
   echo "no test namespaces found under test/" >&2
   exit 1
 fi
+last_chunk=$(( (total + chunk_size - 1) / chunk_size ))
+if [ "$start_chunk" -gt "$last_chunk" ]; then
+  echo "start chunk $start_chunk exceeds the $last_chunk available chunks; nothing would run" >&2
+  exit 2
+fi
+mkdir -p "$(dirname -- "$results")"
+: > "$results"
 
 if [ "$start_chunk" -gt 1 ]; then
   echo "running $total namespaces in chunks of $chunk_size, RESUMING at chunk $start_chunk"
@@ -180,7 +190,7 @@ for ((start = 0; start < total; start += chunk_size)); do
   sum_failures=$((sum_failures + failures))
   sum_errors=$((sum_errors + errors))
 
-  if [ "$failures" -eq 0 ] && [ "$errors" -eq 0 ]; then
+  if [ "$exit_code" -eq 0 ] && [ "$tests" -gt 0 ] && [ "$failures" -eq 0 ] && [ "$errors" -eq 0 ]; then
     status=PASS
   else
     status=FAIL
@@ -190,7 +200,7 @@ for ((start = 0; start < total; start += chunk_size)); do
   printf '%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n' \
     "$chunk_index" "$status" "$tests" "$assertions" "$failures" "$errors" \
     "${#chunk[@]}" "$chunk_seconds" >> "$results"
-  echo "chunk $chunk_index $status: $tests tests, $assertions assertions, $failures failures, $errors errors, ${chunk_seconds}s"
+  echo "chunk $chunk_index $status: exit $exit_code, $tests tests, $assertions assertions, $failures failures, $errors errors, ${chunk_seconds}s"
 done
 
 kill_own_jvms

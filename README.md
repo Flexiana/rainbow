@@ -152,6 +152,7 @@ a bug we want to hear about.
 ## Contributing
 
 Issues and pull requests are welcome; see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Run `python3 scripts/test-suite-runner.py` for the suite runner’s failure controls without a JVM.
 
 ## License
 

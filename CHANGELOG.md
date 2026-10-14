@@ -6,6 +6,7 @@ All notable changes to Rainbow's open core. The project follows
 ## [Unreleased]
 
 ### Fixed
+- Chunked suite runs require a successful process exit and executed tests; invalid chunk sizes and empty resumes are refused.
 - Module installers reject malformed environment results before marking dependencies installed.
 - Interrupted checkpoint packing keeps complete, expandable files and supports retry; gzip writes replace files atomically.
 - Reproduction recomputes rebuilt checkpoint IDs, rejecting changed content with a stale stored ID.

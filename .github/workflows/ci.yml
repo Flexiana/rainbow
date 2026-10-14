@@ -19,6 +19,8 @@ jobs:
           lein: latest
       - name: Trusted base is 1,200 lines
         run: test "$(cat src/rainbow/kernel.clj src/rainbow/term.clj src/rainbow/environment.clj src/rainbow/canonical.clj | wc -l)" -eq 1200
+      - name: Suite runner failure controls
+        run: python3 scripts/test-suite-runner.py
       - name: Kernel tests
         run: lein test rainbow.kernel-test
       - name: Verifier and coverage guard regression tests
