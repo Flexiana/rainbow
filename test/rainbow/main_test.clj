@@ -2,8 +2,10 @@
   (:require [clojure.edn :as edn]
             [clojure.test :refer [deftest is testing]]
             [rainbow.checkpoint :as checkpoint]
+            [rainbow.checkpoint.frontier :as frontier]
             [rainbow.data.inductive :as inductive]
             [rainbow.environment :as environment]
+            [rainbow.foreign.mathlib :as mathlib]
             [rainbow.history.direct-term-corpus :as corpus]
             [rainbow.kernel :as kernel]
             [rainbow.main :as main]))
@@ -24,6 +26,31 @@
 (defn theorem-ids [env]
   (let [alias (:name (first corpus/proofs))]
     {alias (environment/resolve-id env alias)}))
+
+;; A reproducible milestone fixture with an actual kernel-replayable checkpoint.
+(def default-input-checkpoint-path "reproduce-input")
+(def checkpoint-path "reproduce-recorded")
+(defn run [path]
+  (assert (= default-input-checkpoint-path path))
+  {:checkpoint (frontier/checkpoint
+                {:environment @checked-env
+                 :prior {:source {:version mathlib/pinned-version
+                                  :commit mathlib/pinned-commit}
+                         :remaining-targets []}})})
+
+(deftest reproduction-compares-content-rather-than-only-stored-ids
+  (let [original (:checkpoint (run default-input-checkpoint-path))
+        recorded (checkpoint/replay-checkpoint original)]
+    (is (= :replayed (:status recorded)))
+    (with-redefs [checkpoint/load-checkpoint (fn [path]
+                                              (assert (= checkpoint-path path))
+                                              recorded)]
+      (is (true? (:match? (main/reproduce-milestone 'rainbow.main-test))))
+      (doseq [changed [(assoc original :remaining-targets [{:foreign/name 'changed/target}])
+                       (assoc original :environment {})
+                       (dissoc original :rainbow.checkpoint/id)]]
+        (with-redefs [run (fn [_] {:checkpoint changed})]
+          (is (not (:match? (main/reproduce-milestone 'rainbow.main-test)))))))))
 
 (deftest namespace-verification-checks-the-advertised-alias
   (is (= :checked (-> (main/verify-namespace @checked-env 'rainbow.main-test)

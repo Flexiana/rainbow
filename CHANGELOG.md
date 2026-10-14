@@ -6,6 +6,7 @@ All notable changes to Rainbow's open core. The project follows
 ## [Unreleased]
 
 ### Fixed
+- Reproduction recomputes rebuilt checkpoint IDs, rejecting changed content with a stale stored ID.
 - Environment and checkpoint writers ignore diagnostic print limits; checkpoints can use bare filenames.
 - Bundle files preserve reserved symbol aliases and complete EDN under diagnostic print settings.
 - Bundles containing new inductive blocks use schema 2 with ordered, atomic block entries.

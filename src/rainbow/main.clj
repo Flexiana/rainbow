@@ -20,6 +20,7 @@
   content id with the recorded one's."
   (:require [clojure.edn :as edn]
             [clojure.string :as string]
+            [rainbow.canonical :as canonical]
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]))
@@ -355,14 +356,18 @@
         {:namespace ns-sym :error "not a reproducible milestone (needs run, default-input-checkpoint-path, checkpoint-path)"}
         (let [recorded (checkpoint/load-checkpoint recorded-path)
               rebuilt (:checkpoint (run input))
-              rebuilt-id (:rainbow.checkpoint/id rebuilt)]
+              claimed-id (:rainbow.checkpoint/id rebuilt)
+              rebuilt-id (when (map? rebuilt)
+                           (canonical/content-id (dissoc rebuilt :rainbow.checkpoint/id)))]
           {:namespace ns-sym
            :recorded-path recorded-path
            :recorded-status (:status recorded)
            :recorded-id (:checkpoint/id recorded)
            :rebuilt-id rebuilt-id
+           :rebuilt-claimed-id claimed-id
            :match? (and (= :replayed (:status recorded))
                         (some? rebuilt-id)
+                        (= claimed-id rebuilt-id)
                         (= rebuilt-id (:checkpoint/id recorded)))})))
     (catch Throwable t
       {:namespace ns-sym :error (str (.getMessage t))})))
