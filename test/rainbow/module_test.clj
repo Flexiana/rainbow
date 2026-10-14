@@ -54,7 +54,7 @@
                  'shared {'install (fn [env] (swap! calls conj 'shared) env)}}]
     (with-modules modules
       (fn []
-        (let [env (module/install-module {} 'root)]
+        (let [env (module/install-module (environment/empty-environment) 'root)]
           (is (= ['legacy 'shared 'root] @calls))
           (is (= #{'root 'legacy 'shared} (module/installed env))))))))
 
@@ -73,3 +73,16 @@
                                 (module/install-module base 'broken))))
         (is (= 2 @calls))
         (is (empty? (module/installed base)))))))
+
+(deftest malformed-installer-results-cannot-be-marked-installed
+  (doseq [result [nil {} [] false
+                  (assoc (environment/empty-environment) :rainbow.environment/aliases nil)]]
+    (let [dependent-calls (atom 0)
+          modules {'broken {'install (constantly result)}
+                   'root {'deps ['broken]
+                          'install (fn [env] (swap! dependent-calls inc) env)}}]
+      (with-modules modules
+        (fn []
+          (is (thrown-with-msg? clojure.lang.ExceptionInfo #"did not return a declaration environment"
+                                (module/install-module (environment/empty-environment) 'root)))
+          (is (zero? @dependent-calls)))))))

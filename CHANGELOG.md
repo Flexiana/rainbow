@@ -6,6 +6,7 @@ All notable changes to Rainbow's open core. The project follows
 ## [Unreleased]
 
 ### Fixed
+- Module installers reject malformed environment results before marking dependencies installed.
 - Interrupted checkpoint packing keeps complete, expandable files and supports retry; gzip writes replace files atomically.
 - Reproduction recomputes rebuilt checkpoint IDs, rejecting changed content with a stale stored ID.
 - Environment and checkpoint writers ignore diagnostic print limits; checkpoints can use bare filenames.

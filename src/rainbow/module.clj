@@ -16,7 +16,7 @@
   The kernel still checks every declaration, once. Nothing here is trusted: a
   missing dependency shows up as the kernel rejecting a declaration that names an
   unknown constant."
-  (:require [clojure.set :as set]))
+  (:require [rainbow.environment :as environment]))
 
 (defn- module-var [ns-sym var-sym]
   (require ns-sym)
@@ -63,6 +63,14 @@
               (let [install (or (module-var n 'install) (module-var n 'extend-environment))]
                 (when-not install
                   (throw (ex-info "module has neither install nor extend-environment" {:module n})))
-                (update (install env) ::installed (fnil conj #{}) n))))
+                (let [result (install env)]
+                  (when-not (and (map? result)
+                                 (= environment/schema-version (:rainbow.environment/schema-version result))
+                                 (map? (:rainbow.environment/declarations result))
+                                 (map? (:rainbow.environment/aliases result))
+                                 (vector? (:rainbow.environment/order result)))
+                    (throw (ex-info "module installer did not return a declaration environment"
+                                    {:error/category :module/invalid-environment :module n})))
+                  (update result ::installed (fnil conj #{}) n)))))
           environment
           (order [ns-sym])))
