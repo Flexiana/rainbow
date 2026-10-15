@@ -3,6 +3,13 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-10-16
+
+### Fixed
+- The README, CONTRIBUTING, the tour and the CI trusted-base check still stated the
+  1.0 kernel's 1,198 lines; they now state the 1,364 lines 1.1.0 ships (the release
+  test already pinned 1,364). No code changes.
+
 ## [1.1.0] - 2026-10-16
 
 1.0.1 was prepared but never tagged; its repairs ship here, so 1.1.0 is the release to
