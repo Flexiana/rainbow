@@ -3,10 +3,24 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-10-16
+
+1.0.1 was prepared but never tagged; its repairs ship here, so 1.1.0 is the release to
+upgrade to from 1.0.0.
+
+### Security
+- **Kernel soundness: 1.0.0 accepts a proof of False. Upgrade.** When computing an
+  inductive block's content id, 1.0.0 restarted binder numbering at every nested Pi,
+  so `forall X Y : Prop, X -> X` and `forall X Y : Prop, X -> Y` received the same
+  block id. Adding the second block replaced the first, and its recursor then proved
+  `forall P : Prop, P` with an empty axiom set, through public kernel APIs from an
+  empty environment. Binder positions are now absolute across nested Pis
+  (`test/rainbow/inductive_identity_test.clj` is the regression). No shipped
+  declaration depended on the defect: the default checkpoint replays to the same
+  environment id as under 1.0.0, so every content id is unchanged. The repair
+  shortened the kernel to 1,198 lines; see Changed for 1.1.0's trusted base.
 
 ### Fixed
-- Critical kernel soundness repair: nested inductive binders retain distinct identities; installing another block cannot turn identity into an axiom-free proof of False.
 - Re-aliased inductive blocks retain every navigation alias across environment save and kernel replay.
 - Chunked suite runs require a successful process exit and executed tests; invalid chunk sizes and empty resumes are refused.
 - Module installers reject malformed environment results before marking dependencies installed.
@@ -24,6 +38,54 @@ All notable changes to Rainbow's open core. The project follows
   and that installers return declaration environments.
 - The coverage inventory reads complete namespace imports, rejects pending modules and
   empty discovery, and runs in CI alongside verifier and dependency-installer regression tests.
+
+### Changed
+- **The kernel computes natural-number arithmetic natively: 24-123x faster on the
+  RH2EDIN certificates** (c2 trailer allocation: 36.3 s -> 0.45 s; Lean 4 with
+  Mathlib checks a comparable proof of the same instance in 19.6 ms). Same theorems,
+  same proofs, same content ids:
+  - natural-number literals `[:nat n]` stand for `succ` applied n times to `zero`; six
+    reducible definitions (`algebra/nat-add`, `nat/multiply`, `nat/predecessor`,
+    `nat/distance`, `nat/decide-equality`, `nat/decide-at-most`) are computed on
+    closed numeral arguments (an open argument is unfolded exactly as before; argument
+    evaluation never counts against the caller's reduction budget), each pinned to its definition's content id and tested against that
+    definition's own unary reduction. No existing term contains a literal, and
+    `kernel/normalize` still returns unary numerals (bounded by `:max-unary-nodes`).
+  - substitution skips subterms with nothing to substitute, universe levels of a
+    definition body are normalized once, and content-id encoding writes through one
+    buffer (byte-identical, tested against the original).
+  - Definitional equality is the original normal-form comparison, unchanged.
+  - An independent review compared the new kernel with a frozen copy of the original
+    on 25,716 assertions (native operations, malformed terms, large indices, cache
+    behavior, the nested-binder control) and replayed 2,199 declarations through both
+    to the same environment id. Five divergences it found were fixed before release.
+  - The trusted base grows from 1,198 to 1,364 lines (`doc/trusted-base.md`).
+- `lein verify --bundle` no longer re-checks each claim after the kernel has accepted
+  it (twice, until now); it reports the check time per bundle.
+
+### Added
+- **Shared proof bundles** (schema 3): every distinct subterm written once and every
+  constant once, by position. The RH2EDIN c2 certificate goes from 2,363,278 to 15,571
+  bytes. Same declarations, same content ids, same kernel; `lein verify --bundle`
+  checks both encodings and `lein share-bundle` converts. See `doc/bundles.md`.
+- **`lein show`**: a theorem's statement for people, with alias names, binder names
+  from the source when they provably belong to the term, decimal numerals, infix
+  arithmetic, sums and lists as data, explicit elision and a legend. A view; the kernel
+  term is what is checked.
+
+
+### Verified
+- Full test suite in 25 chunks: 1,955 tests, 43,628 assertions, 0 failures; release
+  gate, load checks of every source and test namespace, and the coverage gate included.
+- `lein verify --bundle` on the four RH2EDIN bundles, plain and shared: all OK, same
+  claims (c2: 8.0 s plain, 8.1 s shared, end to end). Tampered bundles (an unknown
+  constant, a missing schema, one price changed in a shared bundle) are all refused,
+  the last by the kernel (`:kernel/type-mismatch`).
+- The 2026-10-14 nested-binder control is rejected; `lein reproduce
+  rainbow.milestones.ahof-bisection` gives SAME.
+- Kernel review: a frozen copy of the 1.0.1 kernel as a differential oracle, 25,716
+  assertions, replay of 2,199 declarations to the same environment id; the two later
+  kernel follow-ups (closed arguments, separate allowance) reviewed the same way.
 
 ## [1.0.0] - 2026-10-13
 

@@ -6,6 +6,10 @@
             [rainbow.environment :as environment]
             [rainbow.term :as term]))
 
+;; first/second without allocating a seq (terms and levels are vectors)
+(defmacro ^:private fst [x] `(nth ~x 0 nil))
+(defmacro ^:private snd [x] `(nth ~x 1 nil))
+
 (def ^:dynamic *reduction-budget* 1000000)
 (def ^:dynamic ^:private *normalization-cache* nil)
 
@@ -26,20 +30,90 @@
 
 (declare whnf*)
 
+;; ---- natural-number literals ---------------------------------------------------
+;; [:nat n] denotes data/succ applied n times to data/zero. No term written before
+;; literals existed contains one, so no content id changes. A literal unfolds to a
+;; constructor only when a recursor inspects it, and the six reducible definitions
+;; below are computed on literals instead of by unary recursion. Each entry is pinned
+;; to the content id of the exact definition it computes; rainbow.kernel-native-test
+;; compares every entry with the definition's own unary reduction.
+(def ^:private nat-id "sha256:3506a443d496ca97e5476cbbb47baadc33ccaef5a3e9717e4bcac7c83acc1453")
+(def ^:private zero-term [:const "sha256:11ea4dcb19455ac6d98fa23f4a631c8e72e1d5158d55f35d15a6891da156837a" []])
+(def ^:private succ-term [:const "sha256:2c087b95d40cd6088f7ed5b2c005939be25c07dd402f56d99fa9cd076fa760b5" []])
+(def ^:private true-term [:const "sha256:0c0f825a7d5e86b6cca9ea42eeae0abde8ff5e3207decf4259ae3687027373df" []])
+(def ^:private false-term [:const "sha256:66c0bacea9f97e582fb425ae89bb16134be13945fdb70a42dbbd9a9938b1df10" []])
+(def ^:private nat-operations
+  {"sha256:ae52ec6e6d33d320ad5cf5bf04a0b7d7a6170f1553ca6921d296cb8f7452b7c5" [2 +']                          ; algebra/nat-add
+   "sha256:a30bc2da8bfb2312a7543d07408d4b2e3bfadbd4115c15663abd9d074e829c65" [2 *']                          ; nat/multiply
+   "sha256:8b31ca9df8160fd65351654c0599dc50f147c3a5a6593b8fb21ff1ebf9391d5f" [1 #(if (pos? %) (dec' %) 0)]   ; nat/predecessor
+   "sha256:939afa870eda7b00fae43fe61c11665d83deb95a70302f36736f84c9d37998d7" [2 #(if (< %1 %2) (-' %2 %1) (-' %1 %2))] ; nat/distance
+   "sha256:1a45e6d58cafe9c186133368e8eb7dd1be0244e7409363daa11a1e13898e2ada" [2 ==]                          ; nat/decide-equality
+   "sha256:b19fc7e912d5ea4a121499f9a3a32922404045f0fb950f46d115b3764a38d900" [2 <=]})                        ; nat/decide-at-most
+
+(defn- literal-constructor
+  "The constructor form a recursor needs: zero, or succ of the predecessor literal."
+  [n]
+  (if (zero? n) zero-term [:app succ-term [:nat (dec' n)]]))
+
 (defn- application-spine [expression]
   (loop [current expression
-         arguments []]
-    (if (= :app (first current))
-      (recur (second current) (into [(nth current 2)] arguments))
-      [current arguments])))
+         reversed (transient [])]
+    (if (= :app (fst current))
+      (recur (snd current) (conj! reversed (nth current 2)))
+      (let [r (persistent! reversed)]
+        [current (if (< (count r) 2) r (vec (rseq r)))]))))
 
 (defn- apply-arguments [function arguments]
   (reduce term/application function arguments))
 
+(defn- nat-value
+  "[n fuel] when expression reduces to a closed numeral (a literal or succ ... zero), else nil."
+  [environment expression fuel unfolding]
+  (loop [expression expression fuel fuel n 0]
+    (cond
+      ;; numerals written out need no reduction
+      (= :nat (fst expression)) [(+' n (snd expression)) fuel]
+      (= zero-term expression) [n fuel]
+      (and (= :app (fst expression)) (= succ-term (snd expression))) (recur (nth expression 2) fuel (inc' n))
+      :else
+      (let [[head fuel] (whnf* environment expression fuel unfolding)]
+        (cond
+          (= :nat (fst head)) [(+' n (snd head)) fuel]
+          (= zero-term head) [n fuel]
+          (and (= :app (fst head)) (= succ-term (snd head))) (recur (nth head 2) fuel (inc' n))
+          :else nil)))))
+
+(defn- native-step
+  "Computes a pinned nat operation on literal arguments, or nil to reduce it by unfolding."
+  [environment head arguments fuel unfolding]
+  (when-let [[arity operation] (and (= :const (fst head)) (get nat-operations (snd head)))]
+    ;; Only closed arguments can be numerals to compute with; an open one (a proof
+    ;; under binders) is reduced by unfolding, as before, instead of being evaluated
+    ;; and given up on at every step.
+    (when (and (<= arity (count arguments))
+               (every? #(zero? (term/loose-range %)) (subvec arguments 0 arity))
+               (= (count (:rainbow/universes (environment/declaration environment (snd head))))
+                  (count (nth head 2)))
+               (unfoldable? (environment/declaration environment (snd head))))
+      ;; The arguments are evaluated on an allowance of their own: unfolding is lazy (it
+      ;; may never need an argument), so charging their evaluation to the caller could
+      ;; exhaust a budget that unfolding fits in. On any failure the caller unfolds, as
+      ;; before, with its fuel untouched; on success it pays one step.
+      (when-let [values (try (loop [values [] remaining (seq (subvec arguments 0 arity)) allowance *reduction-budget*]
+                               (if-let [argument (fst remaining)]
+                                 (when-let [[value allowance] (nat-value environment argument allowance unfolding)]
+                                   (recur (conj values value) (rest remaining) allowance))
+                                 values))
+                             (catch clojure.lang.ExceptionInfo _ nil))]
+        (let [result (apply operation values)]
+          [(apply-arguments (cond (true? result) true-term (false? result) false-term :else [:nat result])
+                            (subvec arguments arity))
+           (consume fuel :native)])))))
+
 (defn- recursor-step [environment expression fuel unfolding]
   (let [[head arguments] (application-spine expression)
-        declaration (when (= :const (first head))
-                      (environment/declaration environment (second head)))]
+        declaration (when (= :const (fst head))
+                      (environment/declaration environment (snd head)))]
     (when (= :recursor (:rainbow/kind declaration))
       (let [{:keys [parameter-count constructor-count block-id]}
             (:rainbow/recursor declaration)
@@ -48,13 +122,14 @@
         (when (<= needed (count arguments))
           (let [target (nth arguments target-index)
                 [target-head remaining] (whnf* environment target fuel unfolding)
+                target-head (if (= :nat (fst target-head)) (literal-constructor (snd target-head)) target-head)
                 normalized-expression (apply-arguments
                                        head (assoc arguments target-index target-head))
                 [constructor-head constructor-arguments]
                 (application-spine target-head)
-                constructor (when (= :const (first constructor-head))
+                constructor (when (= :const (fst constructor-head))
                               (environment/declaration environment
-                                                       (second constructor-head)))]
+                                                       (snd constructor-head)))]
             (if-not (and (= :constructor (:rainbow/kind constructor))
                          (= block-id (:rainbow/block-id constructor)))
               [normalized-expression remaining false]
@@ -62,9 +137,9 @@
                      recursive-fields :recursive-fields
                      field-count :field-count}
                     (:rainbow/constructor constructor)
-                    field-arguments (vec (take field-count
-                                               (drop parameter-count
-                                                     constructor-arguments)))
+                    field-arguments (let [from (min parameter-count (count constructor-arguments))]
+                                      (subvec constructor-arguments from
+                                              (min (count constructor-arguments) (+ from field-count))))
                     _ (when-not (= field-count (count field-arguments))
                         (reject! :kernel/malformed-constructor-application
                                  "Constructor has too few field arguments"
@@ -82,18 +157,18 @@
                                           with-field)))
                                     case-term
                                     (map vector field-arguments recursive-fields))
-                    with-extra (apply-arguments reduced (drop needed arguments))]
+                    with-extra (apply-arguments reduced (subvec arguments needed))]
                 [with-extra (consume remaining :iota) true]))))))))
 
 (defn- whnf*
   [environment expression fuel unfolding]
-  (case (first expression)
+  (case (fst expression)
     :let (recur environment
                 (term/instantiate (nth expression 3) (nth expression 2))
                 (consume fuel :zeta)
                 unfolding)
 
-    :const (let [id (second expression)
+    :const (let [id (snd expression)
                  declaration (environment/declaration environment id)]
              (when-not declaration
                (reject! :kernel/unknown-constant "Unknown constant" {:constant/id id}))
@@ -119,8 +194,11 @@
                           (conj unfolding id))))
                [expression fuel]))
 
-    :app (let [[function remaining] (whnf* environment (second expression) fuel unfolding)]
-           (if (= :lam (first function))
+    :app (if-let [[computed remaining] (let [[head arguments] (application-spine expression)]
+                                         (native-step environment head arguments fuel unfolding))]
+           (recur environment computed remaining unfolding)
+         (let [[function remaining] (whnf* environment (snd expression) fuel unfolding)]
+           (if (= :lam (fst function))
              (recur environment
                     (term/instantiate (nth function 2) (nth expression 2))
                     (consume remaining :beta)
@@ -132,7 +210,7 @@
                    (if reduced?
                      (recur environment next-expression next-fuel unfolding)
                      [next-expression next-fuel]))
-                 [rebuilt remaining]))))
+                 [rebuilt remaining])))))
 
     [expression fuel]))
 
@@ -141,23 +219,27 @@
 (defn- normalize-uncached*
   [environment expression fuel]
   (let [[head fuel] (whnf* environment expression fuel #{})]
-    (case (first head)
-      :sort [[:sort (term/normalize-level (second head))] fuel]
-      (:bound :const) [head fuel]
-      :app (let [[function fuel] (normalize* environment (second head) fuel)
+    (case (fst head)
+      :sort [[:sort (term/normalize-level (snd head))] fuel]
+      (:bound :nat) [head fuel]
+      :const [(if (= zero-term head) [:nat 0] head) fuel]
+      :app (let [[function fuel] (normalize* environment (snd head) fuel)
                  [argument fuel] (normalize* environment (nth head 2) fuel)]
-             [[:app function argument] fuel])
-      :lam (let [[domain fuel] (normalize* environment (second head) fuel)
+             [(if (and (= succ-term function) (= :nat (fst argument)))
+                [:nat (inc' (snd argument))]
+                [:app function argument])
+              fuel])
+      :lam (let [[domain fuel] (normalize* environment (snd head) fuel)
                  [body fuel] (normalize* environment (nth head 2) fuel)
                  candidate [:lam domain body (nth head 3)]]
              ;; Supported eta: (fn [x] (f x)) = f when x is not free in f.
-             (if (and (= :app (first body))
+             (if (and (= :app (fst body))
                       (= [:bound 0] (nth body 2)))
                (try
-                 [(term/shift (second body) -1) (consume fuel :eta)]
+                 [(term/shift (snd body) -1) (consume fuel :eta)]
                  (catch clojure.lang.ExceptionInfo _ [candidate fuel]))
                [candidate fuel]))
-      :pi (let [[domain fuel] (normalize* environment (second head) fuel)
+      :pi (let [[domain fuel] (normalize* environment (snd head) fuel)
                 [body fuel] (normalize* environment (nth head 2) fuel)]
             [[:pi domain body (nth head 3)] fuel])
       :let (throw (AssertionError. "whnf must eliminate lets")))))
@@ -172,7 +254,24 @@
         (swap! *normalization-cache* assoc expression normal))
       [normal remaining])))
 
+(defn- unary [expression nodes]
+  (case (fst expression)
+    :nat (let [n (snd expression)]
+           (when (> n @nodes)
+             (reject! :kernel/resource-limit "Unary numeral output budget exhausted"
+                      {:operation :unary-output :required n :remaining @nodes}))
+           (vswap! nodes - n)
+           (loop [remaining n result zero-term]
+             (if (zero? remaining) result
+                 (recur (dec' remaining) [:app succ-term result]))))
+    :app [:app (unary (snd expression) nodes) (unary (nth expression 2) nodes)]
+    (:lam :pi) [(fst expression) (unary (snd expression) nodes) (unary (nth expression 2) nodes) (nth expression 3)]
+    :let [:let (unary (snd expression) nodes) (unary (nth expression 2) nodes) (unary (nth expression 3) nodes)]
+    expression))
+
 (defn normalize
+  "Normalizes a term. :max-unary-nodes bounds generated successor nodes across
+  the returned term (default 1000000), independently of the reduction budget."
   ([environment expression] (normalize environment expression nil))
   ([environment expression options]
    (try
@@ -182,7 +281,10 @@
            [normal remaining]
            (binding [*normalization-cache* cache]
              (normalize* environment expression budget))]
-       {:status :normalized :term normal :reductions (- budget remaining)})
+       ;; Literals are internal: callers get the unary numerals they always got.
+       {:status :normalized :term (if (::literals options) normal
+                                   (unary normal (volatile! (get options :max-unary-nodes 1000000))))
+        :reductions (- budget remaining)})
      (catch clojure.lang.ExceptionInfo exception
        {:status (if (= :kernel/resource-limit (:error/category (ex-data exception)))
                   :resource-limit
@@ -191,7 +293,7 @@
         :message (ex-message exception)}))))
 
 (defn- normal-form! [environment expression]
-  (let [result (normalize environment expression {:reductions *reduction-budget*})]
+  (let [result (normalize environment expression {:reductions *reduction-budget* ::literals true})]
     (if (= :normalized (:status result))
       (:term result)
       (reject! (get-in result [:error :error/category])
@@ -199,8 +301,8 @@
                (:error result)))))
 
 (defn- definitionally-equal!* [environment left right]
-  ;; Reflexivity is free. For non-identical terms the historical normal-form
-  ;; comparison is unchanged, but both sides share memoized immutable subterms.
+  ;; Keep the original decision procedure. Untyped congruence/eta shortcuts can
+  ;; erase binder annotations or bypass rejection inside a shared subterm.
   (or (= left right)
       (binding [*normalization-cache* (atom {})]
         (= (normal-form! environment left)
@@ -226,36 +328,36 @@
                {:unknown unknown :allowed universe-parameters}))))
 
 (defn- assert-term-level-scope! [expression universe-parameters]
-  (case (first expression)
-    :sort (assert-level-scope! (second expression) universe-parameters)
-    :bound nil
+  (case (fst expression)
+    :sort (assert-level-scope! (snd expression) universe-parameters)
+    (:bound :nat) nil
     :const (doseq [level (nth expression 2)]
              (assert-level-scope! level universe-parameters))
-    :app (do (assert-term-level-scope! (second expression) universe-parameters)
+    :app (do (assert-term-level-scope! (snd expression) universe-parameters)
              (assert-term-level-scope! (nth expression 2) universe-parameters))
-    (:lam :pi) (do (assert-term-level-scope! (second expression) universe-parameters)
+    (:lam :pi) (do (assert-term-level-scope! (snd expression) universe-parameters)
                    (assert-term-level-scope! (nth expression 2) universe-parameters))
-    :let (do (assert-term-level-scope! (second expression) universe-parameters)
+    :let (do (assert-term-level-scope! (snd expression) universe-parameters)
              (assert-term-level-scope! (nth expression 2) universe-parameters)
              (assert-term-level-scope! (nth expression 3) universe-parameters))))
 
 (declare infer*)
 
 (defn- sort-level! [environment type]
-  (let [head (first (whnf* environment type *reduction-budget* #{}))]
-    (if (= :sort (first head))
-      (second head)
+  (let [head (fst (whnf* environment type *reduction-budget* #{}))]
+    (if (= :sort (fst head))
+      (snd head)
       (reject! :kernel/expected-sort
                "Expected a type whose type is a sort"
                {:actual type :actual-normal head}))))
 
 (defn- check* [environment context expression expected]
-  (if (and (= :lam (first expression))
-           (= :pi (first (first (whnf* environment expected
+  (if (and (= :lam (fst expression))
+           (= :pi (fst (fst (whnf* environment expected
                                         *reduction-budget* #{})))))
-    (let [expected-pi (first (whnf* environment expected *reduction-budget* #{}))
-          actual-domain (second expression)
-          expected-domain (second expected-pi)]
+    (let [expected-pi (fst (whnf* environment expected *reduction-budget* #{}))
+          actual-domain (snd expression)
+          expected-domain (snd expected-pi)]
       (when-not (= (nth expression 3) (nth expected-pi 3))
         (reject! :kernel/binder-mode-mismatch
                  "Lambda binder mode differs from expected Pi binder"
@@ -289,41 +391,43 @@
                                   (zipmap parameters levels)))))
 
 (defn- infer* [environment context expression]
-  (case (first expression)
-    :sort [:sort [:succ (second expression)]]
+  (case (fst expression)
+    :sort [:sort [:succ (snd expression)]]
 
-    :bound (let [index (second expression)]
+    :bound (let [index (snd expression)]
              (when-not (< index (count context))
                (reject! :kernel/unbound-variable
                         "de Bruijn index is outside the local context"
                         {:index index :context-size (count context)}))
              (term/shift (nth context index) (inc index)))
 
-    :const (infer-constant environment (second expression) (nth expression 2))
+    :const (infer-constant environment (snd expression) (nth expression 2))
 
-    :app (let [function-type (infer* environment context (second expression))
-               function-head (first (whnf* environment function-type
+    :nat (do (infer-constant environment nat-id []) [:const nat-id []])
+
+    :app (let [function-type (infer* environment context (snd expression))
+               function-head (fst (whnf* environment function-type
                                             *reduction-budget* #{}))]
-           (when-not (= :pi (first function-head))
+           (when-not (= :pi (fst function-head))
              (reject! :kernel/not-a-function
                       "Application function does not have a Pi type"
-                      {:function (second expression) :type function-type}))
-           (check* environment context (nth expression 2) (second function-head))
+                      {:function (snd expression) :type function-type}))
+           (check* environment context (nth expression 2) (snd function-head))
            (term/instantiate (nth function-head 2) (nth expression 2)))
 
-    :lam (let [domain (second expression)
+    :lam (let [domain (snd expression)
                _ (sort-level! environment (infer* environment context domain))
                body-type (infer* environment (into [domain] context) (nth expression 2))]
            [:pi domain body-type (nth expression 3)])
 
-    :pi (let [domain (second expression)
+    :pi (let [domain (snd expression)
               domain-sort (infer* environment context domain)
               domain-level (sort-level! environment domain-sort)
               body-sort (infer* environment (into [domain] context) (nth expression 2))
               body-level (sort-level! environment body-sort)]
           [:sort (term/normalize-level [:imax domain-level body-level])])
 
-    :let (let [declared-type (second expression)
+    :let (let [declared-type (snd expression)
                _ (sort-level! environment (infer* environment context declared-type))
                _ (check* environment context (nth expression 2) declared-type)
                body-type (infer* environment (into [declared-type] context) (nth expression 3))]
@@ -470,7 +574,7 @@
                                aliases)]
       (when alias-conflict
         (reject! :kernel/alias-conflict "Alias already identifies another declaration"
-                 {:alias (first alias-conflict) :existing-id (second alias-conflict)}))
+                 {:alias (fst alias-conflict) :existing-id (snd alias-conflict)}))
       {:status :accepted
        :declaration checked
        :environment (-> environment
@@ -493,16 +597,16 @@
     :else false))
 
 (defn- normalize-block-level [level universe-index]
-  (case (first level)
+  (case (fst level)
     :zero [:zero]
-    :param (if-some [index (get universe-index (second level))]
+    :param (if-some [index (get universe-index (snd level))]
              [:parameter index]
              (reject! :kernel/unbound-universe "Block level uses an undeclared universe"
                       {:level level}))
-    :succ [:succ (normalize-block-level (second level) universe-index)]
-    :max [:max (normalize-block-level (second level) universe-index)
+    :succ [:succ (normalize-block-level (snd level) universe-index)]
+    :max [:max (normalize-block-level (snd level) universe-index)
           (normalize-block-level (nth level 2) universe-index)]
-    :imax [:imax (normalize-block-level (second level) universe-index)
+    :imax [:imax (normalize-block-level (snd level) universe-index)
            (normalize-block-level (nth level 2) universe-index)]))
 
 (defn- validate-block-type-ast!
@@ -513,25 +617,25 @@
   (when-not (vector? ast)
     (reject! :kernel/malformed-block-type "Inductive type AST must be a vector"
              {:ast ast}))
-  (case (first ast)
+  (case (fst ast)
     :var
-    (when-not (and (= 2 (count ast)) (symbol? (second ast))
-                   (contains? known (second ast)))
+    (when-not (and (= 2 (count ast)) (symbol? (snd ast))
+                   (contains? known (snd ast)))
       (reject! :kernel/unknown-block-variable
                "Inductive type references an unknown or forward variable"
                {:ast ast :known known}))
 
     :sort
     (do
-      (when-not (and (= 2 (count ast)) (term/level? (second ast)))
+      (when-not (and (= 2 (count ast)) (term/level? (snd ast)))
         (reject! :kernel/malformed-block-type "Malformed sort in inductive type"
                  {:ast ast}))
-      (assert-level-scope! (second ast) universe-parameters))
+      (assert-level-scope! (snd ast) universe-parameters))
 
     :const
     (do
       (when-not (and (= 3 (count ast))
-                     (or (string? (second ast)) (symbol? (second ast)))
+                     (or (string? (snd ast)) (symbol? (snd ast)))
                      (vector? (nth ast 2))
                      (every? term/level? (nth ast 2)))
         (reject! :kernel/malformed-block-type
@@ -551,12 +655,12 @@
     (let [[_ bindings body] ast]
       (when-not (and (= 3 (count ast)) (vector? bindings)
                      (every? #(and (vector? %) (= 2 (count %))
-                                   (symbol? (first %)))
+                                   (symbol? (fst %)))
                              bindings))
         (reject! :kernel/malformed-block-type
                  "Malformed dependent function in inductive type" {:ast ast}))
       (loop [scope known remaining bindings]
-        (if-let [[name type-ast] (first remaining)]
+        (if-let [[name type-ast] (fst remaining)]
           (do (validate-block-type-ast! type-ast scope universe-parameters)
               (recur (conj scope name) (next remaining)))
           (validate-block-type-ast! body scope universe-parameters))))
@@ -568,21 +672,21 @@
 (defn- normalize-block-type-ast
   ([ast universe-index known] (normalize-block-type-ast ast universe-index known 0))
   ([ast universe-index known depth]
-   (case (first ast)
-     :var (or (get known (second ast))
+   (case (fst ast)
+     :var (or (get known (snd ast))
               (reject! :kernel/unknown-block-variable
                        "Unknown variable while normalizing inductive type"
                        {:ast ast :known (keys known)}))
-     :sort [:sort (normalize-block-level (second ast) universe-index)]
-     :const [:const (second ast)
+     :sort [:sort (normalize-block-level (snd ast) universe-index)]
+     :const [:const (snd ast)
              (mapv #(normalize-block-level % universe-index) (nth ast 2))]
-     :app (into [:app (normalize-block-type-ast (second ast) universe-index known depth)]
+     :app (into [:app (normalize-block-type-ast (snd ast) universe-index known depth)]
                 (map #(normalize-block-type-ast % universe-index known depth) (drop 2 ast)))
      :pi (let [[_ bindings body] ast]
            ;; Absolute binder positions must continue across nested Pis. Resetting
            ;; to zero aliases outer and inner variables in the content identity.
            (loop [scope known index depth remaining bindings normalized []]
-             (if-let [[name type-ast] (first remaining)]
+             (if-let [[name type-ast] (fst remaining)]
                (recur (assoc scope name [:bound index])
                       (inc index) (next remaining)
                       (conj normalized
@@ -615,7 +719,7 @@
                "Inductive parameters must have distinct names and type ASTs"
                {:parameters parameters}))
     (loop [known #{} remaining parameters]
-      (when-let [{:parameter/keys [name type]} (first remaining)]
+      (when-let [{:parameter/keys [name type]} (fst remaining)]
         (validate-block-type-ast! type known (set universes))
         (recur (conj known name) (next remaining))))
     (when-not (and (term/level? (:block/sort-level spec))
@@ -641,7 +745,7 @@
                    {:constructor constructor-index :fields fields}))
         (loop [known (set parameter-names)
                remaining fields]
-          (when-let [field (first remaining)]
+          (when-let [field (fst remaining)]
             (let [field-type (:field/type field)]
               (cond
                 (= [:self] field-type) nil
@@ -663,7 +767,7 @@
                index 0
                remaining parameters
                result []]
-          (if-let [{:parameter/keys [name type]} (first remaining)]
+          (if-let [{:parameter/keys [name type]} (fst remaining)]
             (recur (assoc known name [:parameter index])
                    (inc index) (next remaining)
                    (conj result
@@ -682,7 +786,7 @@
                     field-index 0
                     remaining (:constructor/fields constructor)
                     result []]
-               (if-let [field (first remaining)]
+               (if-let [field (fst remaining)]
                  (let [field-type (:field/type field)
                        normalized
                        (if (= [:self] field-type)
@@ -702,20 +806,20 @@
   (canonical/content-id {:block/id block-id :block/member-key member-key}))
 
 (defn- compile-block-ast [ast context]
-  (case (first ast)
-    :var (if-some [index (first (keep-indexed (fn [i name]
-                                                (when (= name (second ast)) i))
+  (case (fst ast)
+    :var (if-some [index (fst (keep-indexed (fn [i name]
+                                                (when (= name (snd ast)) i))
                                               context))]
            (term/bound index)
            (reject! :kernel/unknown-block-variable "Unknown block type variable"
-                    {:variable (second ast) :context context}))
-    :sort (term/sort-term (second ast))
-    :const (term/constant (second ast) (nth ast 2))
-    :app (apply-arguments (compile-block-ast (second ast) context)
+                    {:variable (snd ast) :context context}))
+    :sort (term/sort-term (snd ast))
+    :const (term/constant (snd ast) (nth ast 2))
+    :app (apply-arguments (compile-block-ast (snd ast) context)
                           (map #(compile-block-ast % context) (drop 2 ast)))
     :pi (let [[_ bindings body] ast]
           (letfn [(walk [remaining inner-context]
-                    (if-let [[name type-ast] (first remaining)]
+                    (if-let [[name type-ast] (fst remaining)]
                       (term/pi-term (compile-block-ast type-ast inner-context)
                                     (walk (next remaining) (into [name] inner-context)))
                       (compile-block-ast body inner-context)))]
@@ -723,7 +827,7 @@
 
 (defn- compile-pi [bindings body]
   (letfn [(walk [remaining context]
-            (if-let [[name type-ast] (first remaining)]
+            (if-let [[name type-ast] (fst remaining)]
               (term/pi-term (compile-block-ast type-ast context)
                             (walk (next remaining) (into [name] context)))
               (compile-block-ast body context)))]
@@ -860,7 +964,7 @@
                          aliases)
           _ (when conflict
               (reject! :kernel/alias-conflict "Inductive alias already exists"
-                       {:alias (first conflict) :existing-id (second conflict)}))
+                       {:alias (fst conflict) :existing-id (snd conflict)}))
           block {:rainbow/id block-id
                  :rainbow/kind :inductive-block
                  :block/schema-version 1
@@ -891,7 +995,7 @@
               (let [result (infer staged (:rainbow/type member)
                                   (set (:rainbow/universes member)))]
                 (when-not (and (= :checked (:status result))
-                               (= :sort (first (:term (normalize staged (:type result))))))
+                               (= :sort (fst (:term (normalize staged (:type result))))))
                   (reject! :kernel/invalid-inductive-member-type
                            "Generated inductive member type failed kernel checking"
                            {:member (:rainbow/id member) :cause result}))))]

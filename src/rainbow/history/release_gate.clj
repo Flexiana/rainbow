@@ -31,6 +31,10 @@
    "artifacts/day12/environment.edn" "artifacts/day13/environment.edn"
    "artifacts/day14/environment.edn"])
 
+;; The size of the trusted base is a release decision: Gate A fails when the four files
+;; change length without this pin changing with them (v1-release-test pins it too).
+(def trusted-base-lines 1364)
+
 (def trusted-paths
   ["src/rainbow/canonical.clj" "src/rainbow/term.clj"
    "src/rainbow/environment.clj" "src/rainbow/kernel.clj"])
@@ -110,7 +114,7 @@
         gates
         {:A (when (and (= :passed (:status seed)) all-environments?
                        (= :replayed (:status proof-graph))
-                       (= 1200 trusted-lines)
+                       (= trusted-base-lines trusted-lines)
                        (empty? (get-in evidence [:lean-roundtrip :round-trip :axioms])))
               (passed [:trusted-manifest :seed-replay :adversarial-suite
                        :semantic-hashes :axiom-closures :lean-cross-check]))

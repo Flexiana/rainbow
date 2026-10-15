@@ -4,6 +4,8 @@
       lein verify rainbow.math.finite.rational-argmax [more namespaces ...]
       lein verify --checkpoint artifacts/<dir>/checkpoint.edn.gz <namespace> ...
       lein verify --bundle [--reductions N] proof-bundle.edn ...
+      lein share-bundle in.edn out.edn      (or --plain: the tree encoding back)
+      lein show optimization/some-theorem [module namespace ...]
       lein reproduce rainbow.milestones.ahof-bisection [more ...]
       lein reproduce --all
 
@@ -15,11 +17,20 @@
   the checkpoint does not replay, a module fails to install, or any theorem is
   not :checked -- so the command is usable as a gate.
 
+  A proof bundle is checked in either encoding: the plain one (schema 1 or 2, every
+  term written as a tree) or the shared one (schema 3, every distinct subterm
+  written once; see rainbow.bundle.shared). Both decode to the same declarations.
+
+  show: print a theorem's statement for humans (see rainbow.render). It is a view;
+  the kernel term is what is checked.
+
   reproduce: rebuild a milestone's checkpoint from source (its own `run`, from its
   recorded input checkpoint), write nothing, and compare the rebuilt checkpoint's
   content id with the recorded one's."
   (:require [clojure.edn :as edn]
             [clojure.string :as string]
+            [rainbow.bundle.shared :as shared]
+            [rainbow.render :as render]
             [rainbow.canonical :as canonical]
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
@@ -234,7 +245,7 @@
     (or (some #{:kernel/resource-limit} categories)
         (peek categories))))
 
-(def supported-bundle-schemas #{1 2})
+(def supported-bundle-schemas #{1 2 shared/schema-version})
 
 (defn- bundle-payload-error [bundle]
   (case (:rainbow.bundle/schema-version bundle)
@@ -254,6 +265,7 @@
 
 (defn- check-bundle* [bundle]
   (try
+    (let [bundle (if (shared/shared? bundle) (shared/decode bundle) bundle)]
     (cond
       (not (contains? supported-bundle-schemas (:rainbow.bundle/schema-version bundle)))
       {:ok? false :error (str "not a proof bundle this version understands: :rainbow.bundle/schema-version is "
@@ -278,28 +290,29 @@
             (let [entries (if (= 2 (:rainbow.bundle/schema-version bundle))
                             (:entries bundle)
                             (mapv #(hash-map :entry/kind :declaration :entry/value %) (:declarations bundle)))
-                  result (reduce (fn [env entry]
-                                   (let [r (replay-bundle-entry env entry)]
-                                     (if (= :accepted (:status r))
-                                       (:environment r)
-                                       (reduced {:rejected (or (get-in entry [:entry/value :rainbow/id]) :unnamed)
-                                                 :cause r}))))
-                                 base entries)]
+                  replayed (reduce (fn [[env added] entry]
+                                     (let [r (replay-bundle-entry env entry)]
+                                       (if (= :accepted (:status r))
+                                         [(:environment r) (into added (keep :rainbow/id) [(:declaration r)])]
+                                         (reduced {:rejected (or (get-in entry [:entry/value :rainbow/id]) :unnamed)
+                                                   :cause r}))))
+                                   [base #{}] entries)
+                  result (if (:rejected replayed) replayed (first replayed))
+                  ;; add-declaration has just checked these; checking them again cannot change the verdict
+                  added (when-not (:rejected replayed) (second replayed))]
               (if (:rejected result)
                 {:ok? false :error (str "kernel rejected bundle entry " (:rejected result)
                                         (when-let [why (kernel-reason (:cause result))] (str " (" why ")"))
                                         (when (= :kernel/resource-limit (kernel-reason (:cause result)))
                                           (str "; the reduction budget was " kernel/*reduction-budget*
                                                ", try --reductions with a larger value")))}
-                {:ok? (every? (fn [[alias {:keys [id axioms]}]]
-                                (and (= id (environment/resolve-id result alias))
-                                     (= :checked (recheck result id))
-                                     (= axioms (kernel/axioms result id))))
-                              (:claims bundle))
-                 :claims (into (sorted-map)
+                (let [claims
+                      (into (sorted-map)
                                (for [[alias {:keys [id]}] (:claims bundle)]
                                  (let [resolved (environment/resolve-id result alias)
-                                       status (some->> resolved (recheck result))
+                                       status (cond (nil? resolved) nil
+                                                    (contains? added resolved) :checked
+                                                    :else (recheck result resolved))
                                        actual (some->> resolved (kernel/axioms result))
                                        recorded (get-in bundle [:claims alias :axioms])]
                                    [alias {:id id :resolved resolved :status status :axioms actual
@@ -307,8 +320,9 @@
                                                        (not= id resolved) (conj (str "resolves to " resolved ", recorded " id))
                                                        (not= :checked status) (conj "does not re-check")
                                                        (not= recorded actual) (conj (str "recorded axioms " (pr-str recorded)
-                                                                                         " but the kernel computes " (pr-str actual))))}])))}))))))
-    )
+                                                                                         " but the kernel computes " (pr-str actual))))}])))]
+                  {:ok? (every? (comp empty? :problems val) claims) :claims claims})))))))
+    ))
     (catch Throwable t
       {:ok? false :error (.getMessage t)})))
 
@@ -322,10 +336,12 @@
         (throw (ex-info "usage: lein verify --bundle [--reductions N] <bundle> ..." {})))
       (every? true?
               (mapv (fn [path]
-                      (let [{:keys [ok? error claims]}
+                      (let [started (System/nanoTime)
+                            {:keys [ok? error claims]}
                             (try (check-bundle (edn/read-string (slurp path)) reductions)
                                  (catch Throwable t {:ok? false :error (.getMessage t)}))]
-                        (println (if ok? "OK   " "FAIL ") path (if error (str "-- " error) ""))
+                        (println (if ok? "OK   " "FAIL ") path (if error (str "-- " error) "")
+                                 (format "(%.1f s)" (/ (- (System/nanoTime) started) 1e9)))
                         (doseq [[alias {:keys [status axioms problems]}] claims]
                           (println (format "       %-9s %s%s%s" (some-> status name) alias
                                            (if (seq axioms) (str "  axioms: " (pr-str (sort axioms))) "  axiom-free")
@@ -336,6 +352,37 @@
     (catch Throwable t
       (println "FAIL --" (.getMessage t))
       false)))
+
+;; ---------------------------------------------------------------- share-bundle, show
+
+(defn- share-bundle-main
+  "lein share-bundle in.edn out.edn writes the shared encoding of a plain bundle;
+  --plain writes a shared bundle back as a plain one. Either way the declarations are
+  the same terms with the same ids."
+  [args]
+  (let [[plain? [in out]] (if (= "--plain" (first args)) [true (rest args)] [false args])]
+    (if-not (and in out)
+      (do (println "usage: lein share-bundle [--plain] in.edn out.edn") false)
+      (let [bundle (edn/read-string (slurp in))
+            converted (if plain? (shared/decode bundle) (shared/encode bundle))]
+        (write-bundle! out converted)
+        (println (format "%s (%,d bytes) -> %s (%,d bytes)" in (.length (java.io.File. ^String in))
+                         out (.length (java.io.File. ^String out))))
+        true))))
+
+(defn- show-main
+  "lein show alias [module namespace ...] prints the statement of a declaration for
+  humans: a view of the term the kernel checks, not the term itself."
+  [args]
+  (let [[alias & modules] args]
+    (if-not alias
+      (do (println "usage: lein show some/theorem [module namespace ...]") false)
+      (let [loaded (checkpoint/load-checkpoint default-checkpoint)
+            env (reduce (fn [env m] (let [s (symbol m)] (require s) ((ns-resolve s 'extend-environment) env)))
+                        (:environment loaded) modules)]
+        (if-not (environment/resolve-id env (symbol alias))
+          (do (println "unknown declaration" alias "-- name the module that installs it") false)
+          (do (render/print-statement env (symbol alias)) true))))))
 
 ;; ---------------------------------------------------------------- reproduce
 
@@ -410,6 +457,8 @@
   (let [ok (case command
              "verify" (verify-main args)
              "reproduce" (reproduce-main args)
-             (do (println "usage: lein verify ... | lein reproduce ...") (System/exit 2)))]
+             "share-bundle" (share-bundle-main args)
+             "show" (show-main args)
+             (do (println "usage: lein verify ... | lein reproduce ... | lein share-bundle ... | lein show ...") (System/exit 2)))]
     (shutdown-agents)
     (System/exit (if ok 0 1))))

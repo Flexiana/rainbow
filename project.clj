@@ -1,4 +1,4 @@
-(defproject org.flexiana/rainbow "1.0.0"
+(defproject org.flexiana/rainbow "1.1.0"
   :description "Rainbow: data-oriented, kernel-checked mathematics for Clojure (Levels 1-3, open core)"
   :url "https://github.com/flexiana/rainbow"
   :license {:name "Apache-2.0" :url "https://www.apache.org/licenses/LICENSE-2.0"}
@@ -9,6 +9,8 @@
   :aliases {
             "verify" ["run" "-m" "rainbow.main" "verify"]
             "reproduce" ["run" "-m" "rainbow.main" "reproduce"]
+            "share-bundle" ["run" "-m" "rainbow.main" "share-bundle"]
+            "show" ["run" "-m" "rainbow.main" "show"]
             "finite-nat" ["run" "-m" "rainbow.milestones.finite-nat"]
             "bellman" ["run" "-m" "rainbow.milestones.finite-bellman"]
             "nat-distance" ["run" "-m" "rainbow.milestones.nat-distance"]
