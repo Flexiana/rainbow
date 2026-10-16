@@ -3,6 +3,43 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-16
+
+The open core's code is unchanged; this release accompanies Rainbow Pro 1.3.0, whose
+output it checks.
+
+### Checked by this core
+- **Smaller LP optimality bundles.** Pro 1.3's certificate generator writes instance data
+  with native numerals and, optionally, as balanced lookup trees, and proves the
+  certificate by reflection. The four RH2EDIN bundles went from 0.35-1.9 MB to 6.7-8.5 KB
+  (shared EDN) or 3.3-3.8 KB (binary). They check with this core, and with 1.2.0, in
+  12-30 s each, axiom-free.
+
+### In Rainbow Pro 1.3.0
+- **Programs whose size does not grow with the instance**: a loop language beside
+  `clj/Expr` (slots read at computed indices, loops counted by shape parameters), a
+  printer that emits one Clojure function per program, a decoder that reads the printed
+  text back and has the kernel confirm it is the program, and a proof that the embedding
+  of `clj/Expr` preserves meaning. The graph coloring checker as one loop program is
+  proved equal to the coloring family's verdict for every number of vertices and colors
+  and every store, so the family's soundness and completeness carry over; it checks
+  252,000 inputs in about 0.3 s, where the straight-line program stopped compiling near
+  600 (JVM method size).
+- **Level-3 optimality as emitted code**: assignment and closed-tour (TSP) optima by
+  exhaustive permutation coverage, and unit and weighted knapsack subset optima.
+- **LP certificate options**: `{:table :binary}` lookup trees (40x40 random LPs certify in
+  123 s instead of 228 s; 60x60 in 457 s, where linear tables ran out of memory).
+
+### Verified
+- Generated from internal e934fb61. Rainbow Pro: every source namespace loads (7 chunks,
+  0 failures); the loop-language, loop-coloring, decoder, loop-proof, Level-3 optimality,
+  LP certificate (literals, binary tables, reflection, epsilon verifier) and coloring
+  family tests: 72 tests, 2,042 assertions, 0 failures.
+- This core: the release gate and binary-bundle tests, 13 tests, 53 assertions, 0
+  failures; its code is byte-identical to 1.2.0 apart from the version.
+- The four RH2EDIN bundles from Pro 1.3 check with `lein verify --bundle` (OK,
+  axiom-free); a copy with one numeral changed is rejected.
+
 ## [1.2.0] - 2026-10-16
 
 ### Added
