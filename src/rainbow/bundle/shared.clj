@@ -26,7 +26,7 @@
      declaration's :rainbow/type and :rainbow/value are node positions and its
      :rainbow/dependencies are constant positions}
 
-  Nodes: [:sort level] [:bound i] [:const k levels] [:app f a] [:lam domain body
+  Nodes: [:sort level] [:bound i] [:nat n] [:const k levels] [:app f a] [:lam domain body
   mode] [:pi domain body mode] [:let type value body], where f, a, domain, body,
   type and value are positions of earlier nodes and k is a constant position.")
 
@@ -48,6 +48,7 @@
       (let [node (case (first term)
                    :sort term
                    :bound term
+                   :nat term
                    :const [:const (constant-index enc (second term)) (nth term 2)]
                    :app [:app (term-index enc (nth term 1)) (term-index enc (nth term 2))]
                    (:lam :pi) [(first term) (term-index enc (nth term 1)) (term-index enc (nth term 2))
@@ -117,6 +118,9 @@
                  :bound (do (when-not (and (= 2 (count node)) (int? (second node)))
                               (refuse! "bad :bound node" {:node i}))
                             node)
+                 :nat (do (when-not (and (= 2 (count node)) (integer? (second node)) (not (neg? (second node))))
+                            (refuse! "bad :nat node" {:node i}))
+                          node)
                  :const (do (when-not (and (= 3 (count node)) (vector? (nth node 2)))
                               (refuse! "bad :const node" {:node i}))
                             [:const (nth constants (position! (second node) n-constants "a constant")) (nth node 2)])

@@ -1,6 +1,6 @@
 # The corpus
 
-Every proof module in the open core: 1154 modules, grouped by folder. Each line links to the source and
+Every proof module in the open core: 1157 modules, grouped by folder. Each line links to the source and
 quotes the first sentence of its docstring. Re-check any of them with `lein verify <namespace>`.
 This file is generated from the source tree; do not edit it by hand.
 
@@ -434,7 +434,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.logic.strict-contraction-stabilization`](../src/rainbow/math/logic/strict_contraction_stabilization.clj) | Constructive bounded stabilization of strict contractions in a finite Nat sup metric. |
 | [`rainbow.math.logic.strict-contraction-uniqueness`](../src/rainbow/math/logic/strict_contraction_uniqueness.clj) | Constructive uniqueness of support-relative fixed points for strict finite contractions. |
 
-## Natural numbers (`src/rainbow/math/nat/`, 27)
+## Natural numbers (`src/rainbow/math/nat/`, 29)
 
 | namespace | |
 |---|---|
@@ -461,6 +461,8 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.nat.pigeonhole`](../src/rainbow/math/nat/pigeonhole.clj) | THE PIGEONHOLE PRINCIPLE ON NAT, constructively. |
 | [`rainbow.math.nat.power`](../src/rainbow/math/nat/power.clj) | Natural-number exponentiation base^exp, defined by recursion on the exponent: power b 0 = 1 power b (succ e) = b * (power b e). |
 | [`rainbow.math.nat.power-growth`](../src/rainbow/math/nat/power_growth.clj) | Growth lemmas for nat exponentiation, on the road to the geometric-convergence modulus. |
+| [`rainbow.math.nat.ring-reflect`](../src/rainbow/math/nat/ring_reflect.clj) | Definitions for proving nat semiring identities BY REFLECTION. |
+| [`rainbow.math.nat.ring-reflect-sound`](../src/rainbow/math/nat/ring_reflect_sound.clj) | Unconditional, native soundness of the nat reflection normalizer. |
 | [`rainbow.math.nat.semiring`](../src/rainbow/math/nat/semiring.clj) | Constructive natural semiring laws needed by rational proof data. |
 | [`rainbow.math.nat.square-zero`](../src/rainbow/math/nat/square_zero.clj) | nat/square-zero-implies-zero : a*a = 0 -> a = 0. |
 | [`rainbow.math.nat.strict-below-more`](../src/rainbow/math/nat/strict_below_more.clj) | Small reusable nat lemmas for indexed-fold attainment (pure nat, off the trusted base): nat/add-successor-right : i + succ e = succ (i + e) (add recurses left, so this needs proof) nat/strict-below-self : m < succ m nat/ |
@@ -627,7 +629,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.rational.nnrat.weighted-sum-scaling`](../src/rainbow/math/rational/nnrat/weighted_sum_scaling.clj) | Publicly named finite-sum scaling bridge for contraction proofs. |
 | [`rainbow.math.rational.nnrat.weighted-term-bound`](../src/rainbow/math/rational/nnrat/weighted_term_bound.clj) | Scalar weighted-term monotonicity for the finite mixture proof. |
 
-## Signed rationals (`src/rainbow/math/rational/signed/`, 135)
+## Signed rationals (`src/rainbow/math/rational/signed/`, 136)
 
 | namespace | |
 |---|---|
@@ -694,6 +696,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.rational.signed.list-sum`](../src/rainbow/math/rational/signed/list_sum.clj) | Finite sums of signed rationals over a list, and their order laws. |
 | [`rainbow.math.rational.signed.lp-capacity-sensitivity`](../src/rainbow/math/rational/signed/lp_capacity_sensitivity.clj) | Capacity sensitivity for signed LP dual bounds. |
 | [`rainbow.math.rational.signed.lp-certificate`](../src/rainbow/math/rational/signed/lp_certificate.clj) | A worked LP optimality certificate on concrete numbers, including a NEGATIVE cost -- the per-instance end of the verified-optimization pipeline. |
+| [`rainbow.math.rational.signed.lp-certificate-reflect`](../src/rainbow/math/rational/signed/lp_certificate_reflect.clj) | LP optimality certificates by reflection over finite row and column lists. |
 | [`rainbow.math.rational.signed.lp-duality`](../src/rainbow/math/rational/signed/lp_duality.clj) | Linear-programming weak duality and the optimality certificate over SIGNED rationals -- arbitrary matrix, costs and right-hand side, any of them negative. |
 | [`rainbow.math.rational.signed.lp-duality-on`](../src/rainbow/math/rational/signed/lp_duality_on.clj) | LP weak duality and the optimality certificate, quantified over the rows and columns an instance actually has. |
 | [`rainbow.math.rational.signed.lp-equality-row`](../src/rainbow/math/rational/signed/lp_equality_row.clj) | Formal equality-row expansion into two signed inequality rows. |

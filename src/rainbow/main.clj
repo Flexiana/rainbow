@@ -4,7 +4,7 @@
       lein verify rainbow.math.finite.rational-argmax [more namespaces ...]
       lein verify --checkpoint artifacts/<dir>/checkpoint.edn.gz <namespace> ...
       lein verify --bundle [--reductions N] proof-bundle.edn ...
-      lein share-bundle in.edn out.edn      (or --plain: the tree encoding back)
+      lein share-bundle in.edn out.edn      (--binary: the compact file format; --plain: back to trees)
       lein show optimization/some-theorem [module namespace ...]
       lein reproduce rainbow.milestones.ahof-bisection [more ...]
       lein reproduce --all
@@ -29,6 +29,7 @@
   content id with the recorded one's."
   (:require [clojure.edn :as edn]
             [clojure.string :as string]
+            [rainbow.bundle.binary :as binary]
             [rainbow.bundle.shared :as shared]
             [rainbow.render :as render]
             [rainbow.canonical :as canonical]
@@ -326,6 +327,14 @@
     (catch Throwable t
       {:ok? false :error (.getMessage t)})))
 
+(defn read-bundle
+  "A bundle file in any encoding: EDN (plain or shared) or the binary file format."
+  [path]
+  (let [data (java.nio.file.Files/readAllBytes (.toPath (java.io.File. ^String path)))]
+    (if (binary/binary? data)
+      (binary/unpack data)
+      (edn/read-string (String. ^bytes data "UTF-8")))))
+
 (defn- verify-bundles-main [args]
   ;; mapv, not for: every bundle is checked and reported even after one fails
   (try
@@ -338,7 +347,7 @@
               (mapv (fn [path]
                       (let [started (System/nanoTime)
                             {:keys [ok? error claims]}
-                            (try (check-bundle (edn/read-string (slurp path)) reductions)
+                            (try (check-bundle (read-bundle path) reductions)
                                  (catch Throwable t {:ok? false :error (.getMessage t)}))]
                         (println (if ok? "OK   " "FAIL ") path (if error (str "-- " error) "")
                                  (format "(%.1f s)" (/ (- (System/nanoTime) started) 1e9)))
@@ -356,16 +365,20 @@
 ;; ---------------------------------------------------------------- share-bundle, show
 
 (defn- share-bundle-main
-  "lein share-bundle in.edn out.edn writes the shared encoding of a plain bundle;
-  --plain writes a shared bundle back as a plain one. Either way the declarations are
-  the same terms with the same ids."
+  "lein share-bundle in out writes the shared encoding of a bundle as EDN; --binary
+  writes it in the compact binary file format; --plain writes a plain bundle. Every
+  form holds the same declarations with the same ids."
   [args]
-  (let [[plain? [in out]] (if (= "--plain" (first args)) [true (rest args)] [false args])]
+  (let [[mode [in out]] (case (first args) "--plain" [:plain (rest args)] "--binary" [:binary (rest args)] [:shared args])]
     (if-not (and in out)
-      (do (println "usage: lein share-bundle [--plain] in.edn out.edn") false)
-      (let [bundle (edn/read-string (slurp in))
-            converted (if plain? (shared/decode bundle) (shared/encode bundle))]
-        (write-bundle! out converted)
+      (do (println "usage: lein share-bundle [--binary|--plain] in out") false)
+      (let [bundle (read-bundle in)
+            as-shared (if (shared/shared? bundle) bundle (shared/encode bundle))]
+        (case mode
+          :plain (write-bundle! out (if (shared/shared? bundle) (shared/decode bundle) bundle))
+          :shared (write-bundle! out as-shared)
+          :binary (java.nio.file.Files/write (.toPath (java.io.File. ^String out)) (binary/pack as-shared)
+                                             ^"[Ljava.nio.file.OpenOption;" (make-array java.nio.file.OpenOption 0)))
         (println (format "%s (%,d bytes) -> %s (%,d bytes)" in (.length (java.io.File. ^String in))
                          out (.length (java.io.File. ^String out))))
         true))))

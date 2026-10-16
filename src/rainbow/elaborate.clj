@@ -127,6 +127,13 @@
                 (reject! :elaborate/invalid-sort "Malformed sort form" {:form surface}))
               (term/sort-term level))
 
+      ;; a natural-number literal (the kernel types it as data/Nat)
+      :nat (let [[_ n] surface]
+             (when-not (and (= 2 (count surface)) (integer? n) (not (neg? n)))
+               (reject! :elaborate/invalid-literal "A literal is [:nat n] with n a natural number"
+                        {:form surface}))
+             [:nat n])
+
       :const (let [[_ alias levels] surface
                    id (if (string? alias) alias (environment/resolve-id environment alias))]
                (when-not (and (= 3 (count surface)) id (vector? levels)

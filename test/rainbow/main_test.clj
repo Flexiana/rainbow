@@ -219,17 +219,17 @@
       (is (false? @result)))))
 
 (deftest bundle-command-reports-every-file-after-read-errors
-  (with-redefs [checkpoint/load-checkpoint replay-base
-                slurp (fn [path]
-                        (case path
-                          "missing.edn" (throw (java.io.FileNotFoundException. path))
-                          "malformed.edn" "{"
-                          "valid.edn" (pr-str (bundle))))]
-    (let [result (atom nil)
-          output (with-out-str
-                   (reset! result (#'main/verify-bundles-main
-                                   ["missing.edn" "malformed.edn" "valid.edn"])))]
-      (is (false? @result))
-      (is (re-find #"FAIL\s+missing.edn" output))
-      (is (re-find #"FAIL\s+malformed.edn" output))
-      (is (re-find #"OK\s+valid.edn" output)))))
+  ;; real files: bundles are read as bytes (binary or EDN), so this exercises the actual reader
+  (let [dir (.toFile (java.nio.file.Files/createTempDirectory "bundles" (make-array java.nio.file.attribute.FileAttribute 0)))
+        at #(str (java.io.File. dir ^String %))]
+    (spit (at "malformed.edn") "{")
+    (spit (at "valid.edn") (pr-str (bundle)))
+    (with-redefs [checkpoint/load-checkpoint replay-base]
+      (let [result (atom nil)
+            output (with-out-str
+                     (reset! result (#'main/verify-bundles-main
+                                     [(at "missing.edn") (at "malformed.edn") (at "valid.edn")])))]
+        (is (false? @result))
+        (is (re-find #"FAIL\s+\S*missing.edn" output))
+        (is (re-find #"FAIL\s+\S*malformed.edn" output))
+        (is (re-find #"OK\s+\S*valid.edn" output) output)))))

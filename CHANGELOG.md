@@ -3,6 +3,41 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-16
+
+### Added
+- **Binary bundle files** (`lein share-bundle --binary`): a shared bundle with a one-byte
+  tag per node, back references as variable-length integers, constants as raw 32-byte
+  hashes. `lein verify --bundle` reads binary and EDN files alike. The RH2EDIN c2
+  certificate: 2,363,278 bytes plain, 15,571 shared, 5,591 binary (3,623 gzipped). The
+  unpacker refuses malformed files; a sweep flipping every byte of a packed bundle never
+  produces an accepted bundle with different claims.
+
+- **Proof by reflection for natural-number ring identities**
+  (`rainbow.math.nat.ring-reflect`, soundness in `ring-reflect-sound`): a goal is
+  checked by normalizing both sides to Horner polynomials in the kernel; one theorem
+  (`ring/identity-sound`) turns that into the proof. (a+b+c)^3: 4,753 proof nodes
+  instead of 857,095 as a rewrite chain; (a+b+c)^4, which a rewrite chain cannot build
+  in 6 GB, checks in about 0.4 s.
+- **An LP certificate checker with its soundness theorem**
+  (`rainbow.math.rational.signed.lp-certificate-reflect`): an optimality certificate is
+  `lp/certificate-check-sound` applied to the instance data and `refl true`, with the
+  same statement as before.
+
+### Fixed
+- Shared bundles encode `[:nat n]` literal nodes (1.1 refused bundles containing them).
+
+### Verified
+- Full test suite, 25 chunks: 1,988 tests, 44,112 assertions, 0 failures (two chunks
+  re-run after a test fix and a generator fix that touched only them).
+- `lein verify --bundle` on the four RH2EDIN bundles; a reflected c2 certificate in plain
+  (330,141 bytes), shared (11,674) and binary (4,640) form, all OK; a binary file with one
+  byte changed is refused.
+- Binary format: a mutation sweep of 2,537,120 single-byte substitutions, insertions,
+  deletions and multi-byte edits, none accepted with other claims.
+- The nested-binder control is rejected; `lein reproduce rainbow.milestones.ahof-bisection`
+  gives SAME.
+
 ## [1.1.1] - 2026-10-16
 
 ### Fixed

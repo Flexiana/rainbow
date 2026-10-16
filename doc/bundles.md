@@ -18,6 +18,11 @@ nodes but only 617 distinct ones, and it names 26 constants 21,938 times; as a t
 three quarters of the file is the same 71-character hashes. The shared encoding writes
 each distinct subterm once, children by position, and each constant once.
 
+A third form, the binary file (`lein share-bundle --binary`), writes the same shared
+bundle with a one-byte tag per node, back references as variable-length integers and
+constants as raw 32-byte hashes: c2 is 5,591 bytes (3,623 gzipped). `lein verify
+--bundle` reads it like the EDN forms.
+
 What does not change: the terms, the kernel, the claims. Decoding rebuilds exactly the
 plain bundle's declarations, so the kernel checks the same terms and computes the same
 content ids. `lein share-bundle in.edn out.edn` converts a plain bundle; `--plain`

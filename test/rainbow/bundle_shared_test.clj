@@ -76,3 +76,13 @@
          (let [r (main/check-bundle (round-trip bad))]
            (is (false? (:ok? r)))
            (is (re-find #"malformed shared bundle" (str (:error r))) (:error r))))))))
+
+(deftest literals-are-shared-and-checked-like-other-leaves
+  (let [b (assoc-in (plain) [:declarations 0 :rainbow/type] [:pi [:sort [:zero]] [:nat 12345678901234567890] :explicit])
+        s (shared/encode b)]
+    (is (= b (shared/decode (round-trip s))))
+    (is (some #(= [:nat 12345678901234567890] %) (:terms s)))
+    (doseq [bad [[:nat -1] [:nat 1.5] [:nat]]]
+      (let [i (first (keep-indexed (fn [i n] (when (= :nat (first n)) i)) (:terms s)))]
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"malformed shared bundle"
+                              (shared/decode (assoc-in s [:terms i] bad))))))))
