@@ -6,26 +6,26 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.main :as main]
-            [rainbow.math.lemmas.xol-readings :as m0]
-            [rainbow.math.nat.extremal-index :as m1]
-            [rainbow.math.rational.signed.absolute-reciprocal :as m2]
-            [rainbow.math.rational.signed.affine-convex :as m3]
-            [rainbow.math.rational.signed.close-of-distance :as m4]
-            [rainbow.math.rational.signed.convergent-bounded-below :as m5]
-            [rainbow.math.rational.signed.convex-combination :as m6]
-            [rainbow.math.rational.signed.gap-quality :as m7]
-            [rainbow.math.rational.signed.half-scale-subtract-self :as m8]
-            [rainbow.math.rational.signed.limit-product :as m9]
-            [rainbow.math.rational.signed.limit-square :as m10]
-            [rainbow.math.rational.signed.lp-equality-row :as m11]
-            [rainbow.math.rational.signed.lp-equality-row-transport :as m12]
-            [rainbow.math.rational.signed.lp-free-price :as m13]
-            [rainbow.math.rational.signed.lp-objective-negate :as m14]
-            [rainbow.math.rational.signed.magnitude-monotone :as m15]
-            [rainbow.math.rational.signed.midpoint-convexity :as m16]
-            [rainbow.math.rational.signed.one-hot-attained :as m17]
-            [rainbow.math.rational.signed.one-hot-keep :as m18]
-            [rainbow.math.rational.signed.one-hot-selects :as m19]))
+            [rainbow.math.lemmas.wab-mean :as m0]
+            [rainbow.math.lemmas.wage-readings :as m1]
+            [rainbow.math.lemmas.weighted-cover-rounding :as m2]
+            [rainbow.math.lemmas.weighted-median :as m3]
+            [rainbow.math.lemmas.xol-readings :as m4]
+            [rainbow.math.nat.extremal-index :as m5]
+            [rainbow.math.rational.signed.absolute-reciprocal :as m6]
+            [rainbow.math.rational.signed.affine-convex :as m7]
+            [rainbow.math.rational.signed.close-of-distance :as m8]
+            [rainbow.math.rational.signed.convergent-bounded-below :as m9]
+            [rainbow.math.rational.signed.convex-combination :as m10]
+            [rainbow.math.rational.signed.gap-quality :as m11]
+            [rainbow.math.rational.signed.half-scale-subtract-self :as m12]
+            [rainbow.math.rational.signed.limit-product :as m13]
+            [rainbow.math.rational.signed.limit-square :as m14]
+            [rainbow.math.rational.signed.lp-equality-row :as m15]
+            [rainbow.math.rational.signed.lp-equality-row-transport :as m16]
+            [rainbow.math.rational.signed.lp-free-price :as m17]
+            [rainbow.math.rational.signed.lp-objective-negate :as m18]
+            [rainbow.math.rational.signed.magnitude-monotone :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -51,62 +51,62 @@
         (is (= :checked status))
         (is (= (set (map #(environment/resolve-id @env %) (classical name))) axioms))))))
 
-(deftest rechecks-0-xol-readings
+(deftest rechecks-0-wab-mean
+  (rechecks 'rainbow.math.lemmas.wab-mean))
+
+(deftest rechecks-1-wage-readings
+  (rechecks 'rainbow.math.lemmas.wage-readings))
+
+(deftest rechecks-2-weighted-cover-rounding
+  (rechecks 'rainbow.math.lemmas.weighted-cover-rounding))
+
+(deftest rechecks-3-weighted-median
+  (rechecks 'rainbow.math.lemmas.weighted-median))
+
+(deftest rechecks-4-xol-readings
   (rechecks 'rainbow.math.lemmas.xol-readings))
 
-(deftest rechecks-1-extremal-index
+(deftest rechecks-5-extremal-index
   (rechecks 'rainbow.math.nat.extremal-index))
 
-(deftest rechecks-2-absolute-reciprocal
+(deftest rechecks-6-absolute-reciprocal
   (rechecks 'rainbow.math.rational.signed.absolute-reciprocal))
 
-(deftest rechecks-3-affine-convex
+(deftest rechecks-7-affine-convex
   (rechecks 'rainbow.math.rational.signed.affine-convex))
 
-(deftest rechecks-4-close-of-distance
+(deftest rechecks-8-close-of-distance
   (rechecks 'rainbow.math.rational.signed.close-of-distance))
 
-(deftest rechecks-5-convergent-bounded-below
+(deftest rechecks-9-convergent-bounded-below
   (rechecks 'rainbow.math.rational.signed.convergent-bounded-below))
 
-(deftest rechecks-6-convex-combination
+(deftest rechecks-10-convex-combination
   (rechecks 'rainbow.math.rational.signed.convex-combination))
 
-(deftest rechecks-7-gap-quality
+(deftest rechecks-11-gap-quality
   (rechecks 'rainbow.math.rational.signed.gap-quality))
 
-(deftest rechecks-8-half-scale-subtract-self
+(deftest rechecks-12-half-scale-subtract-self
   (rechecks 'rainbow.math.rational.signed.half-scale-subtract-self))
 
-(deftest rechecks-9-limit-product
+(deftest rechecks-13-limit-product
   (rechecks 'rainbow.math.rational.signed.limit-product))
 
-(deftest rechecks-10-limit-square
+(deftest rechecks-14-limit-square
   (rechecks 'rainbow.math.rational.signed.limit-square))
 
-(deftest rechecks-11-lp-equality-row
+(deftest rechecks-15-lp-equality-row
   (rechecks 'rainbow.math.rational.signed.lp-equality-row))
 
-(deftest rechecks-12-lp-equality-row-transport
+(deftest rechecks-16-lp-equality-row-transport
   (rechecks 'rainbow.math.rational.signed.lp-equality-row-transport))
 
-(deftest rechecks-13-lp-free-price
+(deftest rechecks-17-lp-free-price
   (rechecks 'rainbow.math.rational.signed.lp-free-price))
 
-(deftest rechecks-14-lp-objective-negate
+(deftest rechecks-18-lp-objective-negate
   (rechecks 'rainbow.math.rational.signed.lp-objective-negate))
 
-(deftest rechecks-15-magnitude-monotone
+(deftest rechecks-19-magnitude-monotone
   (rechecks 'rainbow.math.rational.signed.magnitude-monotone))
-
-(deftest rechecks-16-midpoint-convexity
-  (rechecks 'rainbow.math.rational.signed.midpoint-convexity))
-
-(deftest rechecks-17-one-hot-attained
-  (rechecks 'rainbow.math.rational.signed.one-hot-attained))
-
-(deftest rechecks-18-one-hot-keep
-  (rechecks 'rainbow.math.rational.signed.one-hot-keep))
-
-(deftest rechecks-19-one-hot-selects
-  (rechecks 'rainbow.math.rational.signed.one-hot-selects))

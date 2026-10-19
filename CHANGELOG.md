@@ -3,6 +3,91 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-10-19
+
+This core gains 27 modules of mathematics that Pro's Level-3 certificate readings rest on;
+the kernel is unchanged. This release accompanies Rainbow Pro 1.4.0.
+
+### Added to this core
+- `rainbow.math.sums` (23 modules) and `rainbow.math.lemmas` (4): LP Farkas and ray
+  lemmas, bounds for LP certificates with row and column bounds, Hungarian and
+  Gilmore-Gomory pricing bounds, and the indicator, one-hot and predicate-bridge lemmas
+  that tie a checker's sums to the predicate it claims (admissions, budgeted protection,
+  earliest schedules, Pareto masks, period usage and more). Native and axiom-free; each is
+  installed by the coverage tests.
+
+### In Rainbow Pro 1.4.0
+- **Proved MILP certificates.** A branch-and-bound tree checker as one loop program: an
+  integral, feasible incumbent; per node a box of column bounds, each child containing its
+  parent's box cut by its side of a split on an integer column; per leaf an exact LP dual
+  bound or a Farkas proof of infeasibility; and the claimed gap. It rests on a sparse LP
+  certificate checker (CSR/CSC rows and columns, safe dual bound), which checks a
+  22,940 x 17,572 plant LP in 3-4 s. On an e-methanol plant's week-ahead unit commitment
+  (electrolyser, hydrogen tank, methanol loop with turndown and start-up costs; 674 x 840,
+  168 binaries), every week of 2023 was proved optimal to within 1e-6 relative: 52 of 52
+  certificates accepted, a gap smaller by 1e-6 refused for all 52, median check 0.64 s
+  (at most 45 s). The soundness theorem for the tree checker is stated, not yet proved.
+- **Loop language v2**: index tables read from the parameters (`clj/Index2`,
+  `clj/LoopExpr2`), so a checker can compare indices and read sparse structures.
+- **Loop port**: 918 of 986 program families translate to loop programs, kernel-checked per
+  shape; `deploy-loop` runs a ported family at any shape. Generic check and sum loops,
+  grids and the a1c port carry proved denotations.
+- **Level-3 claims**: 24 more claims proved for the families' certificate readings (stable
+  matching and roommates, admissions, Pareto efficiency, EVPI, Holt, Wardrop, RCPSP,
+  job shop, unit commitment, lot sizing, multicommodity flow, routing, Max-Cut local
+  optimality, Hall violators and others). Statements that overclaimed are corrected:
+  Wagner-Whitin's "optimal over all production schedules" fails with zero demand (a
+  counterexample is kernel-checked; the claim stays open), the Max-Cut claim states the
+  data assumption it does not check. 450 claims that only cite where a formula comes from
+  are recorded as documented assumptions with their citation, never as proved. Open
+  correctness claims: 943 in 1.3.0 -> 624.
+- **Audit**: a manifest that declares a raised kernel reduction budget is re-checked at it
+  (it was re-checked at the default, so budget exhaustion was reported as a failure).
+
+### Fixed in Rainbow Pro 1.4.0
+- When a module is split into a public mathematics half and a Pro half, the release build
+  pointed every Pro module that depended on it at the public half, even when it used the
+  Pro half. In Pro 1.3.0 and 1.3.1 (the same source), 5 of the 147 such modules therefore
+  failed to install on their own: on the d63 checkpoint, `rainbow.module/install-module`
+  stops with an unknown constant (`clj/expr-sum`, `clj/Expr` or `clj/all-at-most`) for
+  `clojure-forward-iteration-program`, `clojure-newsvendor-program-family`,
+  `clojure-product-combinator`, `clojure-two-opt-program-family` and
+  `expr-sum-arule-readings`. The test suite passed regardless; earlier releases were not
+  checked. 1.4.0 gives the 152 Pro modules that depend on a split module their Pro half
+  back, and all 152 install on their own.
+- Five Pro tests reach a private var as `#'ns/var` in a namespace they did not require, so
+  they compiled only after another test had loaded it; `expr-sum-benders-cut-test` run on
+  its own did not compile (1.3.0: "Unable to resolve var"). The release build now adds the
+  require to every such test, and each of the five passes on its own.
+- The same defect in Pro tests: a test that built its environment with a split module now
+  built it with the public half alone, so the Pro half's theorems were unknown constants.
+  `expr-sum-mmck-unique-test` failed in 1.3.0 (1 failure, 2 errors), and with it
+  `mmck-unique-independent-review-test`. Six Pro tests now build their environment with the
+  Pro half; each passes on its own, as does the review test.
+
+### Verified
+- Generated from internal 9c5c9fcc.
+- This core: the CI steps (trusted base 1,364 lines, unchanged; suite-runner controls, 4
+  tests; kernel, 14 tests, 130 assertions; verifier and coverage guards, 40 tests, 137
+  assertions; the tour's three modules re-checked, OK), the release and bundle tests (19
+  tests, 82 assertions) and the coverage parts 8-15, which install the new modules (146
+  tests, 946 assertions), 0 failures.
+- The 27 new modules: `lein verify` reports each OK. It lists the theorems of the 4
+  `rainbow.math.lemmas` modules (7, all for all inputs); the 23 `rainbow.math.sums` modules
+  export no theorem list, so it reports them as installed, which kernel-checks every lemma
+  they add. Every declaration each one adds, installed on its own, is axiom-free; the same
+  check reports axioms for 603 of the 2,268 declarations already in the base checkpoint.
+- The store and checkpoints hold the same values as 1.3.1 (256 of 256 checkpoints and the
+  store decompress to identical text; Pro 272 of 272), and every store id is the SHA-256 of
+  its declaration (6,315 of 6,315; Pro 6,329 of 6,329).
+- Rainbow Pro, run against this core in a sibling layout: the 58 new test namespaces (206
+  tests, 4,733 assertions); the 170 existing namespaces that reference a module changed in
+  1.4.0 (169 pass; the other is a helper with no tests; namespaces that ran out of heap in a
+  shared JVM were re-run in a fresh one); and the eleven tests changed by the fixes above,
+  each on its own. 0 failures, 0 errors. Every Pro module that depends on a split module
+  (152) installs on its own on the d63 checkpoint. The rest of the Pro suite, whose tests and
+  modules are unchanged since 1.3.1, was not re-run for this release.
+
 ## [1.3.1] - 2026-10-19
 
 Documentation corrections from an audit of every published claim against the repository,

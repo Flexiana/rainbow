@@ -6,26 +6,26 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.main :as main]
-            [rainbow.math.lemmas.hhi-bounds :as m0]
-            [rainbow.math.lemmas.incometax-readings :as m1]
-            [rainbow.math.lemmas.indep-set-dual :as m2]
-            [rainbow.math.lemmas.infnorm-abs :as m3]
-            [rainbow.math.lemmas.ista-shrink :as m4]
-            [rainbow.math.lemmas.kmeans-nearest :as m5]
-            [rainbow.math.lemmas.knn-reading :as m6]
-            [rainbow.math.lemmas.kstwo-range :as m7]
-            [rainbow.math.lemmas.lcr-floor :as m8]
-            [rainbow.math.lemmas.lp-duality :as m9]
-            [rainbow.math.lemmas.lsq-optimal :as m10]
-            [rainbow.math.lemmas.masshaul-readings :as m11]
-            [rainbow.math.lemmas.matching-cover-duality :as m12]
-            [rainbow.math.lemmas.max-closure :as m13]
-            [rainbow.math.lemmas.mccormick-sandwich :as m14]
-            [rainbow.math.lemmas.mcf-optimal :as m15]
-            [rainbow.math.lemmas.mctrans-step :as m16]
-            [rainbow.math.lemmas.minimax-regret :as m17]
-            [rainbow.math.lemmas.mmck-unique :as m18]
-            [rainbow.math.lemmas.mnl-assortment :as m19]))
+            [rainbow.math.lemmas.headway-wait :as m0]
+            [rainbow.math.lemmas.hhi-bounds :as m1]
+            [rainbow.math.lemmas.hungarian-bound :as m2]
+            [rainbow.math.lemmas.incometax-readings :as m3]
+            [rainbow.math.lemmas.indep-set-dual :as m4]
+            [rainbow.math.lemmas.infnorm-abs :as m5]
+            [rainbow.math.lemmas.ista-shrink :as m6]
+            [rainbow.math.lemmas.kmeans-nearest :as m7]
+            [rainbow.math.lemmas.knn-reading :as m8]
+            [rainbow.math.lemmas.kstwo-range :as m9]
+            [rainbow.math.lemmas.lcr-floor :as m10]
+            [rainbow.math.lemmas.lp-duality :as m11]
+            [rainbow.math.lemmas.lp-farkas :as m12]
+            [rainbow.math.lemmas.lp-ray :as m13]
+            [rainbow.math.lemmas.lsq-optimal :as m14]
+            [rainbow.math.lemmas.masshaul-readings :as m15]
+            [rainbow.math.lemmas.matching-cover-duality :as m16]
+            [rainbow.math.lemmas.max-closure :as m17]
+            [rainbow.math.lemmas.mccormick-sandwich :as m18]
+            [rainbow.math.lemmas.mcf-optimal :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -51,62 +51,62 @@
         (is (= :checked status))
         (is (= (set (map #(environment/resolve-id @env %) (classical name))) axioms))))))
 
-(deftest rechecks-0-hhi-bounds
+(deftest rechecks-0-headway-wait
+  (rechecks 'rainbow.math.lemmas.headway-wait))
+
+(deftest rechecks-1-hhi-bounds
   (rechecks 'rainbow.math.lemmas.hhi-bounds))
 
-(deftest rechecks-1-incometax-readings
+(deftest rechecks-2-hungarian-bound
+  (rechecks 'rainbow.math.lemmas.hungarian-bound))
+
+(deftest rechecks-3-incometax-readings
   (rechecks 'rainbow.math.lemmas.incometax-readings))
 
-(deftest rechecks-2-indep-set-dual
+(deftest rechecks-4-indep-set-dual
   (rechecks 'rainbow.math.lemmas.indep-set-dual))
 
-(deftest rechecks-3-infnorm-abs
+(deftest rechecks-5-infnorm-abs
   (rechecks 'rainbow.math.lemmas.infnorm-abs))
 
-(deftest rechecks-4-ista-shrink
+(deftest rechecks-6-ista-shrink
   (rechecks 'rainbow.math.lemmas.ista-shrink))
 
-(deftest rechecks-5-kmeans-nearest
+(deftest rechecks-7-kmeans-nearest
   (rechecks 'rainbow.math.lemmas.kmeans-nearest))
 
-(deftest rechecks-6-knn-reading
+(deftest rechecks-8-knn-reading
   (rechecks 'rainbow.math.lemmas.knn-reading))
 
-(deftest rechecks-7-kstwo-range
+(deftest rechecks-9-kstwo-range
   (rechecks 'rainbow.math.lemmas.kstwo-range))
 
-(deftest rechecks-8-lcr-floor
+(deftest rechecks-10-lcr-floor
   (rechecks 'rainbow.math.lemmas.lcr-floor))
 
-(deftest rechecks-9-lp-duality
+(deftest rechecks-11-lp-duality
   (rechecks 'rainbow.math.lemmas.lp-duality))
 
-(deftest rechecks-10-lsq-optimal
+(deftest rechecks-12-lp-farkas
+  (rechecks 'rainbow.math.lemmas.lp-farkas))
+
+(deftest rechecks-13-lp-ray
+  (rechecks 'rainbow.math.lemmas.lp-ray))
+
+(deftest rechecks-14-lsq-optimal
   (rechecks 'rainbow.math.lemmas.lsq-optimal))
 
-(deftest rechecks-11-masshaul-readings
+(deftest rechecks-15-masshaul-readings
   (rechecks 'rainbow.math.lemmas.masshaul-readings))
 
-(deftest rechecks-12-matching-cover-duality
+(deftest rechecks-16-matching-cover-duality
   (rechecks 'rainbow.math.lemmas.matching-cover-duality))
 
-(deftest rechecks-13-max-closure
+(deftest rechecks-17-max-closure
   (rechecks 'rainbow.math.lemmas.max-closure))
 
-(deftest rechecks-14-mccormick-sandwich
+(deftest rechecks-18-mccormick-sandwich
   (rechecks 'rainbow.math.lemmas.mccormick-sandwich))
 
-(deftest rechecks-15-mcf-optimal
+(deftest rechecks-19-mcf-optimal
   (rechecks 'rainbow.math.lemmas.mcf-optimal))
-
-(deftest rechecks-16-mctrans-step
-  (rechecks 'rainbow.math.lemmas.mctrans-step))
-
-(deftest rechecks-17-minimax-regret
-  (rechecks 'rainbow.math.lemmas.minimax-regret))
-
-(deftest rechecks-18-mmck-unique
-  (rechecks 'rainbow.math.lemmas.mmck-unique))
-
-(deftest rechecks-19-mnl-assortment
-  (rechecks 'rainbow.math.lemmas.mnl-assortment))

@@ -25,7 +25,7 @@
             [rainbow.math.lemmas.frankw-corner :as m16]
             [rainbow.math.lemmas.fulfil-readings :as m17]
             [rainbow.math.lemmas.game-value :as m18]
-            [rainbow.math.lemmas.headway-wait :as m19]))
+            [rainbow.math.lemmas.gilmore-pricing :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -108,5 +108,5 @@
 (deftest rechecks-18-game-value
   (rechecks 'rainbow.math.lemmas.game-value))
 
-(deftest rechecks-19-headway-wait
-  (rechecks 'rainbow.math.lemmas.headway-wait))
+(deftest rechecks-19-gilmore-pricing
+  (rechecks 'rainbow.math.lemmas.gilmore-pricing))

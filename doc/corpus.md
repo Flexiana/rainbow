@@ -1,6 +1,6 @@
 # The corpus
 
-Every proof module in the open core: 1157 modules, grouped by folder. Each line links to the source and
+Every proof module in the open core: 1184 modules, grouped by folder. Each line links to the source and
 quotes the first sentence of its docstring. Re-check any of them with `lein verify <namespace>`.
 This file is generated from the source tree; do not edit it by hand.
 
@@ -155,7 +155,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.finite.value-iteration`](../src/rainbow/math/finite/value_iteration.clj) | Finite Bellman optimality and bounded value iteration over exact rationals. |
 | [`rainbow.math.finite.vector`](../src/rainbow/math/finite/vector.clj) | Finite vectors over signed rationals: lists of signed-rational components with elementwise addition, negation, subtraction, and scalar scaling. |
 
-## Lemmas behind operations-research checks (`src/rainbow/math/lemmas/`, 100)
+## Lemmas behind operations-research checks (`src/rainbow/math/lemmas/`, 104)
 
 | namespace | |
 |---|---|
@@ -197,8 +197,10 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.lemmas.frankw-corner`](../src/rainbow/math/lemmas/frankw_corner.clj) | General lemmas: frankw corner. |
 | [`rainbow.math.lemmas.fulfil-readings`](../src/rainbow/math/lemmas/fulfil_readings.clj) | General lemmas: fulfil readings. |
 | [`rainbow.math.lemmas.game-value`](../src/rainbow/math/lemmas/game_value.clj) | General lemmas: game value. |
+| [`rainbow.math.lemmas.gilmore-pricing`](../src/rainbow/math/lemmas/gilmore_pricing.clj) | General lemmas: gilmore pricing. |
 | [`rainbow.math.lemmas.headway-wait`](../src/rainbow/math/lemmas/headway_wait.clj) | General lemmas: headway wait. |
 | [`rainbow.math.lemmas.hhi-bounds`](../src/rainbow/math/lemmas/hhi_bounds.clj) | General lemmas: hhi bounds. |
+| [`rainbow.math.lemmas.hungarian-bound`](../src/rainbow/math/lemmas/hungarian_bound.clj) | General lemmas: hungarian bound. |
 | [`rainbow.math.lemmas.incometax-readings`](../src/rainbow/math/lemmas/incometax_readings.clj) | General lemmas: incometax readings. |
 | [`rainbow.math.lemmas.indep-set-dual`](../src/rainbow/math/lemmas/indep_set_dual.clj) | General lemmas: indep set dual. |
 | [`rainbow.math.lemmas.infnorm-abs`](../src/rainbow/math/lemmas/infnorm_abs.clj) | General lemmas: infnorm abs. |
@@ -208,6 +210,8 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.lemmas.kstwo-range`](../src/rainbow/math/lemmas/kstwo_range.clj) | General lemmas: kstwo range. |
 | [`rainbow.math.lemmas.lcr-floor`](../src/rainbow/math/lemmas/lcr_floor.clj) | General lemmas: lcr floor. |
 | [`rainbow.math.lemmas.lp-duality`](../src/rainbow/math/lemmas/lp_duality.clj) | General lemmas: lp duality. |
+| [`rainbow.math.lemmas.lp-farkas`](../src/rainbow/math/lemmas/lp_farkas.clj) | General lemmas: lp farkas. |
+| [`rainbow.math.lemmas.lp-ray`](../src/rainbow/math/lemmas/lp_ray.clj) | General lemmas: lp ray. |
 | [`rainbow.math.lemmas.lsq-optimal`](../src/rainbow/math/lemmas/lsq_optimal.clj) | General lemmas: lsq optimal. |
 | [`rainbow.math.lemmas.masshaul-readings`](../src/rainbow/math/lemmas/masshaul_readings.clj) | General lemmas: masshaul readings. |
 | [`rainbow.math.lemmas.matching-cover-duality`](../src/rainbow/math/lemmas/matching_cover_duality.clj) | General lemmas: matching cover duality. |
@@ -801,17 +805,39 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.sets.finset.powerset`](../src/rainbow/math/sets/finset/powerset.clj) | Finite-set powersets derived from extensional Set and Finset proof data. |
 | [`rainbow.math.sets.finset.range`](../src/rainbow/math/sets/finset/range.clj) | Native initial segments of Nat and finite-Finset range bounds. |
 
-## Finite sums (`src/rainbow/math/sums/`, 14)
+## Finite sums (`src/rainbow/math/sums/`, 37)
 
 | namespace | |
 |---|---|
+| [`rainbow.math.sums.admissions-block`](../src/rainbow/math/sums/admissions_block.clj) | A blocking indicator vanishes exactly when the student does not improve, or the college has neither vacancy nor rank improvement. |
+| [`rainbow.math.sums.binary-capacity`](../src/rainbow/math/sums/binary_capacity.clj) | For binary entries, x+y<=1 means selecting x excludes y. |
+| [`rainbow.math.sums.binary-conflicts`](../src/rainbow/math/sums/binary_conflicts.clj) | Reusable bridges from binary entries and nonpositive nonnegative sums to exclusions. |
+| [`rainbow.math.sums.binary-mutuality`](../src/rainbow/math/sums/binary_mutuality.clj) | Mutual selected-edge implications identify binary entries. |
+| [`rainbow.math.sums.boolean-predicate`](../src/rainbow/math/sums/boolean_predicate.clj) | The converse of the existing zero/one polynomial lemma, for predicate adapters. |
 | [`rainbow.math.sums.bpath-cut`](../src/rainbow/math/sums/bpath_cut.clj) | Cut/exit proof support for bottleneck paths. |
 | [`rainbow.math.sums.bpath-walk`](../src/rainbow/math/sums/bpath_walk.clj) | Finite one-hot walks crossing a binary cut. |
+| [`rainbow.math.sums.budgeted-protection`](../src/rainbow/math/sums/budgeted_protection.clj) | Weak duality for a budgeted box: 0<=w<=1, sum w<=Gamma and d_j<=z+p_j, z,p>=0 imply sum w_j*d_j<=Gamma*z+sum p_j. |
+| [`rainbow.math.sums.earliest-schedule`](../src/rainbow/math/sums/earliest_schedule.clj) | The earliest-start recurrence preserves feasibility whenever any window schedule exists. |
+| [`rainbow.math.sums.equality-lp-bound`](../src/rainbow/math/sums/equality_lp_bound.clj) | Weak duality for equality rows and unrestricted dual prices. |
 | [`rainbow.math.sums.flow-cut`](../src/rainbow/math/sums/flow_cut.clj) | General lemmas: flow cut. |
+| [`rainbow.math.sums.indicator-zero`](../src/rainbow/math/sums/indicator_zero.clj) | A zero sum of strict-violation indicators means every weak inequality holds. |
+| [`rainbow.math.sums.lp-bounds`](../src/rainbow/math/sums/lp_bounds.clj) | Finite covering duality and certificate-gap arithmetic, reusing the existing list-backed LP theorem. |
+| [`rainbow.math.sums.lp-mixed-bound`](../src/rainbow/math/sums/lp_mixed_bound.clj) | A free-price equality block, nonnegative-price upper rows and unit upper bounds. |
+| [`rainbow.math.sums.lp-two-blocks`](../src/rainbow/math/sums/lp_two_blocks.clj) | Weak duality with two separate constraint blocks, by two applications of the existing LP theorem. |
+| [`rainbow.math.sums.nonblocking`](../src/rainbow/math/sums/nonblocking.clj) | An encoded maximum is nonnegative exactly when at least one preference gap is. |
 | [`rainbow.math.sums.nonneg-zero`](../src/rainbow/math/sums/nonneg_zero.clj) | Nonnegative terms that sum to zero are each zero, over signed/expr-sum-value: if 0 <= F i for every i < k and sum F k ~ 0 then F i ~ 0 for every i < k. |
 | [`rainbow.math.sums.of-nat`](../src/rainbow/math/sums/of_nat.clj) | The bridge between a natural-number count written as the signed literal of-nat n = n/1 (the form the checkers use, e.g. |
 | [`rainbow.math.sums.one-hot-factor`](../src/rainbow/math/sums/one_hot_factor.clj) | Reusable selection factorization for arbitrary signed values. |
+| [`rainbow.math.sums.one-hot-index`](../src/rainbow/math/sums/one_hot_index.clj) | Every selected index reads every one-hot weighted sum; every distinct index is zero. |
+| [`rainbow.math.sums.one-hot-pair`](../src/rainbow/math/sums/one_hot_pair.clj) | Two independent one-hot rows select exactly the corresponding matrix entry. |
+| [`rainbow.math.sums.one-hot-value`](../src/rainbow/math/sums/one_hot_value.clj) | Pointwise values of a selected index, their weighted equality, and explicit attainment. |
+| [`rainbow.math.sums.pareto-mask`](../src/rainbow/math/sums/pareto_mask.clj) | The Pareto penalty mask is equivalent to absence of strict gain under componentwise dominance. |
+| [`rainbow.math.sums.period-usage`](../src/rainbow/math/sums/period_usage.clj) | Multiplying two Boolean indicators by a weight equals filtering that weight by both tests. |
 | [`rainbow.math.sums.permutation-invariant`](../src/rainbow/math/sums/permutation_invariant.clj) | Nonlinear two-coordinate sums are invariant under a binary permutation matrix. |
+| [`rainbow.math.sums.predicate-bridges`](../src/rainbow/math/sums/predicate_bridges.clj) | Reusable bridges from checker indicators and squared norms to mathematical predicates. |
+| [`rainbow.math.sums.selected-minimum`](../src/rainbow/math/sums/selected_minimum.clj) | A one-hot selected minimum among non-excluded entries. |
+| [`rainbow.math.sums.single-support`](../src/rainbow/math/sums/single_support.clj) | Single supported terms and tight finite unit-capacity sums. |
+| [`rainbow.math.sums.strict-indicator`](../src/rainbow/math/sums/strict_indicator.clj) | A strict comparison indicator is one exactly when the reverse weak inequality is false. |
 | [`rainbow.math.sums.triangular`](../src/rainbow/math/sums/triangular.clj) | Triangular decomposition for the existing finite sums; prefix completion costs. |
 | [`rainbow.math.sums.two-terms`](../src/rainbow/math/sums/two_terms.clj) | One term, and two DISTINCT terms, are bounded by a nonnegative expr-sum-value. |
 | [`rainbow.math.sums.value-algebra`](../src/rainbow/math/sums/value_algebra.clj) | Finite-sum algebra for the existing signed/expr-sum-value. |
@@ -819,6 +845,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.sums.wspt-order`](../src/rainbow/math/sums/wspt_order.clj) | WSPT order prerequisites. |
 | [`rainbow.math.sums.wspt-pair-bound`](../src/rainbow/math/sums/wspt_pair_bound.clj) | Pairwise lower bound for a prefix completion objective, exact for sorted pairs. |
 | [`rainbow.math.sums.wspt-permutation`](../src/rainbow/math/sums/wspt_permutation.clj) | WSPT optimality over all permutation matrices, with positive processing times. |
+| [`rainbow.math.sums.zero-violations`](../src/rainbow/math/sums/zero_violations.clj) | Zero positive-part penalties mean no violated inequality; a minimum encodes disjunction. |
 
 ## Algorithm guarantees (`src/rainbow/algorithms/proofs/`, 85)
 

@@ -6,26 +6,26 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.main :as main]
-            [rainbow.math.lemmas.sir-readings :as m0]
-            [rainbow.math.lemmas.slo-budget :as m1]
-            [rainbow.math.lemmas.sproj-projection :as m2]
-            [rainbow.math.lemmas.sspol-readings :as m3]
-            [rainbow.math.lemmas.state-price :as m4]
-            [rainbow.math.lemmas.stochastic-dominance :as m5]
-            [rainbow.math.lemmas.stoploss-bounds :as m6]
-            [rainbow.math.lemmas.subgrad-duality :as m7]
-            [rainbow.math.lemmas.transport-dual :as m8]
-            [rainbow.math.lemmas.trigg-bound :as m9]
-            [rainbow.math.lemmas.twoline-readings :as m10]
-            [rainbow.math.lemmas.ufl-gap :as m11]
-            [rainbow.math.lemmas.unifpx-readings :as m12]
-            [rainbow.math.lemmas.vertex-cover-approx :as m13]
-            [rainbow.math.lemmas.vickrey-dsic :as m14]
-            [rainbow.math.lemmas.voter-readings :as m15]
-            [rainbow.math.lemmas.wab-mean :as m16]
-            [rainbow.math.lemmas.wage-readings :as m17]
-            [rainbow.math.lemmas.weighted-cover-rounding :as m18]
-            [rainbow.math.lemmas.weighted-median :as m19]))
+            [rainbow.math.lemmas.reservoir-readings :as m0]
+            [rainbow.math.lemmas.rippl-readings :as m1]
+            [rainbow.math.lemmas.salesq-readings :as m2]
+            [rainbow.math.lemmas.sigtime-readings :as m3]
+            [rainbow.math.lemmas.sir-readings :as m4]
+            [rainbow.math.lemmas.slo-budget :as m5]
+            [rainbow.math.lemmas.sproj-projection :as m6]
+            [rainbow.math.lemmas.sspol-readings :as m7]
+            [rainbow.math.lemmas.state-price :as m8]
+            [rainbow.math.lemmas.stochastic-dominance :as m9]
+            [rainbow.math.lemmas.stoploss-bounds :as m10]
+            [rainbow.math.lemmas.subgrad-duality :as m11]
+            [rainbow.math.lemmas.transport-dual :as m12]
+            [rainbow.math.lemmas.trigg-bound :as m13]
+            [rainbow.math.lemmas.twoline-readings :as m14]
+            [rainbow.math.lemmas.ufl-gap :as m15]
+            [rainbow.math.lemmas.unifpx-readings :as m16]
+            [rainbow.math.lemmas.vertex-cover-approx :as m17]
+            [rainbow.math.lemmas.vickrey-dsic :as m18]
+            [rainbow.math.lemmas.voter-readings :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -51,62 +51,62 @@
         (is (= :checked status))
         (is (= (set (map #(environment/resolve-id @env %) (classical name))) axioms))))))
 
-(deftest rechecks-0-sir-readings
+(deftest rechecks-0-reservoir-readings
+  (rechecks 'rainbow.math.lemmas.reservoir-readings))
+
+(deftest rechecks-1-rippl-readings
+  (rechecks 'rainbow.math.lemmas.rippl-readings))
+
+(deftest rechecks-2-salesq-readings
+  (rechecks 'rainbow.math.lemmas.salesq-readings))
+
+(deftest rechecks-3-sigtime-readings
+  (rechecks 'rainbow.math.lemmas.sigtime-readings))
+
+(deftest rechecks-4-sir-readings
   (rechecks 'rainbow.math.lemmas.sir-readings))
 
-(deftest rechecks-1-slo-budget
+(deftest rechecks-5-slo-budget
   (rechecks 'rainbow.math.lemmas.slo-budget))
 
-(deftest rechecks-2-sproj-projection
+(deftest rechecks-6-sproj-projection
   (rechecks 'rainbow.math.lemmas.sproj-projection))
 
-(deftest rechecks-3-sspol-readings
+(deftest rechecks-7-sspol-readings
   (rechecks 'rainbow.math.lemmas.sspol-readings))
 
-(deftest rechecks-4-state-price
+(deftest rechecks-8-state-price
   (rechecks 'rainbow.math.lemmas.state-price))
 
-(deftest rechecks-5-stochastic-dominance
+(deftest rechecks-9-stochastic-dominance
   (rechecks 'rainbow.math.lemmas.stochastic-dominance))
 
-(deftest rechecks-6-stoploss-bounds
+(deftest rechecks-10-stoploss-bounds
   (rechecks 'rainbow.math.lemmas.stoploss-bounds))
 
-(deftest rechecks-7-subgrad-duality
+(deftest rechecks-11-subgrad-duality
   (rechecks 'rainbow.math.lemmas.subgrad-duality))
 
-(deftest rechecks-8-transport-dual
+(deftest rechecks-12-transport-dual
   (rechecks 'rainbow.math.lemmas.transport-dual))
 
-(deftest rechecks-9-trigg-bound
+(deftest rechecks-13-trigg-bound
   (rechecks 'rainbow.math.lemmas.trigg-bound))
 
-(deftest rechecks-10-twoline-readings
+(deftest rechecks-14-twoline-readings
   (rechecks 'rainbow.math.lemmas.twoline-readings))
 
-(deftest rechecks-11-ufl-gap
+(deftest rechecks-15-ufl-gap
   (rechecks 'rainbow.math.lemmas.ufl-gap))
 
-(deftest rechecks-12-unifpx-readings
+(deftest rechecks-16-unifpx-readings
   (rechecks 'rainbow.math.lemmas.unifpx-readings))
 
-(deftest rechecks-13-vertex-cover-approx
+(deftest rechecks-17-vertex-cover-approx
   (rechecks 'rainbow.math.lemmas.vertex-cover-approx))
 
-(deftest rechecks-14-vickrey-dsic
+(deftest rechecks-18-vickrey-dsic
   (rechecks 'rainbow.math.lemmas.vickrey-dsic))
 
-(deftest rechecks-15-voter-readings
+(deftest rechecks-19-voter-readings
   (rechecks 'rainbow.math.lemmas.voter-readings))
-
-(deftest rechecks-16-wab-mean
-  (rechecks 'rainbow.math.lemmas.wab-mean))
-
-(deftest rechecks-17-wage-readings
-  (rechecks 'rainbow.math.lemmas.wage-readings))
-
-(deftest rechecks-18-weighted-cover-rounding
-  (rechecks 'rainbow.math.lemmas.weighted-cover-rounding))
-
-(deftest rechecks-19-weighted-median
-  (rechecks 'rainbow.math.lemmas.weighted-median))
