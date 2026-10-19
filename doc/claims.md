@@ -2,8 +2,9 @@
 
 Every theorem in Rainbow is checked by the kernel. That tells you the proof is
 correct. It does not, by itself, tell you how much the theorem says. This page
-explains the two kinds of statement you will meet, and how to see which one you
-are looking at.
+explains the three kinds of statement you will meet (for all inputs, a
+definitional unfolding, a worked instance), and how to see which one you are
+looking at.
 
 ## For all inputs, or a worked instance
 
@@ -46,7 +47,7 @@ lein verify rainbow.algorithms.proofs.ahof.christofides
 ```
 
 ```
-OK    rainbow.algorithms.proofs.ahof.christofides (3 theorems: 0 for all inputs, 3 worked instances)
+OK    rainbow.algorithms.proofs.ahof.christofides (3 theorems: 0 for all inputs, 0 definitional unfoldings, 3 worked instances)
        checked   instance  christofides/tour-at-most-bound  axiom-free
        ...
 ```
@@ -55,11 +56,16 @@ A theorem is classified `for-all` when its statement quantifies over data, that
 is, when one of its leading binders ranges over a type outside `Prop` (numbers,
 vectors, sets, a type variable). A statement whose only binders are hypotheses,
 such as a negation or an implication between closed propositions, is a worked
-instance: it is about specific values.
+instance: it is about specific values. A statement that quantifies over data but
+whose proof is reflexivity is classified `unfolding`: it holds because a
+definition unfolds to the right-hand side, which is true for all inputs but says
+no more than the definition does.
 
 Modules whose theorems are all worked instances say so at the end of their
 docstring ("Scope (measured by the kernel)"), and the note is generated from this
-classification, so it cannot be more generous than the kernel.
+classification, so it cannot be more generous than the classification. The
+classification is done by `rainbow.main` (outside the trusted base) from the
+kernel's type inference and the proof term.
 
 ## The operations-research catalogue
 
@@ -73,5 +79,10 @@ theorem states them. The module docstrings say which, and `lein verify` shows it
 ## Axioms
 
 Separately from scope, `lein verify` prints each theorem's axioms: the axioms it
-depends on, computed by the kernel. The corpus's theorems report `axiom-free`. See
+depends on, computed by the kernel. All but eight of the corpus's theorems report
+`axiom-free`; those eight, in `math/finite/set_boundary.clj` and `set_union.clj`,
+depend on `logic/excluded-middle` or `logic/proposition-extensionality`, and the
+coverage tests name them with their axioms. The default checkpoint store also
+holds re-proofs of Mathlib statements, some of which use axioms; `lein verify`
+prints each theorem's own profile. See
 [`trusted-base.md`](trusted-base.md) for what the kernel itself relies on.

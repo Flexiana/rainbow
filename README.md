@@ -24,7 +24,7 @@ lein verify rainbow.math.finite.rational-argmax
 
 ```
 checkpoint artifacts/ahof/d63-eligibility-traces/checkpoint.edn.gz replayed
-OK    rainbow.math.finite.rational-argmax (15 theorems: 13 for all inputs, 2 worked instances)
+OK    rainbow.math.finite.rational-argmax (15 theorems: 13 for all inputs, 0 definitional unfoldings, 2 worked instances)
        checked   instance  bool/false-not-true  axiom-free
        checked   instance  bool/true-not-false  axiom-free
        checked   for-all   decision/finite-nnrat-argmax-dominates  axiom-free
@@ -56,11 +56,15 @@ Rainbow was built to be exact about that gap rather than to hide it.
   hashes. Nothing in a report is a remembered number.
 - **No hidden axioms.** A logical principle enters only as an explicit axiom
   declaration, and the kernel computes each theorem's axiom profile. The
-  corpus's tests assert an empty profile for the theorems they cover.
-- **No inflated statements.** The kernel classifies every theorem as holding for
-  all inputs or as a worked instance, and `lein verify` prints which. Of the
-  415 algorithm proof modules, 48 prove something for all inputs;
-  the rest check worked instances of the algorithm's decision step, and say so.
+  corpus's tests assert each covered theorem's profile: empty for all but eight
+  theorems in `set_boundary.clj` and `set_union.clj`, which use classical axioms
+  and are named with them.
+- **No inflated statements.** `lein verify` classifies every theorem, using the
+  kernel's type inference, as holding for all inputs, as a definitional unfolding
+  (it quantifies over data but holds by reflexivity) or as a worked instance, and
+  prints which. Of the 415 algorithm proof modules, 48 prove a non-unfolding
+  statement for all inputs; the rest check worked instances of the algorithm's
+  decision step or unfold its definitions, and say so.
   Classical guarantees (optimality, convergence, approximation ratios) are claimed
   only where a theorem states them. See [`doc/claims.md`](doc/claims.md).
 
@@ -78,7 +82,7 @@ lein test                            # the whole suite (long; see below)
 scripts/run-suite-chunked.sh 40      # the suite in fresh-JVM chunks of 40 namespaces
 ```
 
-The full suite is about 1,600 tests and 16,000 assertions and takes hours,
+The full suite is about 2,000 tests and 44,000 assertions and takes hours,
 because many tests replay large checkpoints through the kernel. Run a single
 namespace with `lein test rainbow.math.rational.nnrat.ring-test`.
 

@@ -17,7 +17,7 @@ else produces a rejected proof, never an accepted false one.
 
 The size is pinned: a release test (`v1_release_test`) fails if these four files
 change length, so growth in the trusted base is always a visible, deliberate
-decision. 1.1.0 grew it from 1,198 lines to make checking 24-123x faster: native
+decision. 1.1.0 grew it from 1,198 lines (1.0.1; the 1.0.0 tag had 1,200) to make checking 24-123x faster: native
 natural-number arithmetic pinned to six definitions by content id (each tested against
 the definition's own unary reduction), and substitution that skips unchanged subterms.
 
@@ -49,7 +49,8 @@ The kernel itself runs on, and so trusts:
   enters only as an explicit axiom declaration (`rainbow.math.profile`), and
   every theorem's axiom profile -- the axioms it transitively depends on -- is
   computed by the kernel (`kernel/axioms`). `lein verify` prints it per theorem,
-  and the tests assert an empty profile for the theorems they cover.
+  and the tests assert each covered theorem's profile: empty, except eight named
+  classical theorems in `set_boundary.clj` and `set_union.clj`.
 
 ## Beyond Level 3
 

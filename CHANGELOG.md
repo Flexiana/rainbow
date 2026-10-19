@@ -3,6 +3,52 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-10-19
+
+Documentation corrections from an audit of every published claim against the repository,
+and a repacked checkpoint store. No changes to the kernel, the code, or any checked value.
+
+### Fixed
+- **Store ids are now the SHA-256 of what the store holds.** In 1.1.0-1.3.0, 3,314 of the
+  6,315 declarations in `artifacts/store/declarations.edn.gz` (Pro: 3,314 of 6,329) were
+  filed under the hash of an earlier printing of the same value (Clojure's `#:rainbow{...}`
+  namespace-map syntax, used when they were first packed), while the store prints them
+  without it; the release build's pack cache carried the old ids forward. Lookups and checks
+  were unaffected, since a reference resolves by its id, but those ids were not content ids
+  of the stored text, as "content-addressed" in the README says. 1.3.1 repacks from scratch:
+  every id is the SHA-256 of its declaration as stored (6,315 of 6,315; Pro 6,329 of 6,329).
+  All 256 checkpoint files (Pro: 272) change their references accordingly; each expands to a
+  value equal to its 1.3.0 value, and the declarations are the same set.
+- The README and `doc/claims.md` described two kinds of statement; `lein verify` has
+  printed three since 1.1 (for all inputs, definitional unfoldings, worked instances). The
+  sample outputs now match what the command prints, and the README says that modules
+  outside the 48 may unfold definitions as well as check worked instances.
+- The classification of theorems is done by `rainbow.main` from the kernel's type
+  inference, not by the kernel; the README and `doc/claims.md` now say so.
+- "The corpus's theorems report axiom-free" and "the tests assert an empty profile": eight
+  theorems in `set_boundary.clj` and `set_union.clj` use classical axioms (as 1.0.0's notes
+  said); README, `doc/claims.md` and `doc/trusted-base.md` now say which.
+- The README's suite size (about 1,600 tests / 16,000 assertions) is now about 2,000 / 44,000.
+- `doc/tour.md` still gave the 1.0 kernel's 915 lines for `kernel.clj`; it is 1,017.
+- The 1.3.0 entry understated the old RH2EDIN bundle sizes (0.6-3.0 MB as published, not
+  0.35-1.9 MB); the 1.1.1 entry called 1,198 lines the 1.0 kernel (1.0.0 had 1,200; 1,198
+  was 1.0.1).
+
+### Verified
+- Generated from internal e934fb61, as 1.3.0 was. Source, tests and scripts are
+  byte-identical to 1.3.0 in both repositories; besides the documentation, only the version,
+  the store and the checkpoint references differ.
+- The store: every id is the SHA-256 of its stored declaration (6,315 of 6,315; Pro 6,329 of
+  6,329), checked by the release build, which now refuses a store with any other id; the same
+  check reports 3,314 mismatches on 1.3.0. Every checkpoint, expanded, equals its 1.3.0
+  expansion (256 of 256; Pro 272 of 272), and both stores hold the same declarations as 1.3.0.
+- This core: the CI steps (trusted base 1,364 lines; suite-runner controls, 4 tests; kernel,
+  14 tests, 130 assertions; verifier and coverage guards, 40 tests, 137 assertions; the
+  tour's three modules re-checked, OK) and the release and bundle tests (19 tests, 82
+  assertions), 0 failures.
+- Rainbow Pro: the release, cache, LP-gap and round-robin family tests, which replay
+  checkpoints through the repacked store: 11 tests, 238 assertions, 0 failures.
+
 ## [1.3.0] - 2026-10-16
 
 The open core's code is unchanged; this release accompanies Rainbow Pro 1.3.0, whose
@@ -11,7 +57,7 @@ output it checks.
 ### Checked by this core
 - **Smaller LP optimality bundles.** Pro 1.3's certificate generator writes instance data
   with native numerals and, optionally, as balanced lookup trees, and proves the
-  certificate by reflection. The four RH2EDIN bundles went from 0.35-1.9 MB to 6.7-8.5 KB
+  certificate by reflection. The four RH2EDIN bundles went from 0.6-3.0 MB (as previously published; c2 2.36 MB) to 6.7-8.5 KB
   (shared EDN) or 3.3-3.8 KB (binary). They check with this core, and with 1.2.0, in
   12-30 s each, axiom-free.
 
@@ -79,7 +125,7 @@ output it checks.
 
 ### Fixed
 - The README, CONTRIBUTING, the tour and the CI trusted-base check still stated the
-  1.0 kernel's 1,198 lines; they now state the 1,364 lines 1.1.0 ships (the release
+  1.0.1 kernel's 1,198 lines (1.0.0 had 1,200); they now state the 1,364 lines 1.1.0 ships (the release
   test already pinned 1,364). No code changes.
 
 ## [1.1.0] - 2026-10-16
