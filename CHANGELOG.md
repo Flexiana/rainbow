@@ -3,6 +3,38 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] - 2026-10-21
+
+Fixes to Rainbow Pro's test suite, found by running all of it against 1.4.0. Every one of these
+also failed in 1.3.0. This core's code is unchanged.
+
+### Fixed in Rainbow Pro 1.4.1
+- `finite-algebra-test` did not compile ("No such var: finite/exact-runtime-examples"). The open
+  core's `rainbow.algebra.finite` leaves out its code-generator demo, which needs the Pro
+  compiler; the demo, the report and the command line now live in Pro as
+  `rainbow.algebra.finite-report`, and the test uses them there.
+- `clojure-tabu-program-family-test`: a test parameter was named `fn`, which the code
+  generator refuses as a reserved name (2 errors); renamed.
+- `clojure-geometric-horizon-test` pinned the printed form of the generated code, which no
+  longer matched; it now checks the generated form itself (ten multiplications by 1/2, no
+  iteration) and runs it on five inputs.
+- `primitives-test` gave the kernel a budget of 1,000 steps to provoke an out-of-budget case,
+  which native arithmetic now finishes within (3 failures); it now uses a budget of 0.
+- `stroke-test`: the day-15 corpus report's id depended on the heap size of the JVM that made
+  it, so a fresh JVM reported a different id. The corpus fixture now pins its memory profile,
+  and a new test checks that the host's heap size no longer changes the controller.
+
+### Verified
+- Generated from internal b90e9040 (1.4.0's 9c5c9fcc plus the four test fixes). Against 1.4.0,
+  this core changes only in its version and this file, and Rainbow Pro only in the files named
+  above; the store and every checkpoint are byte-identical to 1.4.0, and every store id is the
+  SHA-256 of its declaration (6,315 of 6,315; Pro 6,329 of 6,329).
+- Rainbow Pro, against this core in a sibling layout, each of the five tests on its own: 32
+  tests, 853 assertions, 0 failures, 0 errors. With 1.4.0's run, every Pro test namespace
+  has now passed against 1.4.x (1,354 with tests): the 232 checked for 1.4.0, the 1,110 that
+  passed in a run of all the others, the 7 that run did not reach (run separately) and the 5
+  fixed here.
+
 ## [1.4.0] - 2026-10-19
 
 This core gains 27 modules of mathematics that Pro's Level-3 certificate readings rest on;
