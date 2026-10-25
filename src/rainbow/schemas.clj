@@ -17,6 +17,7 @@
   [:tagged-vector
    {:sort [:tuple [:literal :sort] [:ref :level]]
     :bound [:tuple [:literal :bound] :natural]
+    :nat [:tuple [:literal :nat] :natural]   ; data/succ applied n times to data/zero
     :const [:tuple [:literal :const] content-id [:vector [:ref :level]]]
     :app [:tuple [:literal :app] [:ref :term] [:ref :term]]
     :lam [:tuple [:literal :lam] [:ref :term] [:ref :term]

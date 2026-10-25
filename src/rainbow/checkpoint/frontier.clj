@@ -40,7 +40,8 @@
          :remaining-targets remaining-targets
          :remaining-partitions
          (select-keys (:remaining-partitions prior) remaining-names)
-         :latest-outcomes latest-outcomes}]
+         :latest-outcomes latest-outcomes}
+        base (cond-> base (seq (:retracted-mappings prior)) (assoc :retracted-mappings (:retracted-mappings prior)))]
     (assoc base :rainbow.checkpoint/id (canonical/content-id base))))
 
 (defn write-checkpoint! [path value]

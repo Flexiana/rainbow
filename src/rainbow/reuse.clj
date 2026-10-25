@@ -6,6 +6,7 @@
   (:require [clojure.set :as set]
             [clojure.string :as string]
             [rainbow.canonical :as canonical]
+            [rainbow.canonical-stream :as canonical-stream]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.term :as term]))
@@ -31,7 +32,7 @@
           (term-parameters [node]
             (case (first node)
               :sort (level-parameters (second node))
-              :bound []
+              (:bound :nat) []
               :const (mapcat level-parameters (nth node 2))
               (:app :lam :pi) (concat (term-parameters (second node))
                                       (term-parameters (nth node 2)))
@@ -49,12 +50,37 @@
             [parameter [:param (symbol (str "reuse-u" index))]])
           parameters))))
 
+(defn- canonicalize-universe-dag
+  "The same renaming, with a per-call identity cache. Normalization produces
+  shared terms: expanding those back into a tree can exhaust the heap before
+  hashing starts. Do not pass these large transient roots through the kernel's
+  persistent per-thread empty-substitution cache."
+  [expression parameters]
+  (let [substitution (into {} (map-indexed (fn [i p] [p [:param (symbol (str "reuse-u" i))]]) parameters))
+        memo (java.util.IdentityHashMap.)]
+    (letfn [(walk [node]
+              (or (.get memo node)
+                  (let [result
+                        (case (first node)
+                          :sort [:sort (term/instantiate-level (second node) substitution)]
+                          (:bound :nat) node
+                          :const [:const (second node) (mapv #(term/instantiate-level % substitution) (nth node 2))]
+                          :app [:app (walk (second node)) (walk (nth node 2))]
+                          (:lam :pi) [(first node) (walk (second node)) (walk (nth node 2)) (nth node 3)]
+                          :let [:let (walk (second node)) (walk (nth node 2)) (walk (nth node 3))])]
+                    (.put memo node result)
+                    result)))]
+      (walk expression))))
+
 (defn normalized-type-key
   "Content key modulo both term binders and universe-parameter names."
   ([checked-environment type]
    (normalized-type-key checked-environment type nil))
   ([checked-environment type universe-parameters]
-   (let [normalized (kernel/normalize checked-environment type)]
+   (normalized-type-key checked-environment type universe-parameters {}))
+  ([checked-environment type universe-parameters {:keys [incremental?]}]
+   (let [normalized (kernel/normalize checked-environment type)
+         content-id (if incremental? canonical-stream/content-id-incremental canonical/content-id)]
      (when-not (= :normalized (:status normalized))
        (throw (ex-info "Cannot index a type that does not normalize"
                        {:error/category :reuse/normalization-failed
@@ -62,9 +88,10 @@
      (let [normalized-type (:term normalized)
            parameters (or universe-parameters
                           (ordered-level-parameters normalized-type))]
-       (canonical/content-id
+       (content-id
         {:reuse/type
-         (canonicalize-universe-parameters normalized-type parameters)})))))
+         ((if incremental? canonicalize-universe-dag canonicalize-universe-parameters)
+          normalized-type parameters)})))))
 
 (defn- alias-concepts [aliases]
   (into #{}
@@ -86,7 +113,7 @@
   (let [value (get lifecycle declaration-id :active)]
     (if (keyword? value) {:status value} value)))
 
-(defn- declaration-entry [checked-environment declaration lifecycle evidence]
+(defn- declaration-entry [checked-environment declaration lifecycle evidence incremental?]
   (let [id (:rainbow/id declaration)
         lifecycle (lifecycle-record lifecycle id)
         type-universes
@@ -96,7 +123,7 @@
     {:reuse/declaration-id id
      :reuse/type-key (normalized-type-key checked-environment
                                          (:rainbow/type declaration)
-                                         type-universes)
+                                         type-universes {:incremental? incremental?})
      :reuse/universes (:rainbow/universes declaration)
      :reuse/type-universes type-universes
      :reuse/aliases (:rainbow/aliases declaration)
@@ -114,9 +141,11 @@
   `:include-ids` can hold out declarations from training. `:lifecycle` and
   `:evidence` are maps keyed by declaration ID; quarantined entries remain
   inspectable but are never returned. Universe-polymorphic constants are
-  instantiated only when their named parameters occur in the exact target."
+  instantiated only when their named parameters occur in the exact target.
+  `:incremental? true` streams normalized-type and index identity encodings;
+  entries, schema and all existing :reuse/id values remain identical."
   ([checked-environment] (build-index checked-environment {}))
-  ([checked-environment {:keys [include-ids lifecycle evidence]
+  ([checked-environment {:keys [include-ids lifecycle evidence incremental?]
                          :or {lifecycle {} evidence {}}}]
    (let [included? (if include-ids (set include-ids) (constantly true))
          candidates (->> (:rainbow.environment/order checked-environment)
@@ -133,7 +162,7 @@
          (mapv (fn [declaration]
                  (try
                    {:entry (declaration-entry checked-environment declaration
-                                              lifecycle evidence)}
+                                              lifecycle evidence incremental?)}
                    (catch clojure.lang.ExceptionInfo exception
                      (if (= :reuse/normalization-failed
                             (:error/category (ex-data exception)))
@@ -156,7 +185,8 @@
                :reuse/entries entries
                :reuse/by-type buckets
                :reuse/quarantined quarantined}]
-     (assoc base :reuse/id (canonical/content-id base)))))
+     (assoc base :reuse/id ((if incremental? canonical-stream/content-id-incremental
+                               canonical/content-id) base)))))
 
 (defn- eligible? [entry policy]
   (and (= :active (get-in entry [:reuse/lifecycle :status]))
@@ -215,7 +245,7 @@
         :candidates []}
        (let [target-universes (ordered-level-parameters target)
              type-key (normalized-type-key checked-environment target
-                                           target-universes)
+                                           target-universes {:incremental? true})
              entries-by-id (into {} (map (juxt :reuse/declaration-id identity))
                                  (:reuse/entries index))
              target-dependencies (term/constants target)

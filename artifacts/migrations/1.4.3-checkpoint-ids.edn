@@ -1,0 +1,5 @@
+{:migration/release "1.4.3"
+ :migration/reason "vector-equivalence-laws was recorded with vector/equivalent as it stood before the 2026-08-21 length-sensitivity fix, although its precommit names the length-sensitive relation; it and nnrat-additive-reassociation, which builds on it, were rerun from source, proving the same targets"
+ :migration/checkpoint-ids
+ {"sha256:6af6f207e4604b958bcda6648114f9b4a80bb18cf0ac028ade44ee5fdaa74fc5" "sha256:913020e32023c621869090c17fcdc7b562870fb00f889206c15062ab7d79cbd1"
+  "sha256:af23f74130b406240216ca19c605c7fcc74baf3142650ae6dbe6f298b1195073" "sha256:386e3e9d8962005000a1f79840407ce83b7f9f0215b362874b11112796c3826a"}}

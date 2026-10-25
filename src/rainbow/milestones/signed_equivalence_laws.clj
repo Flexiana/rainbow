@@ -78,8 +78,8 @@
     (when-not (= :replayed (:status prior))
       (throw (ex-info "Signed equivalence input checkpoint rejected"
                       {:prior prior})))
-    (when-not (= (get-in precommit [:precommit/source :input-checkpoint/id])
-                 (:checkpoint/id prior))
+    (when-not (day54/same-input-checkpoint? (get-in precommit [:precommit/source :input-checkpoint/id])
+                                            (:checkpoint/id prior))
       (throw (ex-info "Signed equivalence input checkpoint changed"
                       {:expected (get-in precommit
                                          [:precommit/source

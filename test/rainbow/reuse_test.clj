@@ -2,6 +2,9 @@
   (:require [clojure.test :refer :all]
             [rainbow.history.direct-term-corpus :as direct-term-corpus]
             [rainbow.history.held-out-retrieval :as held-out-retrieval]
+            [rainbow.data.inductive :as inductive]
+            [rainbow.elaborate :as elaborate]
+            [rainbow.math.logic.function :as f]
             [rainbow.environment :as environment]
             [rainbow.proof :as proof]
             [rainbow.reuse :as reuse]
@@ -28,6 +31,30 @@
            (set (keys (:reuse/score candidate)))))
     (is (empty? (:reuse/axioms candidate)))
     (is (= :native (:reuse/source candidate)))))
+
+(deftest incremental-index-retains-the-entire-legacy-index-and-id
+  (let [env (direct-term-corpus/build-environment)
+        id (environment/resolve-id env 'logic/polymorphic-identity)]
+    (doseq [options [{} {:include-ids [id]}
+                     {:lifecycle {id :quarantined}
+                      :evidence {id {:successful-uses 7 :failed-uses 3}}}]]
+      (is (= (reuse/build-index env options)
+             (reuse/build-index env (assoc options :incremental? true)))))))
+
+(deftest normalized-literal-types-have-no-universe-parameters
+  (let [env (inductive/build-environment)
+        type (:term (elaborate/core-expression env
+                     (f/equality [:succ [:zero]] (f/const* 'data/Nat []) [:nat 2] [:nat 2])))]
+    (is type)
+    (is (= (reuse/normalized-type-key env type)
+           (reuse/normalized-type-key env type nil {:incremental? true})))))
+
+(deftest shared-universe-renaming-preserves-the-legacy-term
+  (let [leaf [:const "sha256:example" [[:max [:param 'v] [:zero]] [:param 'u]]]
+        shared (nth (iterate #(term/application % %) leaf) 10)]
+    (doseq [parameters [[] ['u] ['v 'u]]]
+      (is (= (#'reuse/canonicalize-universe-parameters shared parameters)
+             (#'reuse/canonicalize-universe-dag shared parameters))))))
 
 (deftest build-index-quarantines-unnormalizable-types-and-indexes-the-rest
   ;; A declaration whose type cannot be normalized within the kernel reduction

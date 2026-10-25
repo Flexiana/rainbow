@@ -33,6 +33,7 @@
                                 (range) constructors)))))
           (range (count (first aliases))))))
 
+;; :rainbow/level-requirements is not written: the kernel derives it on admission, outside every id
 (defn environment-artifact [environment]
   (let [aliases-by-id (reduce-kv (fn [m alias id] (update m id (fnil conj #{}) alias))
                                  {} (:rainbow.environment/aliases environment))
@@ -40,7 +41,7 @@
         variants (into {} (map (fn [id] [id (block-alias-variants environment aliases-by-id id)])
                                block-ids))
         declarations (into []
-                           (comp (map #(environment/declaration environment %))
+                           (comp (map #(dissoc (environment/declaration environment %) :rainbow/level-requirements))
                                  (remove :rainbow/block-id))
                            (distinct (:rainbow.environment/order environment)))
         blocks (into [] (mapcat variants) block-ids)
@@ -50,7 +51,7 @@
                         (let [declaration (environment/declaration environment id)]
                           (cond
                             (not (:rainbow/block-id declaration))
-                            [{:entry/kind :declaration :entry/value declaration}]
+                            [{:entry/kind :declaration :entry/value (dissoc declaration :rainbow/level-requirements)}]
 
                             (= :inductive (:rainbow/member-key declaration))
                             (mapv #(hash-map :entry/kind :inductive-block :entry/value %)

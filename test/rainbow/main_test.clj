@@ -28,10 +28,10 @@
     {alias (environment/resolve-id env alias)}))
 
 ;; A reproducible milestone fixture with an actual kernel-replayable checkpoint.
-(def default-input-checkpoint-path "reproduce-input")
+(def default-input-checkpoint-path (str (doto (java.io.File/createTempFile "reproduce-input" ".edn") .deleteOnExit)))
 (def checkpoint-path "reproduce-recorded")
-(defn run [path]
-  (assert (= default-input-checkpoint-path path))
+(defn run [input-checkpoint-path]
+  (assert (= default-input-checkpoint-path input-checkpoint-path))
   {:checkpoint (frontier/checkpoint
                 {:environment @checked-env
                  :prior {:source {:version mathlib/pinned-version
@@ -51,6 +51,12 @@
                        (dissoc original :rainbow.checkpoint/id)]]
         (with-redefs [run (fn [_] {:checkpoint changed})]
           (is (not (:match? (main/reproduce-milestone 'rainbow.main-test)))))))))
+
+(deftest a-missing-input-file-is-needed-not-rebuilt
+  (with-redefs [default-input-checkpoint-path "no-such-catalog.edn.gz"
+                run (fn [_] (throw (ex-info "run must not be called" {})))]
+    (is (= {:namespace 'rainbow.main-test :needs "no-such-catalog.edn.gz"}
+           (main/reproduce-milestone 'rainbow.main-test)))))
 
 (deftest namespace-verification-checks-the-advertised-alias
   (is (= :checked (-> (main/verify-namespace @checked-env 'rainbow.main-test)

@@ -402,20 +402,28 @@
 (defn reproduce-milestone
   "Rebuilds a milestone's checkpoint from source and compares it with the recorded one.
 
-  A reproducible milestone namespace defines `run` (input checkpoint path -> {:checkpoint :report}),
-  `default-input-checkpoint-path` and `checkpoint-path`. `run` writes nothing: the recorded evidence is
-  only read. The comparison is by content id -- the hash of the whole checkpoint value (environment,
+  A reproducible milestone namespace defines `run` (input checkpoint path, and any further paths,
+  -> {:checkpoint :report}), `checkpoint-path`, and `default-<arg>` for each argument of `run` (always
+  `default-input-checkpoint-path`). An argument file that does not exist -- the Mathlib catalog, made
+  by scripts/export-mathlib-catalog.sh -- is reported as needed, not as a failure. `run` writes
+  nothing: the recorded evidence is only read. The comparison is by content id -- the hash of the whole checkpoint value (environment,
   mappings, remaining targets) -- so equal ids mean the rebuild produced the same declarations."
   [ns-sym]
   (try
     (require ns-sym)
     (let [run (ns-resolve ns-sym 'run)
-          input (some-> (ns-resolve ns-sym 'default-input-checkpoint-path) deref)
-          recorded-path (some-> (ns-resolve ns-sym 'checkpoint-path) deref)]
-      (if-not (and run input recorded-path)
-        {:namespace ns-sym :error "not a reproducible milestone (needs run, default-input-checkpoint-path, checkpoint-path)"}
+          args (map #(some-> (ns-resolve ns-sym (symbol (str "default-" %))) deref)
+                    (first (:arglists (meta run))))
+          recorded-path (some-> (ns-resolve ns-sym 'checkpoint-path) deref)
+          missing (first (remove #(.exists (java.io.File. (str %))) args))]
+      (cond
+        (not (and run (seq args) (every? some? args) recorded-path))
+        {:namespace ns-sym :error "not a reproducible milestone (needs run, a default-<arg> for each of its arguments, checkpoint-path)"}
+        missing
+        {:namespace ns-sym :needs missing}
+        :else
         (let [recorded (checkpoint/load-checkpoint recorded-path)
-              rebuilt (:checkpoint (run input))
+              rebuilt (:checkpoint (apply run args))
               claimed-id (:rainbow.checkpoint/id rebuilt)
               rebuilt-id (when (map? rebuilt)
                            (canonical/content-id (dissoc rebuilt :rainbow.checkpoint/id)))]
@@ -453,16 +461,19 @@
       (println "usage: lein reproduce <milestone-namespace> ... | lein reproduce --all")
       (System/exit 2))
     (let [results (mapv (fn [n] (let [r (reproduce-milestone n)]
-                                  (if (:error r)
-                                    (println "FAIL " n "--" (:error r))
-                                    (println (if (:match? r) "SAME " "DIFF ") n
-                                             (str "recorded " (:recorded-id r) " (" (name (:recorded-status r)) ")"
-                                                  (when-not (:match? r) (str ", rebuilt " (:rebuilt-id r))))))
+                                  (cond
+                                    (:error r) (println "FAIL " n "--" (:error r))
+                                    (:needs r) (println "NEEDS" n "--" (:needs r) "not found (scripts/export-mathlib-catalog.sh makes the Mathlib catalog)")
+                                    :else (println (if (:match? r) "SAME " "DIFF ") n
+                                                   (str "recorded " (:recorded-id r) " (" (name (:recorded-status r)) ")"
+                                                        (when-not (:match? r) (str ", rebuilt " (:rebuilt-id r))))))
                                   (flush)
                                   r))
-                        nss)]
-      (println (count (filter :match? results)) "of" (count results) "rebuilt checkpoints match their recorded content id")
-      (every? :match? results))))
+                        nss)
+          needs (count (filter :needs results))]
+      (println (count (filter :match? results)) "of" (- (count results) needs) "rebuilt checkpoints match their recorded content id"
+               (if (pos? needs) (str "(" needs " not rebuilt: an input file is missing)") ""))
+      (every? #(or (:match? %) (:needs %)) results))))
 
 (defn -main
   "lein verify ... | lein reproduce ... (the first argument names the command)."

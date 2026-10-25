@@ -4,6 +4,7 @@
   definition, kept verbatim in rainbow.canonical-reference."
   (:require [clojure.test :refer [deftest is testing]]
             [rainbow.canonical :as canonical]
+            [rainbow.canonical-stream :as canonical-stream]
             [rainbow.canonical-reference :as reference]
             [rainbow.term :as term]))
 
@@ -31,6 +32,22 @@
     (dotimes [_ 3000]
       (let [v (random-value r 4)]
         (is (= (reference/encode v) (canonical/encode v)) (pr-str v))))))
+
+(deftest incremental-hashing-preserves-legacy-identities
+  (let [r (java.util.Random. 20261024)
+        high (str (char 0xd800))
+        low (str (char 0xdc00))
+        unicode [high low (str high low) (str low high) "é漢字"
+                 (str (apply str (repeat 8190 "x")) high low)]]
+    (doseq [v (concat [nil true false 0 -19 1/3 999999999999999999999999N
+                      [] '() #{} {} #{[1 2] '(3 4)}
+                      {[:key 1] #{:x 'y "z"}}]
+                     unicode (mapv vector unicode)
+                     (repeatedly 3000 #(random-value r 4)))]
+      (is (= (canonical/sha256 (reference/encode v))
+             (canonical-stream/content-id-incremental v)) (pr-str v))))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Unsupported value"
+                       (canonical-stream/content-id-incremental 1.25))))
 
 (deftest universe-instantiation-matches-the-reference
   ;; with no universe arguments, unfolding still normalizes levels, now once per body

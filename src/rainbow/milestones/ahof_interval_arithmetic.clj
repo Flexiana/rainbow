@@ -86,8 +86,8 @@
         prior (day54/load-checkpoint input-checkpoint-path)]
     (when-not (= :replayed (:status prior))
       (throw (ex-info "V40 input checkpoint rejected" {:prior prior})))
-    (when-not (= (get-in precommit [:precommit/source :input-checkpoint/id])
-                 (:checkpoint/id prior))
+    (when-not (day54/same-input-checkpoint? (get-in precommit [:precommit/source :input-checkpoint/id])
+                                            (:checkpoint/id prior))
       (throw (ex-info "V40 input checkpoint identity mismatch"
                       {:precommitted
                        (get-in precommit

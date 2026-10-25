@@ -40,15 +40,17 @@
       :else
       (let [replay (persistence/replay-artifact (:environment value))]
         (if (= :replayed (:status replay))
-          {:status :replayed
-           :checkpoint/id expected
-           :source (:source value)
-           :environment (:environment replay)
-           :environment/id (:environment-id replay)
-           :mappings (:mappings value)
-           :remaining-targets (:remaining-targets value)
-           :remaining-partitions (:remaining-partitions value)
-           :latest-outcomes (:latest-outcomes value)}
+          (cond-> {:status :replayed
+                   :checkpoint/id expected
+                   :source (:source value)
+                   :environment (:environment replay)
+                   :environment/id (:environment-id replay)
+                   :mappings (:mappings value)
+                   :remaining-targets (:remaining-targets value)
+                   :remaining-partitions (:remaining-partitions value)
+                   :latest-outcomes (:latest-outcomes value)}
+            ;; mappings withdrawn by a migration (1.4.2): kept visible, carried into every later checkpoint
+            (:retracted-mappings value) (assoc :retracted-mappings (:retracted-mappings value)))
           {:status :rejected :error/category :day54/environment-rejected
            :cause replay})))))
 
@@ -73,6 +75,24 @@
       (spit file serialized))))
 
 (def ^:private replay-cache (atom {}))
+
+(def checkpoint-migrations-paths
+  "Records of releases that rewrote stored checkpoints, each mapping a checkpoint id to the id it was
+  rewritten to."
+  ["artifacts/migrations/1.4.2-checkpoint-ids.edn" "artifacts/migrations/1.4.3-checkpoint-ids.edn"])
+
+(def ^:private migrated-checkpoint-ids
+  (delay (into {} (map #(:migration/checkpoint-ids (edn/read-string (slurp %)))) checkpoint-migrations-paths)))
+
+(defn same-input-checkpoint?
+  "Whether a precommitted input checkpoint id names the checkpoint with id `actual`: it is that id, or a
+  recorded checkpoint migration rewrote the precommitted checkpoint, possibly in several steps, into it.
+  A precommitment is never edited after the fact; the migration record says what happened to its input."
+  [precommitted actual]
+  (loop [id precommitted seen #{}]
+    (cond (= id actual) true
+          (or (nil? id) (seen id)) false
+          :else (recur (get @migrated-checkpoint-ids id) (conj seen id)))))
 
 (defn load-checkpoint [path]
   (let [key [(str path)

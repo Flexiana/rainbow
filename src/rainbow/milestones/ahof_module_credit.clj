@@ -117,8 +117,8 @@
   (let [precommit (load-precommit config)]
     (when-not (= :replayed (:status prior))
       (throw (ex-info "input checkpoint rejected" {:id (:id config)})))
-    (when-not (= (get-in precommit [:precommit/source :input-checkpoint/id])
-                 (:checkpoint/id prior))
+    (when-not (day54/same-input-checkpoint? (get-in precommit [:precommit/source :input-checkpoint/id])
+                                            (:checkpoint/id prior))
       (throw (ex-info "input checkpoint identity mismatch" {:id (:id config)})))
     (let [baseline (:environment prior)
           env (extend-all baseline config)

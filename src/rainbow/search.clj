@@ -1503,6 +1503,13 @@
                      :reuse-successes 0
                      :local-application-candidates 0
                      :native-logic-candidates 0}]
+       ;; Publish only completed expansion counters and the current immutable
+       ;; frontier. A stroke can retain this lower bound when cancelling a
+       ;; worker inside a costly candidate/kernel operation. No result here is
+       ;; a proof verdict, and the observer cannot bypass reconstruction.
+       (when-let [publish (:progress! options)]
+         (publish {:state (or (ffirst frontier) (first dead-ends))
+                   :attempts attempts :telemetry (assoc metrics :wall-ms (elapsed))}))
        (cond
          (or (.isInterrupted (Thread/currentThread))
              (and (ifn? cancelled?) (cancelled?)))

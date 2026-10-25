@@ -3,6 +3,70 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.3] - 2026-10-25
+
+`lein reproduce` works again after 1.4.2's checkpoint migration, and proof search can build its
+reuse index with less memory. No kernel change; the trusted base is unchanged at 1,471 lines.
+
+### Fixed
+- **`lein reproduce` reported DIFF or failed for migrated milestones** (for example
+  `rainbow.milestones.or-contraction` and `rainbow.milestones.ahof-bisection`). Three causes:
+  - A saved environment wrote `:rainbow/level-requirements`, which the 1.4.2 kernel derives
+    whenever it admits a declaration and keeps out of every declaration id. A rebuilt checkpoint
+    therefore carried it, and the migrated checkpoints did not. It is no longer written. Replay
+    recomputes it, so nothing the kernel checks changes, and no stored checkpoint changes either.
+  - `:retracted-mappings`, which 1.4.2 added to the migrated checkpoints, was dropped when a
+    checkpoint was loaded and so was missing from every rebuild. It is now carried forward.
+  - Milestone precommits name their input checkpoint by id, and 1.4.2 changed 249 checkpoint
+    ids. Precommits are not edited after the fact. Instead
+    `artifacts/migrations/1.4.2-checkpoint-ids.edn` records each old and new id, and a
+    precommitted id is accepted only for the checkpoint the record says it became
+    (`rainbow.checkpoint/same-input-checkpoint?`). Reports written before 1.4.2 still name the
+    old ids; the same record maps them.
+- **`rainbow.milestones.vector-equivalence-laws` did not reproduce, in 1.4.1 and earlier too.**
+  Its checkpoint had been recorded with `vector/equivalent` as it stood before the 2026-08-21
+  fix that made the relation length-sensitive; before that fix `[]` was equivalent to `[x]`. Its
+  precommit already named the length-sensitive relation. It was rerun from source and proves the
+  same four targets with the same search (none at baseline, four with the new lemmas, 8 search
+  states). `rainbow.milestones.nnrat-additive-reassociation`, which builds on it, was rerun as
+  well and proves the same three targets. `artifacts/migrations/1.4.3-checkpoint-ids.edn`
+  records both id changes, so the precommits are again left as they were.
+- **`lein reproduce` stopped with "Wrong number of args" on milestones whose `run` takes more
+  than the input checkpoint**: `finite-nat`, `nat-distance`, `nat-distance-core` and
+  `nat-metric-separation` also take the Mathlib catalog. It now passes each argument its
+  `default-` value. When an input file is missing, which on a fresh checkout means the
+  catalog that `scripts/export-mathlib-catalog.sh` builds from Mathlib v4.30.0, the milestone is
+  listed as `NEEDS` and not rebuilt. A missing input does not fail the command; a `DIFF` or
+  `FAIL` still does.
+- A saved environment containing a natural-number literal could not be replayed: the
+  persistence schema did not accept `:nat` terms.
+- The reuse index could not be built for a type containing a natural-number literal.
+
+### Changed
+- `rainbow.reuse/build-index` takes `:incremental? true`. It hashes each normalized type by
+  streaming its encoding into the digest (`rainbow.canonical-stream`, new, outside the trusted
+  base) instead of building the encoding as one string, and renames universe parameters once per
+  shared subterm instead of once per occurrence. The index is the same either way, with the same
+  `:reuse/id`; a test builds both and compares them. The default is unchanged.
+- `rainbow.search/prove` takes a `:progress!` callback, called with the completed expansion
+  counters and the current search state. It reports progress only; a proof is still accepted
+  only after reconstruction and kernel checking.
+
+### Verified
+- Generated from internal 5e1af921. Every store id is the SHA-256 of its declaration (6,309 of
+  6,309; Pro 6,323 of 6,323). That is three fewer than 1.4.2: the eight superseded `vector/*`
+  declarations are gone and five are new; the rerun's other declarations were already stored.
+- `lein reproduce --all` in this repository: 53 of 53 rebuilt checkpoints match their recorded
+  content ids. `finite-nat`, `nat-distance`, `nat-distance-core` and `nat-metric-separation`
+  were not rebuilt, because the Mathlib catalog was not present.
+- This repository on its own: 974 test namespaces, 2,030 tests, 47,278 assertions, 0 failures,
+  0 errors.
+- The internal suite was not rerun in full. The 49 internal test namespaces that load the changed
+  code passed: 168 tests, 4,036 assertions, 0 failures, 0 errors. Of the 89 internal milestones,
+  53 rebuild to their recorded ids and 36 need the Mathlib catalog (rebuilt at the preceding
+  commit f01283ac, the two rerun milestones again at 5e1af921).
+- No kernel change: `kernel.clj` is identical to 1.4.2, and the trusted base is 1,471 lines.
+
 ## [1.4.2] - 2026-10-25
 
 Two soundness fixes in the kernel, both about inductive types. Before them, a user-declared
