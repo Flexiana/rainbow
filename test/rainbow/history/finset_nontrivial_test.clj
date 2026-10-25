@@ -39,9 +39,9 @@
         source (last (get-in checkpoint [:source
                                          :additional-statement-batches]))]
     (is (= :replayed (:status checkpoint)))
-    (is (= "sha256:7efdd9a56d6bcf40a646cffe2d3857d1303745f840073d4d8ffffe0262f8a2af"
+    (is (= "sha256:c2164d551e837cabd30d975b099d012a741d04111c653127fd6100bada69ca32"
            (:checkpoint/id checkpoint)))
-    (is (= 1216 (count (:mappings checkpoint))))
+    (is (= 1215 (count (:mappings checkpoint))))
     (is (= expected-names (set (map :foreign/name mappings))))
     (is (= 4 (count mappings) (count (set (map :proof/id mappings)))))
     (is (= {0 3, 1 1}

@@ -30,6 +30,9 @@
 (def default-validation-statement-path
   "artifacts/day77/validation-statements.edn")
 
+;; The Day 77 record as it ran. Its instFiniteProp reproof was retracted in 1.4.2 (it used large
+;; elimination from a proposition with several constructors, which the kernel now refuses); the
+;; migrated checkpoint lists it under :retracted-mappings.
 (def development-names ["instFiniteProp" "Set.Finite.eq_1"])
 (def validation-names ["Finite.of_subsingleton"])
 (def expected-gains (set (concat development-names validation-names)))

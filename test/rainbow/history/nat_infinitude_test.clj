@@ -25,9 +25,9 @@
         source (last (get-in checkpoint [:source
                                          :additional-statement-batches]))]
     (is (= :replayed (:status checkpoint)))
-    (is (= "sha256:c0eca3bf888014e942ffa8214ef4c93b92e98090f20599c1387924469ab42d94"
+    (is (= "sha256:8cadb6fc3cec4851dc65f31d077a84cf600119860ed4f95e9fb7710e9e44923c"
            (:checkpoint/id checkpoint)))
-    (is (= 1184 (count (:mappings checkpoint))))
+    (is (= 1183 (count (:mappings checkpoint))))
     (is (= nat-infinitude/target-name (:foreign/name mapping)))
     (is (empty? (:axioms mapping)))
     (is (= :nat-finite-list-bound (:kind source)))

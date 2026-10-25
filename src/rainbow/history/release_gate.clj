@@ -33,7 +33,9 @@
 
 ;; The size of the trusted base is a release decision: Gate A fails when the four files
 ;; change length without this pin changing with them (v1-release-test pins it too).
-(def trusted-base-lines 1364)
+;; 1.4.2: 1364 -> 1471, the two inductive-universe soundness fixes in kernel.clj (constructor field
+;; universes; large elimination from a proposition with several constructors).
+(def trusted-base-lines 1471)
 
 (def trusted-paths
   ["src/rainbow/canonical.clj" "src/rainbow/term.clj"

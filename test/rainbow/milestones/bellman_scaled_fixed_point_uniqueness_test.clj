@@ -51,4 +51,4 @@
                         [:claim-boundaries
                          :function-equality-outside-support-claimed?])))
     (is (= :replayed (:status checkpoint)))
-    (is (= 1245 (count (:mappings checkpoint))))))
+    (is (= 1244 (count (:mappings checkpoint))))))

@@ -36,4 +36,4 @@
     (is (false? (get-in report
                         [:claim-boundaries :cancellation-proved?])))
     (is (= :replayed (:status checkpoint)))
-    (is (= 1237 (count (:mappings checkpoint))))))
+    (is (= 1236 (count (:mappings checkpoint))))))

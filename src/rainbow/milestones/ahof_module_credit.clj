@@ -28,7 +28,7 @@
             [rainbow.kernel :as kernel]))
 
 (def input-checkpoint-id
-  "sha256:b3afbde70ba53ef51fda30a92581dd54a93ef1f3f6ea9c8838afd09dc48dd6c7")
+  "sha256:d8e790a380890ed64a5313eab9c9133fe8cd519386957392099c7bf1a188261c")
 
 (defn precommit-path [config] (str (:dir config) "/precommit.edn"))
 (defn report-path [config] (str (:dir config) "/report.edn"))

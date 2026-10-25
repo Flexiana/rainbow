@@ -23,14 +23,13 @@
         proposition-extensionality
         (environment/resolve-id environment 'logic/proposition-extensionality)
         expected
-        {'type/finite-proposition #{excluded-middle proof-irrelevance}
-         'type/finite-of-subsingleton #{excluded-middle}
+        {'type/finite-of-subsingleton #{excluded-middle}
          'subtype/extensional #{proof-irrelevance}
          'set/finite-subtype-equivalence
          #{excluded-middle proof-irrelevance}
          'set/finite-subtype-proposition-equality
          #{excluded-middle proof-irrelevance proposition-extensionality}}]
-    (is (= 5 (count ids)))
+    (is (= 4 (count ids)))
     (let [definition-id
           (get (finite-subtype/definition-ids environment)
                'type/subsingleton)

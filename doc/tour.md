@@ -6,15 +6,15 @@ from the repository root.
 
 ## 1. The kernel — what you have to trust
 
-`src/rainbow/kernel.clj` (1,017 lines), with `term.clj`, `environment.clj` and
-`canonical.clj`: 1,364 lines in all. The functions that matter:
+`src/rainbow/kernel.clj` (1,124 lines), with `term.clj`, `environment.clj` and
+`canonical.clj`: 1,471 lines in all. The functions that matter:
 
 | function | what it does |
 |---|---|
 | `infer`, `check` | type inference and checking for the dependent calculus |
 | `normalize`, `definitionally-equal?` | reduction and the conversion check |
 | `add-declaration` | the only way a declaration enters an environment: it is checked first |
-| `add-inductive-block` | inductive types and their recursors |
+| `add-inductive-block` | inductive types and their recursors; each constructor field must fit the type's universe |
 | `axioms` | the axioms a declaration depends on, transitively |
 
 Everything else in the repository — elaboration, tactics, proof search,

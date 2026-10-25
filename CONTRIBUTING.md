@@ -16,7 +16,7 @@ privately to the maintainers first (see the contact address on
 ## Changing code
 
 - **The kernel** (`kernel.clj`, `term.clj`, `environment.clj`, `canonical.clj`)
-  is pinned at 1,364 lines by a release test. A change there needs a stated
+  is pinned at 1,471 lines by a release test. A change there needs a stated
   reason and a review of what it adds to the trusted base.
 - **A new theorem** goes in a module under `src/rainbow/math/` or
   `src/rainbow/algorithms/proofs/` with `theorem-specs`, `deps`, `install`,

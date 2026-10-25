@@ -19,4 +19,4 @@
     (is (true? (get-in report [:claim-boundaries
                                 :canonical-cardinality-complete-for-computational-finset?])))
     (is (= :replayed (:status checkpoint)))
-    (is (= 1227 (count (:mappings checkpoint))))))
+    (is (= 1226 (count (:mappings checkpoint))))))

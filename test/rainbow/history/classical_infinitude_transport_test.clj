@@ -26,9 +26,9 @@
         source (last (get-in checkpoint [:source
                                          :additional-statement-batches]))]
     (is (= :replayed (:status checkpoint)))
-    (is (= "sha256:3c8bc85a8a6e2fb1e7c0960c6e1f3ab7e73522e1c1e4df8d0a1742ea04704e08"
+    (is (= "sha256:d079a24886faae39ef6e49f8dd9560261c4aae00f451bdb7c3fcc3e05eb3bbf4"
            (:checkpoint/id checkpoint)))
-    (is (= 1187 (count (:mappings checkpoint))))
+    (is (= 1186 (count (:mappings checkpoint))))
     (is (= classical-infinitude-transport/target-name (:foreign/name mapping)))
     (is (= 1 (count (:axioms mapping))))
     (is (= :classical-infinite-injection (:kind source)))

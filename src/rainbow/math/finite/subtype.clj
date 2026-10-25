@@ -63,50 +63,10 @@
   (function/app (function/const* 'data/subtype [data-level])
                 carrier predicate value property))
 
-(def finite-proposition-spec
-  (let [list-p (finite-type/list-of zero 'P)
-        nil-p (function/app (function/const* 'data/nil [zero]) 'P)
-        singleton
-        (function/app (function/const* 'data/cons [zero])
-                      'P 'selected nil-p)
-        cover
-        (function/lam
-         [['enumeration list-p]]
-         (function/forall
-          [['value 'P]]
-          (finite-type/membership zero 'P 'enumeration 'value)))
-        target (finite-type/finite zero 'P)]
-    {:name 'type/finite-proposition
-     :universes []
-     :type (function/forall [['P 'Prop :explicit]] target)
-     :value
-     (function/lam
-      [['P 'Prop :explicit]]
-      (function/app
-       (function/const* 'logic/classical-cases []) 'P target
-       (function/lam
-        [['selected 'P]]
-        (witness
-         zero list-p cover singleton
-         (function/lam
-          [['value 'P]]
-          (function/app
-           (function/const* 'proposition/left-disjunct [])
-           (equality zero 'P 'value 'selected)
-           (finite-type/membership zero 'P nil-p 'value)
-           (function/app
-            (function/const* 'logic/proof-irrelevance [])
-            'P 'value 'selected)))))
-       (function/lam
-        [['not-p (proposition/negation 'P)]]
-        (witness
-         zero list-p cover nil-p
-         (function/lam
-          [['value 'P]]
-          (function/app
-           (function/const* 'proposition/explode [])
-           (finite-type/membership zero 'P nil-p 'value)
-           (function/app 'not-p 'value)))))))}))
+;; type/finite-proposition (every proposition is finite, via a list of its proofs) was removed in 1.4.2. It
+;; instantiated type/finite at Prop, whose membership eliminates data/List.{0} into Prop: large elimination
+;; from a proposition with two constructors, which the kernel now refuses (with logic/proof-irrelevance it
+;; derived False). Lean states the same fact for the type Prop through ULift/PLift, never List of proofs.
 
 (def finite-of-subsingleton-spec
   (let [list-a (finite-type/list-of L 'A)
@@ -370,7 +330,7 @@
         'A 'source)))}))
 
 (def theorem-specs
-  [finite-proposition-spec finite-of-subsingleton-spec subtype-extensional-spec
+  [finite-of-subsingleton-spec subtype-extensional-spec
    finite-subtype-equivalence-spec finite-subtype-equality-spec])
 
 (defn- elaborate! [checked-environment expression]

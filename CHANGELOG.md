@@ -3,6 +3,68 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.2] - 2026-10-25
+
+Two soundness fixes in the kernel, both about inductive types. Before them, a user-declared
+inductive type, or a proof using the proof-irrelevance axiom, could derive False. Please upgrade.
+
+### Security
+- **Constructor fields were not checked against the inductive type's universe.**
+  `add-inductive-block` checked that each generated type was well typed, but never compared a
+  field's universe with the type's own. A type could contain its own universe (`U : Sort 1`
+  with a constructor `Sort 1 -> U` was accepted), and from that False is derivable without
+  axioms (Girard's paradox; we checked the ingredients, not the full proof term). Every
+  non-recursive constructor field must now live in a universe at most the type's, for every
+  value of the universe parameters. There is no exception for propositions, so an inductive
+  proposition with a field in a larger universe is refused. Every inductive type in this
+  repository passes the new check.
+- **Large elimination from propositions.** `data/Sum`, `data/Option`, `data/List` and
+  `data/Product` are propositions when their universe arguments are 0, and their recursors
+  still eliminated into any universe. Without axioms this is believed consistent; with proof
+  irrelevance it is not, and 1.4.1 accepted a proof of False under the `:proof-irrelevant`
+  profile. Now a recursor of a type with two or more constructors can eliminate into a
+  universe above Prop only when the type is not a proposition. Where that depends on
+  universe parameters, the requirement is recorded on the declaration and checked wherever
+  it is instantiated, so definitions built on it inherit it.
+
+### Who is affected
+- An axiom-free theorem (`kernel/axioms` returns `#{}`) that uses only this repository's
+  inductive types: not affected. The first issue needs an ill-formed type; the second needs
+  the proof-irrelevance axiom.
+- A theorem that uses an inductive type declared elsewhere: re-check it with 1.4.2.
+- A theorem checked by 1.4.1 or earlier under `:proof-irrelevant`, `:mathlib-logic` or
+  `:mathlib-complete-logic`, and probably `:classical` (excluded middle with an impredicative
+  Prop implies proof irrelevance; we have not built that proof): that kernel's acceptance did
+  not establish it. Re-check it with 1.4.2.
+
+### Removed
+- `type/finite-proposition` (`rainbow.math.finite.subtype`), which needed large elimination from
+  a proposition, with the Mathlib reproof of `instFiniteProp` that used it and that reproof's
+  mapping record: the store holds 6,312 declarations, 3 fewer than 1.4.1. 249 of the 256
+  checkpoints contained them and are rebuilt without them, so their ids change; a checkpoint
+  that mapped `instFiniteProp` keeps the mapping under `:retracted-mappings` with the reason.
+  The other 7 checkpoints are unchanged. Both declarations relied on the proof-irrelevance
+  axiom, so no axiom-free theorem is lost.
+
+### Corrected
+- 1.4.0 headed its MILP work "Proved MILP certificates" and said every week of 2023 "was
+  proved optimal". The tree checker's soundness theorem is stated and not proved (the same
+  entry said so), so what holds is weaker: 52 of 52 weekly certificates were accepted by a
+  checker that is tested, not proved. That is below Level 4 (`doc/maturity-levels.md`). The same applies to the sparse LP
+  checker it rests on.
+
+### Verified
+- Generated from internal 8bdabda2. Since the commit the full suite was run on (4d2b07f9), only
+  documentation and one test changed; that test (`day77_test`) now reads checkpoints without a
+  private helper and passes (2 tests, 15 assertions). Every store id is the SHA-256 of its
+  declaration (6,312 of 6,312; Pro 6,326 of 6,326).
+- The internal suite, which includes everything in this repository and in Rainbow Pro: 2,304
+  test namespaces, 5,974 tests, 373,656 assertions, 0 failures, 0 errors.
+- This repository on its own: 973 test namespaces, 2,022 tests, 44,229 assertions, 0 failures,
+  0 errors.
+- Two new kernel tests refuse each counterexample: a type containing its own universe, and the
+  1.4.1 proof of False under `:proof-irrelevant`.
+
 ## [1.4.1] - 2026-10-21
 
 Fixes to Rainbow Pro's test suite, found by running all of it against 1.4.0. Every one of these

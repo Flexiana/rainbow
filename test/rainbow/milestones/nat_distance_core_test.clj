@@ -34,4 +34,4 @@
     (is (false? (get-in report
                         [:claim-boundaries :lean-proof-bodies-imported?])))
     (is (= :replayed (:status checkpoint)))
-    (is (= 1244 (count (:mappings checkpoint))))))
+    (is (= 1243 (count (:mappings checkpoint))))))

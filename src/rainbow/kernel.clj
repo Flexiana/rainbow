@@ -378,6 +378,69 @@
                  {:expected expected :actual actual :term expression}))))
   expression)
 
+;; Large elimination from Prop. A recursor of an inductive type with two or more constructors may
+;; eliminate into a universe above Prop only when the type is not a proposition: at Prop, proofs are
+;; meant to be indistinguishable (the opt-in proof-irrelevance axiom says so), and eliminating Sum P Q
+;; into Bool would tell inl from inr, deriving False. A single-constructor type is fine: its fields are
+;; then propositions too (constructor fields live at most at the type's own sort).
+;; A use whose level is fixed is decided at once; a universe-polymorphic use (data/List.rec at Sort u)
+;; records the requirement "level >= 1" on the declaration using it (:rainbow/level-requirements, not
+;; part of any content id), and every use of that declaration must keep it.
+(def ^:private one-level [:succ [:zero]])
+
+(defn- level-at-most-terms [level upper?]
+  (case (fst level)
+    :zero [[nil 0]]
+    :param [[(snd level) 0]]
+    :succ (mapv (fn [[base k]] [base (inc k)]) (level-at-most-terms (snd level) upper?))
+    :max (into (level-at-most-terms (snd level) upper?) (level-at-most-terms (nth level 2) upper?))
+    :imax (if upper?
+            (into (level-at-most-terms (snd level) upper?) (level-at-most-terms (nth level 2) upper?))
+            (level-at-most-terms (nth level 2) upper?))))
+
+(defn- level-at-most*? [a b]
+  (let [bs (level-at-most-terms (term/normalize-level b) false)]
+    (every? (fn [[base k]]
+              (some (fn [[base' k']] (and (or (nil? base) (= base base')) (<= k k'))) bs))
+            (level-at-most-terms (term/normalize-level a) true))))
+
+(defn- elimination-requirements
+  "Levels that must be at least 1 for this use of a declaration at the given universe levels."
+  [environment declaration levels]
+  (let [parameters (:rainbow/universes declaration)
+        substitution (zipmap parameters levels)
+        inherited (map #(term/instantiate-level % substitution) (:rainbow/level-requirements declaration))
+        recursor (:rainbow/recursor declaration)]
+    (if (and recursor (<= 2 (:constructor-count recursor))
+             (not (level-at-most*? (last levels) [:zero])))
+      (let [block (environment/block environment (:block-id recursor))
+            sort-level (get-in block [:block/spec :block/sort-level])
+            block-universes (get-in block [:block/spec :block/universes])]
+        (conj (vec inherited)
+              (term/instantiate-level sort-level (zipmap block-universes (butlast levels)))))
+      inherited)))
+
+(defn- assert-level-requirements! [environment declaration levels]
+  (doseq [level (elimination-requirements environment declaration levels)]
+    (when (level-at-most*? level [:zero])
+      (reject! :kernel/large-elimination-from-prop
+               "Large elimination from a proposition with several constructors"
+               {:constant/id (:rainbow/id declaration) :levels levels :required-nonzero level}))))
+
+(defn- term-level-requirements
+  "The requirements a term's constant uses leave open (not already at least 1)."
+  [environment expression]
+  (letfn [(walk [acc node]
+            (case (fst node)
+              :const (let [declaration (environment/declaration environment (snd node))]
+                       (into acc (remove #(level-at-most*? one-level %))
+                             (when declaration (elimination-requirements environment declaration (nth node 2)))))
+              :app (walk (walk acc (snd node)) (nth node 2))
+              (:lam :pi) (walk (walk acc (snd node)) (nth node 2))
+              :let (walk (walk (walk acc (snd node)) (nth node 2)) (nth node 3))
+              acc))]
+    (into #{} (map term/normalize-level) (walk #{} expression))))
+
 (defn- infer-constant [environment id levels]
   (let [declaration (environment/declaration environment id)]
     (when-not declaration
@@ -387,6 +450,7 @@
         (reject! :kernel/universe-arity
                  "Wrong number of universe arguments"
                  {:constant/id id :expected (count parameters) :actual (count levels)}))
+      (assert-level-requirements! environment declaration levels)
       (term/instantiate-universes (:rainbow/type declaration)
                                   (zipmap parameters levels)))))
 
@@ -565,6 +629,9 @@
                        "Supplied declaration ID does not match semantic content"
                        {:supplied supplied-id :computed computed-id}))
           checked (assoc semantic :rainbow/id computed-id)
+          requirements (into (term-level-requirements environment (:rainbow/type base))
+                             (when (:rainbow/value base) (term-level-requirements environment (:rainbow/value base))))
+          checked (cond-> checked (seq requirements) (assoc :rainbow/level-requirements requirements))
           existing (environment/declaration environment computed-id)
           aliases (into (or (:rainbow/aliases existing) #{}) (:rainbow/aliases checked))
           checked (assoc checked :rainbow/aliases aliases)
@@ -947,6 +1014,39 @@
      :members (into [inductive-declaration]
                     (conj constructor-declarations recursor-declaration))}))
 
+;; Universe comparison for inductive fields (level-at-most*?, defined with the large-elimination rule
+;; above): a SOUND, possibly incomplete test that level a <= level b under every assignment of universe
+;; parameters. A level is read as the max of terms base + k; imax is bounded above by max on the left
+;; and below by its right argument on the right.
+(defn level-at-most?
+  "True when a <= b holds for every assignment of universe parameters (sound, possibly incomplete)."
+  [a b]
+  (level-at-most*? a b))
+
+(defn- assert-field-universes!
+  "Every non-recursive constructor field lives in a universe at most the block's sort. Without this an
+  inductive type can contain its own universe (U : Sort 1 with mk : Sort 1 -> U), and with the
+  recursor's free motive universe that is Girard's paradox. There is no impredicative exception for
+  Prop blocks: a Prop block with a large field and large elimination is Coquand's paradox."
+  [environment spec constructor-declarations]
+  (let [block-level (:block/sort-level spec)
+        parameter-count (count (:block/parameters spec))]
+    (doseq [[index constructor declaration] (map vector (range) (:block/constructors spec) constructor-declarations)]
+      (loop [type (:rainbow/type declaration) context [] position 0
+             fields (:constructor/fields constructor)]
+        (when (= :pi (fst type))
+          (let [domain (snd type)
+                field (when (>= position parameter-count) (fst fields))]
+            (when (and field (not= [:self] (:field/type field)))
+              (let [field-level (sort-level! environment (infer* environment context domain))]
+                (when-not (level-at-most? field-level block-level)
+                  (reject! :kernel/field-universe-too-large
+                           "Constructor field lives in a universe above the inductive type's sort"
+                           {:constructor index :field (:field/name field)
+                            :field-level field-level :sort-level block-level}))))
+            (recur (nth type 2) (into [domain] context) (inc position)
+                   (if field (next fields) fields))))))))
+
 (defn add-inductive-block [environment spec]
   (try
     (validate-block-spec! spec)
@@ -998,7 +1098,14 @@
                                (= :sort (fst (:term (normalize staged (:type result))))))
                   (reject! :kernel/invalid-inductive-member-type
                            "Generated inductive member type failed kernel checking"
-                           {:member (:rainbow/id member) :cause result}))))]
+                           {:member (:rainbow/id member) :cause result}))))
+          _ (assert-field-universes! staged spec (:constructors generated))
+          staged (reduce (fn [env member]
+                           (let [requirements (term-level-requirements env (:rainbow/type member))]
+                             (cond-> env (seq requirements)
+                               (assoc-in [:rainbow.environment/declarations (:rainbow/id member) :rainbow/level-requirements]
+                                         requirements))))
+                         staged members)]
       {:status :accepted
        :block block
        :declarations members

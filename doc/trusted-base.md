@@ -5,21 +5,24 @@ This file lists that code. Everything not on this list is checked BY it: the
 mathematics, the tactics that build proofs, the proof search -- a bug anywhere
 else produces a rejected proof, never an accepted false one.
 
-## The kernel: 1,364 lines
+## The kernel: 1,471 lines
 
 | file | lines | role |
 |---|---|---|
-| `src/rainbow/kernel.clj` | 1017 | type checking, definitional equality, reduction, natural-number literals and the six native nat operations, inductive types and recursors, universe levels |
+| `src/rainbow/kernel.clj` | 1124 | type checking, definitional equality, reduction, natural-number literals and the six native nat operations, inductive types and recursors, universe levels |
 | `src/rainbow/term.clj` | 254 | the term language: binders, substitution (skipping subterms with nothing to change), de Bruijn indices |
 | `src/rainbow/environment.clj` | 48 | declarations stored by content id; name resolution |
 | `src/rainbow/canonical.clj` | 45 | canonical encoding and the content hash that names every declaration |
-| **total** | **1364** | |
+| **total** | **1471** | |
 
 The size is pinned: a release test (`v1_release_test`) fails if these four files
 change length, so growth in the trusted base is always a visible, deliberate
 decision. 1.1.0 grew it from 1,198 lines (1.0.1; the 1.0.0 tag had 1,200) to make checking 24-123x faster: native
 natural-number arithmetic pinned to six definitions by content id (each tested against
 the definition's own unary reduction), and substitution that skips unchanged subterms.
+1.4.2 grew it to 1,471 lines with two soundness fixes for inductive types (see the CHANGELOG):
+constructor fields are checked against the inductive type's universe, and a proposition with
+two or more constructors can no longer be eliminated into a larger universe.
 
 The nested inductive-binder identity repair changes content IDs for affected
 blocks. Earlier kernels could conflate distinct field types and accept an
