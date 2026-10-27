@@ -4,7 +4,7 @@
 
 **A theorem prover in Clojure that treats proofs as data.**
 
-Rainbow checks mathematics with a small dependent-type kernel — 1,471 lines you
+Rainbow checks mathematics with a small dependent-type kernel — 1,548 lines you
 can read in an afternoon — and stores everything it checks as plain, immutable,
 content-addressed EDN: terms, declarations, proofs, failures and their
 provenance. A proof is a value. You can store it, diff it, hash it, ship it and
@@ -43,7 +43,7 @@ Most "verified" claims fail in the same place: a theorem about a model, a
 program that allegedly implements the model, and nothing checking the link.
 Rainbow was built to be exact about that gap rather than to hide it.
 
-- **The trusted base is small and pinned.** Four files, 1,471 lines, and a
+- **The trusted base is small and pinned.** Four files, 1,548 lines, and a
   release test fails if they change length. Search, tactics, elaboration and
   checkpoint loading are all untrusted: they propose terms, the kernel decides.
   See [`doc/trusted-base.md`](doc/trusted-base.md).
@@ -125,7 +125,7 @@ of its content. [`doc/tour.md`](doc/tour.md) reads a module end to end;
 
 | | |
 |---|---|
-| `src/rainbow/{kernel,term,environment,canonical}.clj` | the trusted kernel, 1,471 lines |
+| `src/rainbow/{kernel,term,environment,canonical}.clj` | the trusted kernel, 1,548 lines |
 | `src/rainbow/math/` | foundations: nat, rationals, signed rationals, sums, finite types, sets, linear algebra, analysis |
 | `src/rainbow/algorithms/` | algorithm guarantees (`proofs/`) and the reference implementations they are about |
 | `src/rainbow/milestones/` | the drivers that built the corpus checkpoints, one per result |

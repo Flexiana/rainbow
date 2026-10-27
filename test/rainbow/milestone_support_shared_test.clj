@@ -48,3 +48,34 @@
       (is (thrown-with-msg?
            clojure.lang.ExceptionInfo #"one alias, two statements"
            (support/extend-with-shared env :impostor [impostor]))))))
+
+(deftest shared-add-compares-a-definition's-body
+  ;; claim integrity A4: two definitions with
+  ;; one type under one alias are two meanings, unlike two proofs of one statement
+  (let [bool (function/const* 'data/Bool [])
+        def-spec (fn [body] {:name 'test/pick :kind :definition :universes []
+                             :type (function/arrow bool bool bool)
+                             :value body})
+        first-arg (function/lam [['a bool] ['b bool]] 'a)
+        env (support/extend-with-shared @base-environment :shared-test [(def-spec first-arg)])]
+    (testing "the same body, binder names changed: skipped"
+      (let [again (support/extend-with-shared env :again [(def-spec (function/lam [['x bool] ['y bool]] 'x))])]
+        (is (= (environment/resolve-id env 'test/pick) (environment/resolve-id again 'test/pick)))))
+    (testing "a different body under the same alias and type: refused"
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo #"one alias, two definitions"
+           (support/extend-with-shared env :impostor [(def-spec (function/lam [['a bool] ['b bool]] 'b))]))))
+    (testing "the same statement as a theorem where a definition is stored: refused"
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo #"one alias, two definitions"
+           (support/extend-with-shared env :impostor [(dissoc (def-spec first-arg) :kind)]))))))
+
+(deftest a-spec-without-universes-has-none
+  ;; add-spec passed a missing :universes through as nil, overriding add-declaration's []
+  (let [bool (function/const* 'data/Bool [])
+        spec {:name 'test/identity-bool :kind :definition
+              :type (function/arrow bool bool) :value (function/lam [['b bool]] 'b)}
+        without (support/add-spec @base-environment :test spec)
+        with (support/add-spec @base-environment :test (assoc spec :universes []))]
+    (is (= [] (:rainbow/universes (environment/declaration without (environment/resolve-id without 'test/identity-bool)))))
+    (is (= (environment/resolve-id with 'test/identity-bool) (environment/resolve-id without 'test/identity-bool)))))

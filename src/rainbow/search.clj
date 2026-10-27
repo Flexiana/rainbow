@@ -180,22 +180,8 @@
          (take max-terms)
          vec)))
 
-(defn- application-spine [expression]
-  (loop [current expression
-         arguments []]
-    (if (= :app (first current))
-      (recur (second current) (into [(nth current 2)] arguments))
-      [current arguments])))
-
-(defn- beta-head [expression]
-  (loop [current expression]
-    (case (first current)
-      :let (recur (term/instantiate (nth current 3) (nth current 2)))
-      :app (let [function (beta-head (second current))]
-             (if (= :lam (first function))
-               (recur (term/instantiate (nth function 2) (nth current 2)))
-               [:app function (nth current 2)]))
-      current)))
+(def ^:private application-spine tactic/application-spine)
+(def ^:private beta-head tactic/beta-head)
 
 (defn- pi-conclusion-head
   "Returns the syntactic application head after a theorem's Pi prefix.
@@ -327,8 +313,7 @@
                    (fn [components wanted]
                      (cond
                        (= wanted (first components)) project-left
-                       (= wanted (second components)) project-right
-                       :else nil))
+                       (= wanted (second components)) project-right))
                    left-project (and left-components
                                      (projection left-components target-left))
                    right-project (and right-components
@@ -536,8 +521,7 @@
           (and (= normalized-left false-term)
                (= normalized-right true-term)) :false-to-true
           (and (= normalized-left true-term)
-               (= normalized-right false-term)) :true-to-false
-          :else nil)]
+               (= normalized-right false-term)) :true-to-false)]
     (when (and orientation (= normalized-carrier bool)
                bool-rec truth trivial)
       (let [proposition-sort (term/sort-term term/zero-level)
@@ -746,9 +730,7 @@
                                 (swapped left from to)
                                 (swapped right to from))
              :source :structural-proof-plan
-             :focus/phase :invertible}))
-
-        :else nil))))
+             :focus/phase :invertible}))))))
 
 (defn- definitional-equivalence-step
   "Closes equivalent reducible propositions with explicit identity functions."
@@ -802,12 +784,14 @@
                     (fn [wanted]
                       (cond
                         (same? wanted (first source-components)) project-left
-                        (same? wanted (second source-components)) project-right
-                        :else nil))
+                        (same? wanted (second source-components)) project-right))
                     first-project (and source-components target-components
                                        (project (first target-components)))
                     second-project (and source-components target-components
                                         (project (second target-components)))
+                    projected #(apply-terms % (term/shift (first source-components) 2)
+                                            (term/shift (second source-components) 2)
+                                            (term/bound 0))
                     transformed
                     (cond
                       (same? source-branch target-branch) (term/bound 0)
@@ -816,17 +800,8 @@
                        conjoin
                        (term/shift (first target-components) 2)
                        (term/shift (second target-components) 2)
-                       (apply-terms
-                        first-project
-                        (term/shift (first source-components) 2)
-                        (term/shift (second source-components) 2)
-                        (term/bound 0))
-                       (apply-terms
-                        second-project
-                        (term/shift (first source-components) 2)
-                        (term/shift (second source-components) 2)
-                        (term/bound 0)))
-                      :else nil)]
+                       (projected first-project)
+                       (projected second-project)))]
                 (when transformed
                   [:lam (term/shift source-branch 1)
                    (apply-terms constructor
@@ -1077,9 +1052,7 @@
                        :template (apply-terms symmetric carrier right truth forward)
                        :targets [right]
                        :source :structural-theorem-reuse
-                       :focus/phase :equality})
-
-                    :else nil))]
+                       :focus/phase :equality})))]
             (cond-> []
               generalized (conj generalized)
               structural (conj structural)
@@ -1203,6 +1176,37 @@
                            finite-subset-steps
                            goal-steps context-steps)))))
 
+(defn- progressing-reuse-step
+  "An :apply step for a reuse candidate, or nil when applying it fails or makes no
+  progress."
+  [state candidate extra]
+  (let [step (merge {:tactic :apply
+                     :term (:reuse/term candidate)
+                     :declaration/id (:reuse/declaration-id candidate)
+                     :score (:reuse/score candidate)
+                     :source :premise-theorem-reuse}
+                    extra)
+        probe (tactic/run state (tactic/apply (:term step)))]
+    (when-not (contains? #{:failure :no-progress} (:status probe))
+      step)))
+
+(defn- local-case-steps
+  "An :induction step on each context local whose type's head constant id is in
+  `ids` and which the target mentions."
+  [context target ids source]
+  (->> context
+       (map-indexed vector)
+       (keep (fn [[index local]]
+               (let [[head _] (application-spine (:goal/type local))]
+                 (when (and (= :const (first head))
+                            (contains? ids (second head))
+                            (contains-free-bound? target index))
+                   {:tactic :induction
+                    :term [:bound index]
+                    :source source
+                    :focus/phase :invertible}))))
+       vec))
+
 (defn- available-steps
   [state reuse-options local-application-depth
    local-application-terms-limit local-application-compositional?
@@ -1253,39 +1257,15 @@
                    (:proof/environment state) (:goal/target goal) %)
                  related-reuse-candidates)
         related-reuse-steps
-        (->> related-reuse-candidates
-             (keep
-              (fn [candidate]
-                (let [step
-                      {:tactic :apply
-                       :term (:reuse/term candidate)
-                       :declaration/id (:reuse/declaration-id candidate)
-                       :score (:reuse/score candidate)
-                       :source :premise-theorem-reuse}
-                      probe (tactic/run state (tactic/apply (:term step)))]
-                  (when-not (contains? #{:failure :no-progress}
-                                       (:status probe))
-                    step))))
-             vec)
+        (into [] (keep #(progressing-reuse-step state % nil))
+              related-reuse-candidates)
         related-specialization-steps
         (when native-dependent-theorem-specialization?
-          (->> (dependent-reuse-specializations
-                state specialization-candidates
-                local-application-depth local-application-terms-limit)
-               (keep
-                (fn [candidate]
-                  (let [step
-                        {:tactic :apply
-                         :term (:reuse/term candidate)
-                         :declaration/id (:reuse/declaration-id candidate)
-                         :score (:reuse/score candidate)
-                         :source :premise-theorem-reuse
-                         :reuse/kind :dependent-prefix-specialization}
-                        probe (tactic/run state (tactic/apply (:term step)))]
-                    (when-not (contains? #{:failure :no-progress}
-                                         (:status probe))
-                      step))))
-               vec))
+          (into [] (keep #(progressing-reuse-step
+                           state % {:reuse/kind :dependent-prefix-specialization}))
+                (dependent-reuse-specializations
+                 state specialization-candidates
+                 local-application-depth local-application-terms-limit)))
         tautology-plan
         (when (and native-classical-tautology?
                    (not= :pi (first (:goal/target goal))))
@@ -1304,20 +1284,7 @@
                                           'data/Bool))
         bool-case-steps
         (when bool-id
-          (->> context
-               (map-indexed vector)
-               (keep (fn [[index local]]
-                       (let [[head _] (application-spine
-                                      (:goal/type local))]
-                         (when (and (= :const (first head))
-                                    (= bool-id (second head))
-                                    (contains-free-bound? (:goal/target goal)
-                                                          index))
-                           {:tactic :induction
-                            :term [:bound index]
-                            :source :native-bool-cases
-                            :focus/phase :invertible}))))
-               vec))
+          (local-case-steps context (:goal/target goal) #{bool-id} :native-bool-cases))
         inductive-ids
         (when native-inductive-cases?
           (into #{}
@@ -1326,20 +1293,8 @@
                  'data/Sigma 'data/PSigma]))
         inductive-case-steps
         (when (seq inductive-ids)
-          (->> context
-               (map-indexed vector)
-               (keep (fn [[index local]]
-                       (let [[head _] (application-spine
-                                      (:goal/type local))]
-                         (when (and (= :const (first head))
-                                    (contains? inductive-ids (second head))
-                                    (contains-free-bound? (:goal/target goal)
-                                                          index))
-                           {:tactic :induction
-                            :term [:bound index]
-                            :source :native-inductive-cases
-                            :focus/phase :invertible}))))
-               vec))
+          (local-case-steps context (:goal/target goal) inductive-ids
+                            :native-inductive-cases))
         focused-steps
         (vec
          (concat

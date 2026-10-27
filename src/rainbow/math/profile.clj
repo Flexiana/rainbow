@@ -214,14 +214,46 @@
 (def principle-by-name
   (into {} (map (juxt :name :principle)) principle-specs))
 
+(defn- principle-declaration-id
+  "The content id of the axiom `add-principle` would add for spec, elaborated in this
+  environment, or nil when the spec does not elaborate here."
+  [checked-environment spec]
+  (let [result (elaborate/core-expression checked-environment (:type spec))]
+    (when (= :elaborated (:status result))
+      (let [type (:term result)]
+        (environment/declaration-id
+         {:rainbow/kind :axiom
+          :rainbow/universes (:universes spec)
+          :rainbow/type type
+          :rainbow/value nil
+          :rainbow/transparency :opaque
+          :rainbow/dependencies (term/constants type)
+          :rainbow/schema-version 1})))))
+
+;; axiom id -> principle, for ids verified to be a principle's exact declaration. An id
+;; fixes its content, so a verified id names the principle in every environment; only
+;; positive results are kept (a failed check in one environment may be its aliases).
+(def ^:private verified-principles (atom {}))
+
 (defn principle-of
-  "The named logical principle an axiom id represents in this environment, or
-  :unknown when it is not a declared principle."
+  "The named logical principle an axiom id represents, or :unknown when it is not a
+  declared principle. A provenance tag or an alias only NAMES the candidate; the axiom
+  counts as that principle only when its content id is the principle's own declaration
+  id (an axiom of a different type tagged :classical, or aliased logic/excluded-middle,
+  is :unknown)."
   [checked-environment axiom-id]
-  (let [declaration (environment/declaration checked-environment axiom-id)]
-    (or (get-in declaration [:rainbow/provenance :logical/principle])
-        (some principle-by-name (:rainbow/aliases declaration))
-        :unknown)))
+  (or (get @verified-principles axiom-id)
+      (let [declaration (environment/declaration checked-environment axiom-id)
+            candidate (or (get-in declaration [:rainbow/provenance :logical/principle])
+                          (some principle-by-name (:rainbow/aliases declaration)))
+            verified? (and candidate
+                           (= :axiom (:rainbow/kind declaration))
+                           (some #(and (= candidate (:principle %))
+                                       (= axiom-id (principle-declaration-id checked-environment %)))
+                                 principle-specs))]
+        (if verified?
+          (do (swap! verified-principles assoc axiom-id candidate) candidate)
+          :unknown))))
 
 (defn- covering-profiles [principles]
   (->> profiles
@@ -240,21 +272,32 @@
 
   Returns the exact axiom ids, the named principles they stand for, any axiom
   that is not a declared principle, and the smallest profile that covers the
-  result. A declaration whose closure is empty is `:constructive`."
-  [checked-environment id]
-  (let [axiom-ids (set (kernel/axioms checked-environment id))
-        named (into (sorted-set)
-                    (map #(principle-of checked-environment %))
-                    axiom-ids)
-        unknown (into (sorted-set)
-                      (filter #(= :unknown (principle-of checked-environment %)))
+  result. A declaration whose closure is empty is `:constructive`. A name the
+  environment does not have is `:unknown`, never constructive and never within a
+  profile (`:logical/unknown-declaration`)."
+  [checked-environment id-or-alias]
+  (if-let [id (if (environment/declaration checked-environment id-or-alias)
+                id-or-alias
+                (when (symbol? id-or-alias) (environment/resolve-id checked-environment id-or-alias)))]
+    (let [axiom-ids (set (kernel/axioms checked-environment id))
+          named (into (sorted-set)
+                      (map #(principle-of checked-environment %))
                       axiom-ids)
-        principles (disj named :unknown)]
-    {:logical/axiom-ids axiom-ids
-     :logical/principles principles
-     :logical/unknown-axiom-ids unknown
-     :logical/profile (if (seq unknown) :unknown (minimal-profile principles))
-     :logical/constructive? (empty? axiom-ids)}))
+          unknown (into (sorted-set)
+                        (filter #(= :unknown (principle-of checked-environment %)))
+                        axiom-ids)
+          principles (disj named :unknown)]
+      {:logical/axiom-ids axiom-ids
+       :logical/principles principles
+       :logical/unknown-axiom-ids unknown
+       :logical/profile (if (seq unknown) :unknown (minimal-profile principles))
+       :logical/constructive? (empty? axiom-ids)})
+    {:logical/axiom-ids #{}
+     :logical/principles (sorted-set)
+     :logical/unknown-axiom-ids (sorted-set)
+     :logical/unknown-declaration id-or-alias
+     :logical/profile :unknown
+     :logical/constructive? false}))
 
 (defn within-profile?
   "True when a classification is admissible under a declared profile. An unknown
@@ -262,6 +305,7 @@
   [classification profile]
   (let [spec (get profiles profile)]
     (boolean (and spec
+                  (not (:logical/unknown-declaration classification))
                   (empty? (:logical/unknown-axiom-ids classification))
                   (every? (:profile/principles spec)
                           (:logical/principles classification))))))
@@ -285,7 +329,8 @@
               :logical/unknown
               (into (sorted-set)
                     (keep (fn [[id classification]]
-                            (when (seq (:logical/unknown-axiom-ids classification))
+                            (when (or (seq (:logical/unknown-axiom-ids classification))
+                                      (:logical/unknown-declaration classification))
                               id))
                           classified))}
        requested

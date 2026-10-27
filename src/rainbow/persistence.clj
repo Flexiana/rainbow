@@ -1,6 +1,7 @@
 (ns rainbow.persistence
   "Persistence boundary for checked declarations. Loading always re-enters the kernel."
   (:require [clojure.edn :as edn]
+            [rainbow.canonical :as canonical]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.schemas :as schemas]))
@@ -66,6 +67,13 @@
      :rainbow.artifact/inductive-blocks blocks
      :rainbow.artifact/entries entries}))
 
+(defn names-id
+  "The content id of an environment's name bindings (alias -> declaration id). The environment id
+  covers declarations only, so a checkpoint whose aliases were swapped replays to the same environment
+  id (claim integrity A1); a claim made by name records this id as well."
+  [environment]
+  (canonical/content-id (into (sorted-map) (:rainbow.environment/aliases environment))))
+
 (defn save-environment! [environment path]
   (let [artifact (environment-artifact environment)]
     (binding [*print-namespace-maps* false
@@ -114,7 +122,7 @@
             (let [actual-id (environment/environment-id current)
                   expected-id (:rainbow.artifact/environment-id artifact)]
               (if (= expected-id actual-id)
-                {:status :replayed :environment current :environment-id actual-id}
+                {:status :replayed :environment current :environment-id actual-id :names-id (names-id current)}
                 {:status :rejected
                  :error {:error/category :persistence/environment-id-mismatch
                          :expected expected-id :actual actual-id}}))))))))

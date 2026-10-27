@@ -1,6 +1,5 @@
 (ns rainbow.algorithms.reference.conformal
-  "Executable conformal prediction, matching the proved Rainbow definition."
-  (:require [clojure.set :as set]))
+  "Executable conformal prediction, matching the proved Rainbow definition.")
 
 (defn in-prediction-set?
   "True iff a label's nonconformity score is within the threshold q."

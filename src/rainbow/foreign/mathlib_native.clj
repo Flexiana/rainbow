@@ -65,13 +65,10 @@
               (case (first node)
                 :param (if (string? (second node)) #{(second node)} #{})
                 :zero #{}
-                :succ (walk (second node))
-                (:max :imax) (into (walk (second node)) (walk (nth node 2 nil)))
-                :sort (walk (second node))
+                (:succ :sort) (walk (second node))
                 :bound #{}
                 :const (into #{} (mapcat walk (nth node 2 [])))
-                :app (into (walk (second node)) (walk (nth node 2 nil)))
-                (:lam :pi) (into (walk (second node)) (walk (nth node 2 nil)))
+                (:max :imax :app :lam :pi) (into (walk (second node)) (walk (nth node 2 nil)))
                 :let (into (walk (second node))
                            (into (walk (nth node 2 nil))
                                  (walk (nth node 3 nil))))
@@ -84,8 +81,7 @@
               #{}
               (case (first node)
                 :const (if (string? (second node)) #{(second node)} #{})
-                :app (into (walk (second node)) (walk (nth node 2 nil)))
-                (:lam :pi) (into (walk (second node)) (walk (nth node 2 nil)))
+                (:app :lam :pi) (into (walk (second node)) (walk (nth node 2 nil)))
                 :let (into (walk (second node))
                            (into (walk (nth node 2 nil))
                                  (walk (nth node 3 nil))))
@@ -148,8 +144,7 @@
   (let [mapping (get constant-aliases name)]
     (cond
       (symbol? mapping) {:native/alias mapping :native/level-transform :identity}
-      (map? mapping) mapping
-      :else nil)))
+      (map? mapping) mapping)))
 
 (defn- resolve-native-constant [checked-environment constant-aliases name path]
   (let [concept (native-concept constant-aliases name)
@@ -226,8 +221,7 @@
       (not (vector? node)) nil
       (= :app (first node)) (recur (second node))
       (= :const (first node)) (let [name (second node)]
-                                (when (string? name) name))
-      :else nil)))
+                                (when (string? name) name)))))
 
 (defn- typed-nat-literal-form?
   "True when `expression` is an application spine whose head constant is

@@ -14,8 +14,9 @@
   cost one install instead of one per path to it.
 
   The kernel still checks every declaration, once. Nothing here is trusted: a
-  missing dependency shows up as the kernel rejecting a declaration that names an
-  unknown constant."
+  missing dependency shows up as the first spec that names one of its constants
+  failing to elaborate (:elaborate/unknown-constant), before the kernel sees it,
+  unless another dependency happens to install that module."
   (:require [rainbow.environment :as environment]))
 
 (defn- module-var [ns-sym var-sym]

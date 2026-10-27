@@ -303,10 +303,13 @@
 (defn- definitionally-equal!* [environment left right]
   ;; Keep the original decision procedure. Untyped congruence/eta shortcuts can
   ;; erase binder annotations or bypass rejection inside a shared subterm.
+  ;; Normal forms are compared up to level equivalence: a level is equal to another with the
+  ;; same value under every assignment (term/level-equivalent?).
   (or (= left right)
       (binding [*normalization-cache* (atom {})]
-        (= (normal-form! environment left)
-           (normal-form! environment right)))))
+        (let [left (normal-form! environment left)
+              right (normal-form! environment right)]
+          (or (= left right) (term/equivalent-up-to-levels? left right))))))
 
 (defn definitionally-equal?
   ([environment left right] (definitionally-equal? environment left right nil))
@@ -1105,6 +1108,14 @@
                              (cond-> env (seq requirements)
                                (assoc-in [:rainbow.environment/declarations (:rainbow/id member) :rainbow/level-requirements]
                                          requirements))))
+                         staged members)
+          ;; A member inherits the axioms of the constants in its type (a field or parameter
+          ;; type may mention an axiom): every user's closure then sees them. Its own block's
+          ;; members are not yet in `environment` and carry none.
+          members (mapv #(assoc % :rainbow/axioms (declaration-axioms environment %)) members)
+          staged (reduce (fn [env member]
+                           (assoc-in env [:rainbow.environment/declarations (:rainbow/id member) :rainbow/axioms]
+                                     (:rainbow/axioms member)))
                          staged members)]
       {:status :accepted
        :block block

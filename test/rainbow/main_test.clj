@@ -239,3 +239,23 @@
         (is (re-find #"FAIL\s+\S*missing.edn" output))
         (is (re-find #"FAIL\s+\S*malformed.edn" output))
         (is (re-find #"OK\s+\S*valid.edn" output) output)))))
+
+(deftest a-bundle-pins-the-names-of-its-base
+  ;; claim integrity A1: the environment id does not cover aliases, so a base whose names were
+  ;; swapped reproduces it; the names id does not
+  (let [base @checked-env
+        [a b] (map :name corpus/proofs)
+        swapped (-> base
+                    (assoc-in [:rainbow.environment/aliases a] (environment/resolve-id base b))
+                    (assoc-in [:rainbow.environment/aliases b] (environment/resolve-id base a)))
+        made (main/proof-bundle {:checkpoint "names-base" :modules [] :base-env base :env base :claims [a]})]
+    (is (string? (get-in made [:base :names-id])))
+    (is (= (environment/environment-id base) (environment/environment-id swapped)))
+    (with-redefs [checkpoint/load-checkpoint (fn [_] {:status :replayed :environment base})]
+      (is (= {:ok? true :names :pinned} (select-keys (main/check-bundle made) [:ok? :names])))
+      (testing "a bundle made before 1.4.4 records no names id and says so"
+        (is (= {:ok? true :names :not-pinned}
+               (select-keys (main/check-bundle (update made :base dissoc :names-id)) [:ok? :names])))))
+    (with-redefs [checkpoint/load-checkpoint (fn [_] {:status :replayed :environment swapped})]
+      (is (= {:ok? false :error "the base's names do not match the recorded names id"}
+             (main/check-bundle made))))))

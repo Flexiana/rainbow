@@ -128,7 +128,7 @@
                               {:target (:goal/target goal)
                                :context (mapv :goal/type (:goal/context goal))})))))))
 
-(defn- application-spine [expression]
+(defn application-spine [expression]
   (loop [current expression
          arguments []]
     (if (= :app (first current))
@@ -138,7 +138,7 @@
 (defn- apply-arguments [function arguments]
   (reduce term/application function arguments))
 
-(defn- beta-head [expression]
+(defn beta-head [expression]
   (loop [current expression]
     (case (first current)
       :let (recur (term/instantiate (nth current 3) (nth current 2)))

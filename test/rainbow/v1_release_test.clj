@@ -29,7 +29,7 @@
            (:audited-machinery-cap compactness)))
     (is (pos? (:proof-corpus-lines compactness)))
     (is (= :none (:proof-corpus-cap compactness)))
-    (is (= 1471 (:trusted-base-lines compactness)))
+    (is (= 1548 (:trusted-base-lines compactness)))
     (testing "the split is exhaustive, so nothing escapes both buckets"
       (is (= (:production-source-lines compactness)
              (+ (:audited-machinery-lines compactness)

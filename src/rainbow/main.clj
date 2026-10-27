@@ -35,7 +35,8 @@
             [rainbow.canonical :as canonical]
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
-            [rainbow.kernel :as kernel]))
+            [rainbow.kernel :as kernel]
+            [rainbow.persistence :as persistence]))
 
 (def default-checkpoint
   "A late checkpoint of the open corpus; every module in the public tree installs on it."
@@ -153,7 +154,7 @@
       (when-not (= :replayed (:status loaded))
         (println "FAIL checkpoint" cp "did not replay:" (pr-str (:status loaded)))
         (System/exit 1))
-      (println "checkpoint" cp "replayed")
+      (println "checkpoint" cp "replayed: environment" (:environment/id loaded) "names" (:names/id loaded))
       (let [results (mapv #(verify-namespace (:environment loaded) (symbol %)) nss)]
         (run! print-result results)
         (every? ok? results)))))
@@ -196,7 +197,8 @@
      {:rainbow.bundle/schema-version (if blocks? 2 1)
      :base {:checkpoint checkpoint
             :modules (mapv str modules)
-            :environment-id (environment/environment-id base-env)}
+            :environment-id (environment/environment-id base-env)
+            :names-id (persistence/names-id base-env)}
      :claims (into (sorted-map)
                    (for [alias claims
                          :let [id (environment/resolve-id env alias)]]
@@ -220,7 +222,8 @@
 
 (defn check-bundle
   "Replays a proof bundle through the kernel: the base checkpoint must replay, the
-  named modules install on it to the recorded environment id, every declaration
+  named modules install on it to the recorded environment id (and, when the bundle records one,
+  to the recorded names id: the aliases the claims are read by), every declaration
   is re-checked by kernel/add-declaration (inductive blocks by add-inductive-block),
   and every claim resolves to its
   recorded id with its recorded axiom closure."
@@ -277,7 +280,7 @@
       (bundle-payload-error bundle)
       {:ok? false :error (bundle-payload-error bundle)}
       :else
-    (let [{:keys [checkpoint modules environment-id]} (:base bundle)
+    (let [{:keys [checkpoint modules environment-id names-id]} (:base bundle)
           loaded (checkpoint/load-checkpoint checkpoint)]
       (if-not (= :replayed (:status loaded))
         {:ok? false :error (str "base checkpoint did not replay: " checkpoint)}
@@ -286,8 +289,12 @@
                                (require s)
                                ((ns-resolve s 'extend-environment) env)))
                            (:environment loaded) modules)]
-          (if-not (= environment-id (environment/environment-id base))
+          (cond
+            (not= environment-id (environment/environment-id base))
             {:ok? false :error "the base modules did not reproduce the recorded environment id"}
+            (and names-id (not= names-id (persistence/names-id base)))
+            {:ok? false :error "the base's names do not match the recorded names id"}
+            :else
             (let [entries (if (= 2 (:rainbow.bundle/schema-version bundle))
                             (:entries bundle)
                             (mapv #(hash-map :entry/kind :declaration :entry/value %) (:declarations bundle)))
@@ -322,7 +329,8 @@
                                                        (not= :checked status) (conj "does not re-check")
                                                        (not= recorded actual) (conj (str "recorded axioms " (pr-str recorded)
                                                                                          " but the kernel computes " (pr-str actual))))}])))]
-                  {:ok? (every? (comp empty? :problems val) claims) :claims claims})))))))
+                  {:ok? (every? (comp empty? :problems val) claims) :claims claims
+                   :names (if names-id :pinned :not-pinned)})))))))
     ))
     (catch Throwable t
       {:ok? false :error (.getMessage t)})))
@@ -346,11 +354,13 @@
       (every? true?
               (mapv (fn [path]
                       (let [started (System/nanoTime)
-                            {:keys [ok? error claims]}
+                            {:keys [ok? error claims names]}
                             (try (check-bundle (read-bundle path) reductions)
                                  (catch Throwable t {:ok? false :error (.getMessage t)}))]
                         (println (if ok? "OK   " "FAIL ") path (if error (str "-- " error) "")
                                  (format "(%.1f s)" (/ (- (System/nanoTime) started) 1e9)))
+                        (when (= :not-pinned names)
+                          (println "       names not pinned: the bundle records no names id (made before 1.4.4)"))
                         (doseq [[alias {:keys [status axioms problems]}] claims]
                           (println (format "       %-9s %s%s%s" (some-> status name) alias
                                            (if (seq axioms) (str "  axioms: " (pr-str (sort axioms))) "  axiom-free")

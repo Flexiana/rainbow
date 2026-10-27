@@ -45,6 +45,7 @@
                    :source (:source value)
                    :environment (:environment replay)
                    :environment/id (:environment-id replay)
+                   :names/id (:names-id replay)
                    :mappings (:mappings value)
                    :remaining-targets (:remaining-targets value)
                    :remaining-partitions (:remaining-partitions value)

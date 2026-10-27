@@ -35,7 +35,10 @@
 ;; change length without this pin changing with them (v1-release-test pins it too).
 ;; 1.4.2: 1364 -> 1471, the two inductive-universe soundness fixes in kernel.clj (constructor field
 ;; universes; large elimination from a proposition with several constructors).
-(def trusted-base-lines 1471)
+;; 1.4.4: 1471 -> 1479, inductive block members inherit the axioms their types mention (claim
+;; integrity A3); 1479 -> 1548, levels compared by value (term/level-equivalent?), so
+;; max (succ u) u = succ u and the groupings of a three-way max are equal.
+(def trusted-base-lines 1548)
 
 (def trusted-paths
   ["src/rainbow/canonical.clj" "src/rainbow/term.clj"

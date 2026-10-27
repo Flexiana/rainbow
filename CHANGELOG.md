@@ -3,6 +3,95 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.4] - 2026-10-27
+
+Five fixes to what Rainbow's claims say, and a kernel change that makes it accept proofs it
+wrongly refused. None of the five lets the kernel accept an ill-typed term; each could make a
+claim about a checked theorem (what a name refers to, which logic it uses, which axioms it
+depends on) say something false. Please upgrade if you rely on names, profiles or axiom reports.
+The trusted base grows from 1,471 to 1,548 lines.
+
+### Security
+- **A checkpoint could be edited to change what its names refer to (A1).** The environment id
+  hashes declaration and block ids only, and a checkpoint id is a content hash anyone can
+  recompute. Swapping the aliases of `algebra/nat-add` and `nat/multiply` in a stored checkpoint
+  gives a checkpoint that replays to the same environment id, in which `algebra/nat-add` applied
+  to 2 and 3 computes 6, so a theorem stating 2 + 3 = 6 by that name is accepted with no axioms. Replay now also reports a **names id**, the content id of the
+  name-to-declaration bindings (`rainbow.persistence/names-id`); `lein verify --checkpoint` prints
+  both ids. Proof bundles record the base's names id and `lein verify --bundle` refuses a base
+  whose names differ; a bundle made before 1.4.4 records none and is reported as "names not
+  pinned". The environment id is unchanged, so every published environment id stays valid. A
+  claim made by name should cite both ids.
+- **A logic profile trusted names and provenance, not the axiom (A2).** An axiom of type
+  `forall P : Prop, P` declared with provenance `:classical`, or merely given the alias
+  `logic/excluded-middle`, was classified as excluded middle, so a theorem using it was reported
+  under the `:classical` profile. `rainbow.math.profile/principle-of` now accepts a principle only
+  when the axiom's content id is that principle's own declaration id.
+- **Members of an inductive type reported no axioms (A3).** A constructor or recursor whose type
+  mentions an axiom (a field of a postulated type) reported an empty axiom set, so theorems using
+  it could be reported axiom-free. `add-inductive-block` now gives each member the axioms of the
+  constants in its type. Content ids are unchanged. No inductive type in this repository mentions
+  an axiom, so no reported axiom set here changes.
+- **A shared definition could be replaced silently (A4).**
+  `rainbow.math.milestone-support/extend-with-shared` compared only the type and universes of a
+  declaration already installed under the same name, so a definition with a different body was
+  kept without notice, against its docstring. A definition under an existing name must now have
+  the same kind and a definitionally equal body, or installation throws "one alias, two
+  definitions". Modules that install a declaration only when its name is missing still compare
+  names only; that is unchanged in this release.
+- **An unknown name was classified as constructive (A5).**
+  `rainbow.math.profile/classify-declaration` now reports `:unknown` for a name the environment
+  does not know, outside every profile.
+
+### Who is affected
+- Whether a term type-checks: not affected by any of the five.
+- Claims read by name from a checkpoint or bundle you did not build yourself: check the names
+  id as well as the environment id.
+- A theorem reported `axiom-free` that uses an inductive type declared outside this repository
+  whose fields mention an axiom: re-check its axiom set with 1.4.4.
+- A theorem reported under a profile: re-classify it with 1.4.4 if any axiom in its environment
+  came from outside this repository.
+
+### Changed
+- **Universe levels are compared by value.** Definitional equality compared normal forms
+  exactly, and the level normal form is not complete, so `max (succ u) u` and `succ u`, or the
+  two groupings of a three-way `max`, were different and correct proofs using them were refused.
+  The kernel now treats two levels as equal when they agree under every assignment
+  (`rainbow.term/level-equivalent?`): a level without `imax` has a canonical shape, and each
+  parameter under an `imax`'s second argument is split into 0 and a successor. Level normal forms
+  and every content id are unchanged. Beyond 12 such parameters in one comparison the kernel
+  falls back to comparing normal forms, as before.
+
+### Added
+- **Proof irrelevance is a theorem of propositional extensionality.**
+  `logic/proof-irrelevance-from-proposition-extensionality` (`rainbow.math.logic.proof-irrelevance`)
+  has exactly the statement of the axiom `logic/proof-irrelevance`, and its kernel axiom set is
+  exactly `#{logic/proposition-extensionality}`: no excluded middle, choice or proof irrelevance.
+  The axiom stays declared; a proof that needs only proof irrelevance can now cite this theorem
+  and depend on propositional extensionality instead.
+
+### Fixed
+- A spec without `:universes` is installed with no universe parameters
+  (`milestone-support/add-spec` passed `nil`, which the kernel rejected).
+
+### Verified
+- Generated from internal 63163336. Every store id is the SHA-256 of its declaration (6,309 of
+  6,309; Pro 6,323 of 6,323), the same declarations as 1.4.3.
+- `lein reproduce --all` in this repository: 53 of 53 rebuilt checkpoints match their recorded
+  content ids. `finite-nat`, `nat-distance`, `nat-distance-core` and `nat-metric-separation`
+  were not rebuilt, because the Mathlib catalog was not present.
+- This repository on its own: 987 test namespaces, 2,051 tests, 51,381 assertions, 0 failures,
+  0 errors.
+- The internal suite in full at abd805e4: 2,313 test namespaces, 6,013 tests, 380,879 assertions,
+  0 failures, 0 errors. The release commit 63163336 changes one test only (`names-id-test` now
+  reads its checkpoint through the checkpoint reader, as published checkpoints are stored packed);
+  it passes in both trees.
+- "No inductive type in this repository mentions an axiom" was checked directly: all 256
+  checkpoints replayed under 1.4.4, and none of their 11,950 inductive types, constructors and
+  recursors has a non-empty axiom set.
+- Trusted base 1,548 lines: `term.clj` 254 -> 320 (level equivalence), `kernel.clj` 1,124 -> 1,135
+  (members' axioms, level comparison); `environment.clj` and `canonical.clj` unchanged.
+
 ## [1.4.3] - 2026-10-25
 
 `lein reproduce` works again after 1.4.2's checkpoint migration, and proof search can build its

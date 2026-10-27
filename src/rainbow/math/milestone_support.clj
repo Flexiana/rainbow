@@ -19,7 +19,8 @@
 
 (defn add-spec
   "Elaborates and kernel-checks one spec, adding it to the environment. A spec
-  with `:kind :definition` is reducible; otherwise it is an opaque theorem."
+  with `:kind :definition` is reducible; otherwise it is an opaque theorem. A spec
+  without `:universes` has none."
   [checked-environment producer spec]
   (let [type (elaborate! checked-environment (:type spec))
         value (elaborate! checked-environment (:value spec))
@@ -28,7 +29,7 @@
                 checked-environment
                 {:rainbow/kind (if definition? :definition :theorem)
                  :rainbow/aliases #{(:name spec)}
-                 :rainbow/universes (:universes spec)
+                 :rainbow/universes (or (:universes spec) [])
                  :rainbow/type type :rainbow/value value
                  :rainbow/transparency (if definition? :reducible :opaque)
                  :rainbow/dependencies (into (term/constants type)
@@ -54,7 +55,8 @@
   DIFFERENT statement under the same alias throws, naming both
   producers and both types. Two proofs of one statement are
   interchangeable; two statements under one name are the D20-shape
-  corruption and must never be resolved silently."
+  corruption and must never be resolved silently. A definition is also
+  compared by kind and value: a different body is a different meaning."
   [checked-environment producer spec]
   (if-let [existing-id (environment/resolve-id checked-environment
                                                (:name spec))]
@@ -66,7 +68,26 @@
       (if (and (= candidate-type (:rainbow/type stored))
                (= (vec (:universes spec))
                   (vec (:rainbow/universes stored))))
-        checked-environment
+        ;; A theorem's proof is interchangeable; a DEFINITION's body is its meaning. A
+        ;; definition under a present alias must be the same kind and the same value
+        ;; (elaborated, so binder names do not matter), or definitionally equal to it.
+        (if (or (= :definition (:kind spec)) (= :definition (:rainbow/kind stored)))
+          (let [candidate-value (elaborate! checked-environment (:value spec))]
+            (if (and (= :definition (:kind spec))
+                     (= :definition (:rainbow/kind stored))
+                     (or (= candidate-value (:rainbow/value stored))
+                         (true? (kernel/definitionally-equal? checked-environment candidate-value
+                                                              (:rainbow/value stored)))))
+              checked-environment
+              (throw (ex-info "Shared-world alias conflict: one alias, two definitions"
+                              {:name (:name spec)
+                               :incoming-producer producer
+                               :existing-producer (get-in stored [:rainbow/provenance :producer])
+                               :existing-kind (:rainbow/kind stored)
+                               :incoming-kind (if (= :definition (:kind spec)) :definition :theorem)
+                               :existing-value (:rainbow/value stored)
+                               :incoming-value candidate-value}))))
+          checked-environment)
         (throw (ex-info "Shared-world alias conflict: one alias, two statements"
                         {:name (:name spec)
                          :incoming-producer producer

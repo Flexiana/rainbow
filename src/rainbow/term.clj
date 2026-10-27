@@ -75,6 +75,72 @@
      :imax [:imax (instantiate-level (snd level) substitution)
             (instantiate-level (nth level 2) substitution)])))
 
+;; Level equivalence: equal value under every assignment of naturals to the parameters.
+;; Without imax a level is max(c, p1+k1, ..., pn+kn); `level-shape` is {param k} plus c, with
+;; c dropped (0) when some ki >= c, and two levels without imax are equivalent iff their shapes
+;; are equal. imax a b is 0 when b is 0 and max a b otherwise, so every parameter under an imax's
+;; second argument is split into p = 0 and p = succ p (a renaming of p >= 1); after the split,
+;; each such argument is constant 0 or at least 1.
+(defn- level-terms [level]
+  (case (fst level)
+    :zero [[nil 0]]
+    :param [[(snd level) 0]]
+    :succ (mapv (fn [[base k]] [base (inc k)]) (level-terms (snd level)))
+    :max (into (level-terms (snd level)) (level-terms (nth level 2)))
+    :imax (let [right (level-terms (nth level 2))]
+            (if (every? (fn [[base k]] (and (nil? base) (zero? k))) right)
+              [[nil 0]]
+              (into (level-terms (snd level)) right)))))
+
+(defn- level-shape [level]
+  (let [terms (level-terms level)
+        params (reduce (fn [m [base k]] (if base (update m base (fnil max 0) k) m)) {} terms)
+        c (reduce max 0 (keep (fn [[base k]] (when-not base k)) terms))]
+    [(if (some #(>= % c) (vals params)) 0 c) params]))
+
+(defn- imax-guards [level]
+  (case (fst level)
+    (:zero :param) #{}
+    :succ (imax-guards (snd level))
+    :max (into (imax-guards (snd level)) (imax-guards (nth level 2)))
+    :imax (into (into (imax-guards (snd level)) (imax-guards (nth level 2)))
+                (level-params (nth level 2)))))
+
+(def ^:private max-level-splits 12)
+
+(defn level-equivalent?
+  "True when two levels have the same value under every assignment. Past `max-level-splits`
+  imax parameters it falls back to equal normal forms, which is sound and may be incomplete."
+  [a b]
+  (or (= a b)
+      (let [guards (vec (into (imax-guards a) (imax-guards b)))]
+        (if (> (count guards) max-level-splits)
+          (= (normalize-level a) (normalize-level b))
+          (every? (fn [mask]
+                    (let [s (into {} (map-indexed (fn [i p] [p (if (bit-test mask i) [:succ [:param p]] zero-level)]))
+                                  guards)]
+                      (= (level-shape (instantiate-level a s)) (level-shape (instantiate-level b s)))))
+                  (range (bit-shift-left 1 (count guards))))))))
+
+(defn equivalent-up-to-levels?
+  "Structural equality of two terms, with levels compared by `level-equivalent?`."
+  [a b]
+  (or (identical? a b)
+      (and (= (fst a) (fst b)) (= (count a) (count b))
+           (case (fst a)
+             :sort (level-equivalent? (snd a) (snd b))
+             (:bound :nat) (= a b)
+             :const (and (= (snd a) (snd b)) (= (count (nth a 2)) (count (nth b 2)))
+                         (every? true? (map level-equivalent? (nth a 2) (nth b 2))))
+             :app (and (equivalent-up-to-levels? (snd a) (snd b))
+                       (equivalent-up-to-levels? (nth a 2) (nth b 2)))
+             (:lam :pi) (and (= (nth a 3) (nth b 3))
+                             (equivalent-up-to-levels? (snd a) (snd b))
+                             (equivalent-up-to-levels? (nth a 2) (nth b 2)))
+             :let (and (equivalent-up-to-levels? (snd a) (snd b))
+                       (equivalent-up-to-levels? (nth a 2) (nth b 2))
+                       (equivalent-up-to-levels? (nth a 3) (nth b 3)))))))
+
 (defn term? [term]
   (and (vector? term)
        (case (fst term)

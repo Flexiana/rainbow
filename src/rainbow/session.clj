@@ -1,7 +1,6 @@
 (ns rainbow.session
   "Validated persistence and cheap immutable checkpoints for proof sessions."
   (:require [clojure.edn :as edn]
-            [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.persistence :as persistence]
             [rainbow.proof :as proof]

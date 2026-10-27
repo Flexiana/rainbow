@@ -1,6 +1,6 @@
 # The corpus
 
-Every proof module in the open core: 1184 modules, grouped by folder. Each line links to the source and
+Every proof module in the open core: 1185 modules, grouped by folder. Each line links to the source and
 quotes the first sentence of its docstring. Re-check any of them with `lein verify <namespace>`.
 This file is generated from the source tree; do not edit it by hand.
 
@@ -418,7 +418,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.linear.vector.subtract-negation`](../src/rainbow/math/linear/vector/subtract_negation.clj) | Interaction laws between native vector subtraction and negation. |
 | [`rainbow.math.linear.vector.uniform-clamp`](../src/rainbow/math/linear/vector/uniform_clamp.clj) | Uniform box projection for finite signed-rational vectors. |
 
-## Logic (`src/rainbow/math/logic/`, 15)
+## Logic (`src/rainbow/math/logic/`, 16)
 
 | namespace | |
 |---|---|
@@ -433,6 +433,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.logic.infinite-transport`](../src/rainbow/math/logic/infinite_transport.clj) | Sort-polymorphic infinitude transport and a faithful native Int model. |
 | [`rainbow.math.logic.interval-membership-sound`](../src/rainbow/math/logic/interval_membership_sound.clj) | Universal soundness of the two-clause interval/box membership test, composing the general boolean-AND soundness (rainbow.math.logic.boolean-and) with the decidable order: contains? |
 | [`rainbow.math.logic.maximum-expected-utility`](../src/rainbow/math/logic/maximum_expected_utility.clj) | AHoF D17: finite exact-rational maximum expected utility. |
+| [`rainbow.math.logic.proof-irrelevance`](../src/rainbow/math/logic/proof_irrelevance.clj) | Proof irrelevance from propositional extensionality. |
 | [`rainbow.math.logic.scan-correctness`](../src/rainbow/math/logic/scan_correctness.clj) | GENERAL (abstract-element) correctness theorems for the prefix-sum scan: for arbitrary list elements a, b, c the running totals are exactly the prefix sums, cumulative-sum [a] = [a] cumulative-sum [a, b] = [a, a + b] cum |
 | [`rainbow.math.logic.scan-length`](../src/rainbow/math/logic/scan_length.clj) | A GENERAL (for-all-inputs) correctness theorem about the prefix-sum scan: scanning a list preserves its length, length (cumulative-sum xs) = length xs for every list xs. |
 | [`rainbow.math.logic.strict-contraction-stabilization`](../src/rainbow/math/logic/strict_contraction_stabilization.clj) | Constructive bounded stabilization of strict contractions in a finite Nat sup metric. |
