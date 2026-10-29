@@ -24,8 +24,8 @@
             [rainbow.algorithms.proofs.graph.walk-concat :as m15]
             [rainbow.algorithms.proofs.graph.walk-cycle-cut :as m16]
             [rainbow.algorithms.proofs.graph.walk-shorten :as m17]
-            [rainbow.math.checks :as m18]
-            [rainbow.math.finite.set-boundary :as m19]))
+            [rainbow.math.finite.set-boundary :as m18]
+            [rainbow.math.finite.set-union :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -39,7 +39,9 @@
     set/infinite-nonempty #{logic/excluded-middle} set/infinite-nontrivial #{logic/excluded-middle}
     set/infinite-or-finite #{logic/excluded-middle} set/not-infinite-equivalence #{logic/excluded-middle}
     set/infinite-union-equivalence #{logic/excluded-middle}
-    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}})
+    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}
+    logic/proof-irrelevance-from-proposition-extensionality #{logic/proposition-extensionality}
+    logic/prop-unit-equals-inhabited #{logic/proposition-extensionality}})
 
 (defn- rechecks [ns-sym]
   (let [{:keys [error theorems bundle?]} (main/verify-namespace @base ns-sym)
@@ -105,8 +107,8 @@
 (deftest rechecks-17-walk-shorten
   (rechecks 'rainbow.algorithms.proofs.graph.walk-shorten))
 
-(deftest rechecks-18-checks
-  (rechecks 'rainbow.math.checks))
-
-(deftest rechecks-19-set-boundary
+(deftest rechecks-18-set-boundary
   (rechecks 'rainbow.math.finite.set-boundary))
+
+(deftest rechecks-19-set-union
+  (rechecks 'rainbow.math.finite.set-union))

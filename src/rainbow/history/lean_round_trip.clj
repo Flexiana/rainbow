@@ -59,7 +59,10 @@
             (let [source (slurp lean-source-path)
                   fixture (lean/load-neutral fixture-path)
                   base (check-record-base source fixture)]
-              (assoc base :check/id (canonical/content-id base)))))))
+              ;; Lean writes the fixture even after an error; acceptance needs exit 0 and no sorryAx.
+              (if (string/includes? (pr-str fixture) "sorryAx")
+                {:status :rejected :error/category :lean-export/lean-rejected :reason :sorry-axiom}
+                (assoc base :check/id (canonical/content-id base))))))))
     (catch java.io.IOException exception
       {:status :rejected :error/category :lean-export/tool-unavailable
        :message (.getMessage exception)})))

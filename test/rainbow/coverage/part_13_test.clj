@@ -6,26 +6,26 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.main :as main]
-            [rainbow.math.rational.signed.midpoint-convexity :as m0]
-            [rainbow.math.rational.signed.one-hot-attained :as m1]
-            [rainbow.math.rational.signed.one-hot-keep :as m2]
-            [rainbow.math.rational.signed.one-hot-selects :as m3]
-            [rainbow.math.rational.signed.one-hot-unique :as m4]
-            [rainbow.math.rational.signed.product-radius-positive :as m5]
-            [rainbow.math.rational.signed.square-monotone :as m6]
-            [rainbow.math.rational.signed.square-numerator-positive :as m7]
-            [rainbow.math.rational.signed.square-numerator-positive-of-absolute :as m8]
-            [rainbow.math.sums.admissions-block :as m9]
-            [rainbow.math.sums.binary-capacity :as m10]
-            [rainbow.math.sums.binary-conflicts :as m11]
-            [rainbow.math.sums.binary-mutuality :as m12]
-            [rainbow.math.sums.boolean-predicate :as m13]
-            [rainbow.math.sums.bpath-cut :as m14]
-            [rainbow.math.sums.bpath-walk :as m15]
-            [rainbow.math.sums.budgeted-protection :as m16]
-            [rainbow.math.sums.earliest-schedule :as m17]
-            [rainbow.math.sums.equality-lp-bound :as m18]
-            [rainbow.math.sums.flow-cut :as m19]))
+            [rainbow.math.rational.signed.product-radius-positive :as m0]
+            [rainbow.math.rational.signed.square-monotone :as m1]
+            [rainbow.math.rational.signed.square-numerator-positive :as m2]
+            [rainbow.math.rational.signed.square-numerator-positive-of-absolute :as m3]
+            [rainbow.math.sums.admissions-block :as m4]
+            [rainbow.math.sums.binary-capacity :as m5]
+            [rainbow.math.sums.binary-conflicts :as m6]
+            [rainbow.math.sums.binary-mutuality :as m7]
+            [rainbow.math.sums.boolean-predicate :as m8]
+            [rainbow.math.sums.bpath-cut :as m9]
+            [rainbow.math.sums.bpath-walk :as m10]
+            [rainbow.math.sums.budgeted-protection :as m11]
+            [rainbow.math.sums.earliest-schedule :as m12]
+            [rainbow.math.sums.equality-lp-bound :as m13]
+            [rainbow.math.sums.indicator-zero :as m14]
+            [rainbow.math.sums.lp-bounds :as m15]
+            [rainbow.math.sums.lp-mixed-bound :as m16]
+            [rainbow.math.sums.lp-two-blocks :as m17]
+            [rainbow.math.sums.nonblocking :as m18]
+            [rainbow.math.sums.nonneg-zero :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -39,7 +39,9 @@
     set/infinite-nonempty #{logic/excluded-middle} set/infinite-nontrivial #{logic/excluded-middle}
     set/infinite-or-finite #{logic/excluded-middle} set/not-infinite-equivalence #{logic/excluded-middle}
     set/infinite-union-equivalence #{logic/excluded-middle}
-    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}})
+    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}
+    logic/proof-irrelevance-from-proposition-extensionality #{logic/proposition-extensionality}
+    logic/prop-unit-equals-inhabited #{logic/proposition-extensionality}})
 
 (defn- rechecks [ns-sym]
   (let [{:keys [error theorems bundle?]} (main/verify-namespace @base ns-sym)
@@ -51,62 +53,62 @@
         (is (= :checked status))
         (is (= (set (map #(environment/resolve-id @env %) (classical name))) axioms))))))
 
-(deftest rechecks-0-midpoint-convexity
-  (rechecks 'rainbow.math.rational.signed.midpoint-convexity))
-
-(deftest rechecks-1-one-hot-attained
-  (rechecks 'rainbow.math.rational.signed.one-hot-attained))
-
-(deftest rechecks-2-one-hot-keep
-  (rechecks 'rainbow.math.rational.signed.one-hot-keep))
-
-(deftest rechecks-3-one-hot-selects
-  (rechecks 'rainbow.math.rational.signed.one-hot-selects))
-
-(deftest rechecks-4-one-hot-unique
-  (rechecks 'rainbow.math.rational.signed.one-hot-unique))
-
-(deftest rechecks-5-product-radius-positive
+(deftest rechecks-0-product-radius-positive
   (rechecks 'rainbow.math.rational.signed.product-radius-positive))
 
-(deftest rechecks-6-square-monotone
+(deftest rechecks-1-square-monotone
   (rechecks 'rainbow.math.rational.signed.square-monotone))
 
-(deftest rechecks-7-square-numerator-positive
+(deftest rechecks-2-square-numerator-positive
   (rechecks 'rainbow.math.rational.signed.square-numerator-positive))
 
-(deftest rechecks-8-square-numerator-positive-of-absolute
+(deftest rechecks-3-square-numerator-positive-of-absolute
   (rechecks 'rainbow.math.rational.signed.square-numerator-positive-of-absolute))
 
-(deftest rechecks-9-admissions-block
+(deftest rechecks-4-admissions-block
   (rechecks 'rainbow.math.sums.admissions-block))
 
-(deftest rechecks-10-binary-capacity
+(deftest rechecks-5-binary-capacity
   (rechecks 'rainbow.math.sums.binary-capacity))
 
-(deftest rechecks-11-binary-conflicts
+(deftest rechecks-6-binary-conflicts
   (rechecks 'rainbow.math.sums.binary-conflicts))
 
-(deftest rechecks-12-binary-mutuality
+(deftest rechecks-7-binary-mutuality
   (rechecks 'rainbow.math.sums.binary-mutuality))
 
-(deftest rechecks-13-boolean-predicate
+(deftest rechecks-8-boolean-predicate
   (rechecks 'rainbow.math.sums.boolean-predicate))
 
-(deftest rechecks-14-bpath-cut
+(deftest rechecks-9-bpath-cut
   (rechecks 'rainbow.math.sums.bpath-cut))
 
-(deftest rechecks-15-bpath-walk
+(deftest rechecks-10-bpath-walk
   (rechecks 'rainbow.math.sums.bpath-walk))
 
-(deftest rechecks-16-budgeted-protection
+(deftest rechecks-11-budgeted-protection
   (rechecks 'rainbow.math.sums.budgeted-protection))
 
-(deftest rechecks-17-earliest-schedule
+(deftest rechecks-12-earliest-schedule
   (rechecks 'rainbow.math.sums.earliest-schedule))
 
-(deftest rechecks-18-equality-lp-bound
+(deftest rechecks-13-equality-lp-bound
   (rechecks 'rainbow.math.sums.equality-lp-bound))
 
-(deftest rechecks-19-flow-cut
-  (rechecks 'rainbow.math.sums.flow-cut))
+(deftest rechecks-14-indicator-zero
+  (rechecks 'rainbow.math.sums.indicator-zero))
+
+(deftest rechecks-15-lp-bounds
+  (rechecks 'rainbow.math.sums.lp-bounds))
+
+(deftest rechecks-16-lp-mixed-bound
+  (rechecks 'rainbow.math.sums.lp-mixed-bound))
+
+(deftest rechecks-17-lp-two-blocks
+  (rechecks 'rainbow.math.sums.lp-two-blocks))
+
+(deftest rechecks-18-nonblocking
+  (rechecks 'rainbow.math.sums.nonblocking))
+
+(deftest rechecks-19-nonneg-zero
+  (rechecks 'rainbow.math.sums.nonneg-zero))

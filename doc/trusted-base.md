@@ -5,15 +5,15 @@ This file lists that code. Everything not on this list is checked BY it: the
 mathematics, the tactics that build proofs, the proof search -- a bug anywhere
 else produces a rejected proof, never an accepted false one.
 
-## The kernel: 1,548 lines
+## The kernel: 1,661 lines
 
 | file | lines | role |
 |---|---|---|
-| `src/rainbow/kernel.clj` | 1135 | type checking, definitional equality, reduction, natural-number literals and the six native nat operations, inductive types and recursors, universe levels |
+| `src/rainbow/kernel.clj` | 1248 | type checking, definitional equality, reduction, natural-number literals and the six native nat operations, inductive types and recursors, universe levels |
 | `src/rainbow/term.clj` | 320 | the term language: binders, substitution (skipping subterms with nothing to change), de Bruijn indices, universe-level equivalence |
 | `src/rainbow/environment.clj` | 48 | declarations stored by content id; name resolution |
 | `src/rainbow/canonical.clj` | 45 | canonical encoding and the content hash that names every declaration |
-| **total** | **1548** | |
+| **total** | **1661** | |
 
 The size is pinned: a release test (`v1_release_test`) fails if these four files
 change length, so growth in the trusted base is always a visible, deliberate
@@ -26,6 +26,9 @@ two or more constructors can no longer be eliminated into a larger universe.
 1.4.4 grew it to 1,548 lines: universe levels are compared by value (`term/level-equivalent?`,
 so correct proofs are no longer refused over an incomplete level normal form), and constructors
 and recursors carry the axioms their types mention.
+1.5.0 grew it to 1,661 lines with lazy conversion in type checking: `check*` first compares types
+by head reduction, congruence on equal heads and one-at-a-time unfolding, and falls back to the
+unchanged full-normalisation comparison when that fails.
 
 The nested inductive-binder identity repair changes content IDs for affected
 blocks. Earlier kernels could conflate distinct field types and accept an

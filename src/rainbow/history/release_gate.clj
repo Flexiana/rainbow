@@ -38,7 +38,9 @@
 ;; 1.4.4: 1471 -> 1479, inductive block members inherit the axioms their types mention (claim
 ;; integrity A3); 1479 -> 1548, levels compared by value (term/level-equivalent?), so
 ;; max (succ u) u = succ u and the groupings of a three-way max are equal.
-(def trusted-base-lines 1548)
+;; 1.5.0: 1548 -> 1661, lazy conversion in kernel.clj check* (kernel-lazy-defeq, +113;
+;; Jiri approved 2026-10-26).
+(def trusted-base-lines 1661)
 
 (def trusted-paths
   ["src/rainbow/canonical.clj" "src/rainbow/term.clj"
@@ -71,9 +73,10 @@
    "src/rainbow/math/sums/"
    "src/rainbow/milestones/"])
 
-(def machinery-line-cap
-  "Ceiling on ordinary Clojure a reader must audit to believe the system works."
-  25000)
+;; Audited machinery is reported, not capped (Jiri, 2026-10-27: quality comes from frequent
+;; refactoring and bug fixing, not a line count; the cap was 25,000 from v1 and 26,000 in 1.5.0
+;; development). The trusted base keeps its exact pin (trusted-base-lines): that pin makes every
+;; kernel change a visible, deliberate decision.
 
 (defn- corpus-path? [^String path]
   (boolean (some (fn [^String prefix] (.startsWith path prefix)) corpus-prefixes)))
@@ -145,11 +148,10 @@
                                                 :same-decision?])))
               (passed [:ordinary-clojure-schemas :readable-compiler :fast-compiler
                        :decision-service :assurance-metadata]))
-         :F (when (and (< machinery-lines machinery-line-cap)
-                       (pos? corpus-lines)
+         :F (when (and (pos? corpus-lines)
                        (every? pos? (map line-count source-paths)))
               (passed [:no-custom-parser-editor-runtime :no-empty-namespaces
-                       :audited-machinery-bounded
+                       :audited-machinery-reported
                        :kernel-checked-corpus-uncapped]))}
         v1-capabilities
         {:bulk-foreign-graph (= 1024 (get-in evidence [:foreign-graph :benchmark
@@ -179,7 +181,7 @@
          {:production-source-lines source-lines
           :trusted-base-lines trusted-lines
           :audited-machinery-lines machinery-lines
-          :audited-machinery-cap machinery-line-cap
+          :audited-machinery-cap :none
           :proof-corpus-lines corpus-lines
           :proof-corpus-cap :none
           :split

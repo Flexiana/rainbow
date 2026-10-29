@@ -9,6 +9,8 @@
 # summary is indistinguishable from a hang.
 #
 # So: chunk by namespace, and make every chunk account for itself.
+# The 1.5.0 release run exhausted a 5GB heap with twenty retained proof
+# environments. Default to five; callers may explicitly choose another size.
 #
 #   * each chunk writes its own summary line to the results file the moment it
 #     finishes, so a chunk that dies is VISIBLY MISSING rather than silent;
@@ -21,13 +23,13 @@
 # usage: scripts/run-suite-chunked.sh [CHUNK_SIZE] [RESULTS_FILE]
 set -uo pipefail
 
-chunk_size="${1:-40}"
+chunk_size="${1:-5}"
 results="${2:-target/suite-chunks.tsv}"
 
 # Resume support. A run stopped part-way -- by the operator, by the OS, or to run
 # one part on its own -- should not have to repeat the chunks that already
 # passed. RAINBOW_START_CHUNK=5 skips straight to chunk 5 using the same chunk
-# numbering, so chunk 5 means the same forty namespaces it meant last time.
+# numbering, so chunk 5 means the same configured namespaces it meant last time.
 start_chunk="${RAINBOW_START_CHUNK:-1}"
 for value in "$chunk_size" "$start_chunk"; do
   if [[ ! "$value" =~ ^[1-9][0-9]{0,8}$ ]]; then
@@ -156,7 +158,7 @@ for ((start = 0; start < total; start += chunk_size)); do
   # complete before the summary lines below are grepped.
   chunk_started=$(date +%s)
   ( set -o pipefail
-    lein test "${chunk[@]}" 2>&1 \
+    lein test "${chunk[@]}" < /dev/null 2>&1 \
       | perl -MPOSIX -pe \
         'BEGIN { $| = 1 }
          $_ = strftime("[%H:%M:%S] ", localtime) . $_

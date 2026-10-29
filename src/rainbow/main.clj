@@ -143,6 +143,14 @@
     (verify-bundles-main (rest args))
     (verify-namespace-main args)))
 
+(defn- checkpoint-failure-message [path loaded]
+  (str "checkpoint " path " could not be loaded/replayed: "
+       (pr-str (or (:error/category loaded) (:status loaded)))
+       (when-let [message (:message loaded)] (str " -- " message))
+       "." (if (= :day54/checkpoint-read-failed (:error/category loaded))
+              " Check that the checkpoint path exists and the file is readable and complete."
+              " Use a checkpoint compatible with this version and inspect the replay category above.")))
+
 (defn- verify-namespace-main [args]
   (let [[cp nss] (if (= "--checkpoint" (first args))
                    [(second args) (drop 2 args)]
@@ -151,13 +159,13 @@
       (println "usage: lein verify [--checkpoint path] <namespace> ...")
       (System/exit 2))
     (let [loaded (checkpoint/load-checkpoint cp)]
-      (when-not (= :replayed (:status loaded))
-        (println "FAIL checkpoint" cp "did not replay:" (pr-str (:status loaded)))
-        (System/exit 1))
-      (println "checkpoint" cp "replayed: environment" (:environment/id loaded) "names" (:names/id loaded))
-      (let [results (mapv #(verify-namespace (:environment loaded) (symbol %)) nss)]
-        (run! print-result results)
-        (every? ok? results)))))
+      (if-not (= :replayed (:status loaded))
+        (do (println "FAIL" (checkpoint-failure-message cp loaded)) false)
+        (do
+          (println "checkpoint" cp "replayed: environment" (:environment/id loaded) "names" (:names/id loaded))
+          (let [results (mapv #(verify-namespace (:environment loaded) (symbol %)) nss)]
+            (run! print-result results)
+            (every? ok? results)))))))
 
 ;; ---------------------------------------------------------------- proof bundles
 
@@ -283,7 +291,8 @@
     (let [{:keys [checkpoint modules environment-id names-id]} (:base bundle)
           loaded (checkpoint/load-checkpoint checkpoint)]
       (if-not (= :replayed (:status loaded))
-        {:ok? false :error (str "base checkpoint did not replay: " checkpoint)}
+        {:ok? false :error (checkpoint-failure-message checkpoint loaded)
+         :error/category (:error/category loaded)}
         (let [base (reduce (fn [env m]
                              (let [s (symbol m)]
                                (require s)
@@ -379,19 +388,27 @@
   writes it in the compact binary file format; --plain writes a plain bundle. Every
   form holds the same declarations with the same ids."
   [args]
-  (let [[mode [in out]] (case (first args) "--plain" [:plain (rest args)] "--binary" [:binary (rest args)] [:shared args])]
+  (let [[mode [in out]] (case (first args)
+                        "--plain" [:plain (rest args)]
+                        "--binary" [:binary (rest args)]
+                        [:shared args])]
     (if-not (and in out)
       (do (println "usage: lein share-bundle [--binary|--plain] in out") false)
-      (let [bundle (read-bundle in)
-            as-shared (if (shared/shared? bundle) bundle (shared/encode bundle))]
-        (case mode
-          :plain (write-bundle! out (if (shared/shared? bundle) (shared/decode bundle) bundle))
-          :shared (write-bundle! out as-shared)
-          :binary (java.nio.file.Files/write (.toPath (java.io.File. ^String out)) (binary/pack as-shared)
-                                             ^"[Ljava.nio.file.OpenOption;" (make-array java.nio.file.OpenOption 0)))
-        (println (format "%s (%,d bytes) -> %s (%,d bytes)" in (.length (java.io.File. ^String in))
-                         out (.length (java.io.File. ^String out))))
-        true))))
+      (try
+        (let [bundle (read-bundle in)
+              as-shared (if (shared/shared? bundle) bundle (shared/encode bundle))]
+          (case mode
+            :plain (write-bundle! out (if (shared/shared? bundle) (shared/decode bundle) bundle))
+            :shared (write-bundle! out as-shared)
+            :binary (java.nio.file.Files/write (.toPath (java.io.File. ^String out)) (binary/pack as-shared)
+                                               ^"[Ljava.nio.file.OpenOption;" (make-array java.nio.file.OpenOption 0)))
+          (println (format "%s (%,d bytes) -> %s (%,d bytes)" in (.length (java.io.File. ^String in))
+                           out (.length (java.io.File. ^String out))))
+          true)
+        (catch Exception e
+          (println "FAIL share-bundle" in "->" out "--" (.getMessage e)
+                   "-- Check that the input is a complete, readable bundle and the output directory is writable.")
+          false)))))
 
 (defn- show-main
   "lein show alias [module namespace ...] prints the statement of a declaration for
@@ -400,12 +417,20 @@
   (let [[alias & modules] args]
     (if-not alias
       (do (println "usage: lein show some/theorem [module namespace ...]") false)
-      (let [loaded (checkpoint/load-checkpoint default-checkpoint)
-            env (reduce (fn [env m] (let [s (symbol m)] (require s) ((ns-resolve s 'extend-environment) env)))
-                        (:environment loaded) modules)]
-        (if-not (environment/resolve-id env (symbol alias))
-          (do (println "unknown declaration" alias "-- name the module that installs it") false)
-          (do (render/print-statement env (symbol alias)) true))))))
+      (try
+        (let [loaded (checkpoint/load-checkpoint default-checkpoint)
+              env (reduce (fn [env m]
+                            (let [s (symbol m)]
+                              (require s)
+                              ((ns-resolve s 'extend-environment) env)))
+                          (:environment loaded) modules)]
+          (if-not (environment/resolve-id env (symbol alias))
+            (do (println "unknown declaration" alias "-- name the module that installs it") false)
+            (do (render/print-statement env (symbol alias)) true)))
+        (catch Exception e
+          (println "FAIL show" alias "--" (.getMessage e)
+                   "-- Check the module names and that their source files are available on the classpath.")
+          false)))))
 
 ;; ---------------------------------------------------------------- reproduce
 

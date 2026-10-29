@@ -339,6 +339,7 @@
               [:enum #{:proof :invented-lemmas :alternatives
                        :compressed-blockers :telemetry}]
               {:min 1}]}
+    :optional {:universes [:vector :symbol]}   ; the goal's universe parameters, as on a declaration
     :closed? true}])
 
 (def proof-job-response-schema
@@ -357,7 +358,7 @@
                  :telemetry :map
                  :stroke :map
                  :response/id content-id}
-      :optional {:proof :map}
+      :optional {:proof :map :universes [:vector :symbol]}
       :closed? true}]
     :blocked
     [:map

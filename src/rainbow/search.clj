@@ -6,6 +6,7 @@
             [rainbow.math.tautology :as tautology]
             [rainbow.proof :as proof]
             [rainbow.reuse :as reuse]
+            [rainbow.simp :as simp]
             [rainbow.tactic :as tactic]
             [rainbow.term :as term])
   (:import (java.lang.management ManagementFactory)))
@@ -37,6 +38,8 @@
    :native-finite-cover-reuse? false
    :native-premise-theorem-reuse? false
    :native-dependent-theorem-specialization? false
+   ;; rainbow.simp: rewriting, reducible unfolding, chaining; its proofs are checked like any step
+   :native-simp? false
    :related-reuse-limit 8})
 
 (defn- current-thread-cpu-ms []
@@ -50,21 +53,26 @@
     (max 0 (long (/ (- (.totalMemory runtime) (.freeMemory runtime)) 1048576)))))
 
 (defn goal-hash [environment goal]
-  (canonical/content-id
-   {:environment (environment/environment-id environment)
-    :context (mapv (fn [local]
-                     (:term (kernel/normalize environment (:goal/type local))))
-                   (:goal/context goal))
-    :target (:term (kernel/normalize environment (:goal/target goal)))}))
+  (proof/memoized
+   ::goal-hash environment [(mapv :goal/type (:goal/context goal)) (:goal/target goal)]
+   #(canonical/content-id
+     {:environment (reuse/environment-id environment)
+      :context (mapv (fn [local] (proof/normal environment (:goal/type local))) (:goal/context goal))
+      :target (proof/normal environment (:goal/target goal))})))
 
 (defn state-hash [state]
   (canonical/content-id
-   {:environment (environment/environment-id (:proof/environment state))
+   {:environment (reuse/environment-id (:proof/environment state))
     :universes (vec (sort-by str (:proof/universes state)))
     :goals (mapv (fn [goal]
                    {:context (mapv :goal/type (:goal/context goal))
                     :target (:goal/target goal)})
                  (:proof/goals state))}))
+
+(defn- state-key
+  "The value state-hash digests (one search keeps one environment), compared directly."
+  [state]
+  [(:proof/universes state) (mapv (juxt #(mapv :goal/type (:goal/context %)) :goal/target) (:proof/goals state))])
 
 (defn attempt-key [goal-hash step]
   (canonical/content-id {:goal/hash goal-hash :strategy step}))
@@ -75,9 +83,6 @@
                 (when (= :failure (:result attempt))
                   (attempt-key (:goal/hash attempt) (:strategy attempt)))))
         attempts))
-
-(defn- step-key [environment goal step]
-  (attempt-key (goal-hash environment goal) step))
 
 (defn- local-application-terms
   "Enumerates well-typed applications of local functions to local evidence.
@@ -228,35 +233,11 @@
 
 (defn- unfold-reducible-focus-head
   "Exposes reducible proposition combinators while preserving connective heads.
-
-  This is an untrusted focusing aid. The kernel still checks every tactic term,
-  and bounded unfolding cannot change which terms are accepted."
+  An untrusted focusing aid; the kernel still checks every tactic term."
   [checked-environment expression]
-  (let [protected-ids
-        (into #{} (keep #(environment/resolve-id checked-environment %))
-              focus-protected-aliases)]
-    (loop [current (beta-head expression) remaining 16]
-      (let [[head arguments] (application-spine current)
-            id (when (= :const (first head)) (second head))
-            declaration (when id
-                          (environment/declaration checked-environment id))]
-        (if (and (pos? remaining)
-                 declaration
-                 (not (contains? protected-ids id))
-                 (= :definition (:rainbow/kind declaration))
-                 (:rainbow/value declaration)
-                 (contains? #{:reducible :semireducible}
-                            (:rainbow/transparency declaration)))
-          (let [parameters (:rainbow/universes declaration)
-                levels (nth head 2)
-                value (term/instantiate-universes
-                       (:rainbow/value declaration)
-                       (zipmap parameters levels))
-                unfolded (beta-head (reduce term/application value arguments))]
-            (if (= current unfolded)
-              current
-              (recur unfolded (dec remaining))))
-          current)))))
+  (tactic/unfold-head checked-environment expression
+                      (into #{} (keep #(environment/resolve-id checked-environment %))
+                            focus-protected-aliases)))
 
 (defn- apply-terms [function & arguments]
   (reduce term/application function arguments))
@@ -389,8 +370,7 @@
     (let [inferred (proof/infer-in-context checked-environment context
                                            candidate universes)]
       (and (= :checked (:status inferred))
-           (true? (kernel/definitionally-equal?
-                   checked-environment (:type inferred) expected))))))
+           (proof/convertible? checked-environment (:type inferred) expected)))))
 
 (defn- local-terms-of-type
   [checked-environment context universes expected]
@@ -486,9 +466,7 @@
                   (when (and local-head (= :const (first local-head))
                              (= finite-id (second local-head))
                              (= 2 (count local-arguments))
-                             (true? (kernel/definitionally-equal?
-                                     checked-environment element
-                                     (first local-arguments))))
+                             (proof/convertible? checked-environment element (first local-arguments)))
                     {:tactic :apply
                      :term (apply-terms theorem element small
                                         (second local-arguments))
@@ -505,7 +483,7 @@
   through the equality using a Bool-recursive predicate whose opposite branch
   is the current goal. It is an ordinary proof term, not a kernel rule."
   [checked-environment target evidence carrier left right]
-  (let [normalize #(:term (kernel/normalize checked-environment %))
+  (let [normalize #(proof/normal checked-environment %)
         bool (native-constant checked-environment 'data/Bool [])
         false-term (native-constant checked-environment 'data/false [])
         true-term (native-constant checked-environment 'data/true [])
@@ -586,12 +564,9 @@
              (some
               (fn [local-type]
                 (and local-type
-                     (or (true? (kernel/definitionally-equal?
-                                 checked-environment local-type atom))
+                     (or (proof/convertible? checked-environment local-type atom)
                          (and not-atom
-                              (true? (kernel/definitionally-equal?
-                                      checked-environment local-type
-                                      not-atom))))))
+                              (proof/convertible? checked-environment local-type not-atom)))))
               context-types))))
         atom
         (when (and cases falsity)
@@ -600,9 +575,7 @@
              (let [candidate (term/bound index)
                    candidate-type (nth context-types index)]
                (when (and candidate-type
-                          (true? (kernel/definitionally-equal?
-                                  checked-environment candidate-type
-                                  proposition-sort))
+                          (proof/convertible? checked-environment candidate-type proposition-sort)
                           (contains-subterm? target candidate)
                           (not (decided? candidate)))
                  candidate)))
@@ -735,7 +708,7 @@
 (defn- definitional-equivalence-step
   "Closes equivalent reducible propositions with explicit identity functions."
   [checked-environment left right]
-  (when (true? (kernel/definitionally-equal? checked-environment left right))
+  (when (proof/convertible? checked-environment left right)
     (when-let [intro (native-constant checked-environment
                                       'proposition/equivalence-intro [])]
       {:tactic :exact
@@ -762,8 +735,7 @@
         conjoin (constant 'proposition/conjoin)
         project-left (constant 'proposition/left)
         project-right (constant 'proposition/right)
-        same? #(true? (kernel/definitionally-equal?
-                       checked-environment %1 %2))]
+        same? #(proof/convertible? checked-environment %1 %2)]
     (when (and (= :const (first source-head))
                (= disjunction-id (second source-head))
                (= :const (first target-head))
@@ -845,13 +817,10 @@
   These are ordinary untrusted tactic proposals. Native theorem constants are
   fully instantiated with the connective operands found in the goal/context;
   tactic application and terminal kernel checking remain authoritative."
-  [state native-reducible-focus? native-classical-cases?
-   native-equality-rewrite?
-   native-proposition-extensionality?
-   native-function-extensionality?
-   native-structural-theorem-reuse?
-   native-finite-witnesses? native-list-cover-witnesses?
-   native-finite-cover-reuse?]
+  [state {:keys [native-reducible-focus? native-classical-cases? native-equality-rewrite?
+                 native-proposition-extensionality? native-function-extensionality?
+                 native-structural-theorem-reuse? native-finite-witnesses? native-list-cover-witnesses?
+                 native-finite-cover-reuse?]}]
   (let [goal (proof/current-goal state)
         checked-environment (:proof/environment state)
         finite-subset-steps
@@ -928,7 +897,7 @@
           (let [[carrier predicate] target-arguments
                 witness (constant 'proposition/witness (nth target-head 2))
                 normalized-carrier
-                (:term (kernel/normalize checked-environment carrier))
+                (proof/normal checked-environment carrier)
                 bool (constant 'data/Bool [])
                 finite-candidates
                 (when (and native-finite-witnesses?
@@ -961,7 +930,7 @@
                 proposition-sort (term/sort-term term/zero-level)
                 extensionality (constant 'logic/proposition-extensionality [])
                 normalized-carrier
-                (:term (kernel/normalize checked-environment carrier))
+                (proof/normal checked-environment carrier)
                 carrier-pi (when (= :pi (first normalized-carrier))
                              normalized-carrier)
                 domain (when carrier-pi (second carrier-pi))
@@ -980,12 +949,12 @@
                                           (:proof/universes state)))
                 normalized-domain-kind
                 (when (= :checked (:status domain-kind))
-                  (:term (kernel/normalize checked-environment
-                                           (:type domain-kind))))
+                  (proof/normal checked-environment
+                                           (:type domain-kind)))
                 normalized-codomain-kind
                 (when (= :checked (:status codomain-kind))
-                  (:term (kernel/normalize checked-environment
-                                           (:type codomain-kind))))
+                  (proof/normal checked-environment
+                                           (:type codomain-kind)))
                 domain-level (when (= :sort (first normalized-domain-kind))
                                (second normalized-domain-kind))
                 codomain-level
@@ -1025,8 +994,7 @@
                 (when (and native-proposition-extensionality?
                            (= 3 (count target-arguments))
                            extensionality equivalence
-                           (true? (kernel/definitionally-equal?
-                                   checked-environment carrier proposition-sort)))
+                           (proof/convertible? checked-environment carrier proposition-sort))
                   {:tactic :refine
                    :template (apply-terms extensionality left right [:hole 0])
                    :targets [(apply-terms equivalence left right)]
@@ -1036,8 +1004,7 @@
                 (when (and native-structural-theorem-reuse?
                            (= 3 (count target-arguments))
                            equal-truth truth
-                           (true? (kernel/definitionally-equal?
-                                   checked-environment carrier proposition-sort)))
+                           (proof/convertible? checked-environment carrier proposition-sort))
                   (cond
                     (= right truth)
                     {:tactic :refine
@@ -1186,20 +1153,20 @@
                      :score (:reuse/score candidate)
                      :source :premise-theorem-reuse}
                     extra)
-        probe (tactic/run state (tactic/apply (:term step)))]
+        probe (tactic/run state (tactic/apply (:term step) {:independent-only? true}))]
     (when-not (contains? #{:failure :no-progress} (:status probe))
       step)))
 
 (defn- local-case-steps
-  "An :induction step on each context local whose type's head constant id is in
-  `ids` and which the target mentions."
+  "An :induction step on each context local whose type's head constant id
+  satisfies `ids` (a set or predicate) and which the target mentions."
   [context target ids source]
   (->> context
        (map-indexed vector)
        (keep (fn [[index local]]
                (let [[head _] (application-spine (:goal/type local))]
                  (when (and (= :const (first head))
-                            (contains? ids (second head))
+                            (ids (second head))
                             (contains-free-bound? target index))
                    {:tactic :induction
                     :term [:bound index]
@@ -1208,32 +1175,23 @@
        vec))
 
 (defn- available-steps
-  [state reuse-options local-application-depth
-   local-application-terms-limit local-application-compositional?
-   global-application-terms
-   native-logic-focus? native-logic-prune? native-reducible-focus?
-   native-classical-cases? native-classical-tautology?
-   native-equality-rewrite?
-   native-proposition-extensionality? native-function-extensionality?
-   native-structural-theorem-reuse? native-bool-cases?
-   native-inductive-cases? native-focused-intro? witness-options]
-  (let [{:keys [reuse-index reuse-policy native-premise-theorem-reuse?
-                native-dependent-theorem-specialization?
-                related-reuse-limit]} reuse-options
-        [native-finite-witnesses? native-list-cover-witnesses?
-         native-finite-cover-reuse?]
-        witness-options
-        goal (proof/current-goal state)
+  [state {:keys [reuse-index reuse-policy native-premise-theorem-reuse? native-dependent-theorem-specialization?
+                 related-reuse-limit local-application-depth local-application-compositional? global-application-terms
+                 native-logic-focus? native-logic-prune? native-reducible-focus? native-classical-tautology?
+                 native-bool-cases? native-inductive-cases? native-focused-intro? native-simp?]
+          local-application-terms-limit :local-application-terms :as options}]
+  (let [goal (proof/current-goal state)
         context (:goal/context goal)
         target
         (if native-reducible-focus?
           (unfold-reducible-focus-head (:proof/environment state)
                                        (:goal/target goal))
-          (:term (kernel/normalize (:proof/environment state)
-                                   (:goal/target goal))))
+          (proof/normal (:proof/environment state)
+                                   (:goal/target goal)))
         lookup (when reuse-index
                  (reuse/query reuse-index (:proof/environment state)
                               (:goal/target goal) reuse-policy))
+        simp-steps (when native-simp? (simp/steps state options))
         reuse-steps (mapv (fn [candidate]
                             {:tactic :reuse
                              :term (:reuse/term candidate)
@@ -1285,30 +1243,38 @@
         bool-case-steps
         (when bool-id
           (local-case-steps context (:goal/target goal) #{bool-id} :native-bool-cases))
-        inductive-ids
-        (when native-inductive-cases?
-          (into #{}
-                (keep #(environment/resolve-id (:proof/environment state) %))
-                ['data/Option 'data/Product 'data/Sum 'data/Subtype
-                 'data/Sigma 'data/PSigma]))
+        ;; Any inductive block: case analysis on a local of a non-recursive type is
+        ;; invertible, induction on a recursive one a heuristic; a goal whose head is
+        ;; an inductive type is offered each constructor at the goal's parameters.
+        declaration #(environment/declaration (:proof/environment state) %)
+        members #(map declaration (:block/member-ids (environment/block (:proof/environment state)
+                                                                        (:rainbow/block-id (declaration %)))))
+        inductive? #(and (not= bool-id %) (= :inductive (:rainbow/kind (declaration %))))
+        recursive? (fn [id] (some #(some true? (get-in % [:rainbow/constructor :recursive-fields])) (members id)))
+        [target-head target-parameters] (application-spine target)
+        constructors (when (and native-inductive-cases? (= :const (first target-head))
+                                (inductive? (second target-head)))
+                       (sort-by #(get-in % [:rainbow/constructor :index])
+                                (filter :rainbow/constructor (members (second target-head)))))
         inductive-case-steps
-        (when (seq inductive-ids)
-          (local-case-steps context (:goal/target goal) inductive-ids
-                            :native-inductive-cases))
+        (when native-inductive-cases?
+          (concat
+           (local-case-steps context (:goal/target goal) #(and (inductive? %) (not (recursive? %)))
+                             :native-inductive-cases)
+           (map #(assoc % :focus/phase :heuristic)
+                (local-case-steps context (:goal/target goal) #(and (inductive? %) (recursive? %))
+                                  :native-inductive-cases))
+           (for [constructor constructors]
+             {:tactic :apply :source :native-inductive-cases
+              :term (reduce term/application [:const (:rainbow/id constructor) (nth target-head 2)]
+                            target-parameters)
+              :focus/phase (if (= 1 (count constructors)) :invertible :choice)})))
         focused-steps
         (vec
          (concat
           (if native-logic-focus?
             (cond->
-             (native-logic-steps state native-reducible-focus?
-                                 native-classical-cases?
-                                 native-equality-rewrite?
-                                 native-proposition-extensionality?
-                                 native-function-extensionality?
-                                 native-structural-theorem-reuse?
-                                 native-finite-witnesses?
-                                 native-list-cover-witnesses?
-                                 native-finite-cover-reuse?)
+             (native-logic-steps state options)
               tautology-step (into [tautology-step]))
             [])
           bool-case-steps
@@ -1372,6 +1338,7 @@
      (vec
       (concat
        reuse-steps
+       simp-steps
        related-reuse-steps
        related-specialization-steps
        [{:tactic :assumption}]
@@ -1386,18 +1353,17 @@
              (tactic/intro))
     :assumption (tactic/assumption)
     :exact (tactic/exact (:term step))
-    :apply (tactic/apply (:term step))
+    :apply (tactic/apply (:term step) {:independent-only? true})
     :refine (tactic/refine (:template step) (:targets step))
     :rewrite (tactic/rewrite (:term step) {:direction (:direction step)})
     :induction (tactic/induction (:term step))
     :reflexivity (tactic/reflexivity)
     :reuse (tactic/exact (:term step))))
 
-(defn- attempt-record [state step result elapsed-ms]
-  (let [goal (proof/current-goal state)
-        base {:rainbow/kind :proof-attempt
+(defn- attempt-record [step result elapsed-ms hash]
+  (let [base {:rainbow/kind :proof-attempt
               :attempt/schema-version 1
-              :goal/hash (goal-hash (:proof/environment state) goal)
+              :goal/hash hash
               :strategy step
               :result (case (:status result)
                         :proved :success
@@ -1440,24 +1406,17 @@
          memory-started (used-memory-mb)
          elapsed #(long (/ (- (System/nanoTime) started) 1000000))
          cpu-elapsed #(- (current-thread-cpu-ms) cpu-started)
-         memory-delta #(max 0 (- (used-memory-mb) memory-started))]
+         memory-delta #(max 0 (- (used-memory-mb) memory-started))
+         ;; with an index, every lemma a step or proof uses passes the index's policy and hold-out
+         admit (if reuse-index (reuse/admits reuse-index (:proof/environment state) reuse-policy (:proof/partial-term state)) (constantly true))]
      (loop [frontier (conj clojure.lang.PersistentQueue/EMPTY [state 0])
-            visited #{(state-hash state)}
+            visited #{(state-key state)}
             attempted (set known-failures)
             attempts []
             dead-ends []
-            metrics {:states-created 1
-                     :states-deduplicated 0
-                     :branches-pruned 0
-                     :failure-cache-hits 0
-                     :max-depth 0
-                     :kernel-checks 0
-                     :reuse-lookups 0
-                     :reuse-candidates 0
-                     :reuse-attempts 0
-                     :reuse-successes 0
-                     :local-application-candidates 0
-                     :native-logic-candidates 0}]
+            metrics {:states-created 1 :states-deduplicated 0 :branches-pruned 0 :failure-cache-hits 0
+                     :max-depth 0 :kernel-checks 0 :reuse-lookups 0 :reuse-candidates 0 :reuse-attempts 0
+                     :reuse-successes 0 :local-application-candidates 0 :native-logic-candidates 0}]
        ;; Publish only completed expansion counters and the current immutable
        ;; frontier. A stroke can retain this lower bound when cancelling a
        ;; worker inside a costly candidate/kernel operation. No result here is
@@ -1465,33 +1424,13 @@
        (when-let [publish (:progress! options)]
          (publish {:state (or (ffirst frontier) (first dead-ends))
                    :attempts attempts :telemetry (assoc metrics :wall-ms (elapsed))}))
-       (cond
-         (or (.isInterrupted (Thread/currentThread))
-             (and (ifn? cancelled?) (cancelled?)))
-         (blocked-result frontier dead-ends attempts
-                         (assoc metrics :wall-ms (elapsed)) :cancelled)
-
-         (and cpu-ms (>= (cpu-elapsed) cpu-ms))
-         (blocked-result frontier dead-ends attempts
-                         (assoc metrics :wall-ms (elapsed)) :cpu-budget)
-
-         (and memory-mb (>= (memory-delta) memory-mb))
-         (blocked-result frontier dead-ends attempts
-                         (assoc metrics :wall-ms (elapsed)) :memory-budget)
-
-         (empty? frontier)
-         (blocked-result frontier dead-ends attempts
-                         (assoc metrics :wall-ms (elapsed)) :frontier-exhausted)
-
-         (>= (:states-created metrics) states)
-         (blocked-result frontier dead-ends attempts
-                         (assoc metrics :wall-ms (elapsed)) :state-budget)
-
-         (>= (elapsed) wall-ms)
-         (blocked-result frontier dead-ends attempts
-                         (assoc metrics :wall-ms (elapsed)) :wall-budget)
-
-         :else
+       (if-let [reason (cond (or (.isInterrupted (Thread/currentThread)) (and (ifn? cancelled?) (cancelled?))) :cancelled
+                             (and cpu-ms (>= (cpu-elapsed) cpu-ms)) :cpu-budget
+                             (and memory-mb (>= (memory-delta) memory-mb)) :memory-budget
+                             (empty? frontier) :frontier-exhausted
+                             (>= (:states-created metrics) states) :state-budget
+                             (>= (elapsed) wall-ms) :wall-budget)]
+         (blocked-result frontier dead-ends attempts (assoc metrics :wall-ms (elapsed)) reason)
          (let [[current current-depth] (peek frontier)
                frontier (pop frontier)]
            (if (>= current-depth depth)
@@ -1501,35 +1440,7 @@
                         (update :max-depth max current-depth)))
                (let [{:keys [steps lookup related-lookup local-application-count
                            native-logic-count]}
-                   (available-steps current
-                                    {:reuse-index reuse-index
-                                     :reuse-policy reuse-policy
-                                    :native-premise-theorem-reuse?
-                                    (:native-premise-theorem-reuse? options)
-                                    :native-dependent-theorem-specialization?
-                                    (:native-dependent-theorem-specialization?
-                                     options)
-                                    :related-reuse-limit
-                                     (:related-reuse-limit options)}
-                                    (:local-application-depth options)
-                                    (:local-application-terms options)
-                                    (:local-application-compositional? options)
-                                    (:global-application-terms options)
-                                    (:native-logic-focus? options)
-                                    (:native-logic-prune? options)
-                                    (:native-reducible-focus? options)
-                                    (:native-classical-cases? options)
-                                    (:native-classical-tautology? options)
-                                    (:native-equality-rewrite? options)
-                                    (:native-proposition-extensionality? options)
-                                    (:native-function-extensionality? options)
-                                    (:native-structural-theorem-reuse? options)
-                                    (:native-bool-cases? options)
-                                    (:native-inductive-cases? options)
-                                    (:native-focused-intro? options)
-                                    [(:native-finite-witnesses? options)
-                                     (:native-list-cover-witnesses? options)
-                                     (:native-finite-cover-reuse? options)])
+                   (available-steps current options)
                    lookup? (some? lookup)
                    related-lookup? (some? related-lookup)
                    candidate-count (+ (count (:candidates lookup))
@@ -1545,17 +1456,17 @@
                              (update :reuse-lookups inc)
                              (or lookup? related-lookup?)
                              (update :reuse-candidates + candidate-count))
+                   hash (goal-hash (:proof/environment current) (proof/current-goal current))
                    outcomes
                    (reduce
                     (fn [acc step]
-                      (let [key (step-key (:proof/environment current)
-                                          (proof/current-goal current) step)]
-                        (if (contains? attempted key)
+                      (let [key (attempt-key hash step)]
+                        (if (or (contains? attempted key) (not (admit [(:term step) (:template step)])))
                           (update acc :skipped inc)
                           (let [before (System/nanoTime)
                                 result (tactic/run current (compile-step step))
                                 cost (long (/ (- (System/nanoTime) before) 1000000))
-                                record (attempt-record current step result cost)
+                                record (attempt-record step result cost hash)
                                 failed? (contains? #{:failure :no-progress} (:status result))]
                             (-> acc
                                 (cond-> failed? (update :attempted conj key))
@@ -1564,7 +1475,7 @@
                     {:attempted attempted :attempts attempts :results [] :skipped 0}
                     steps)
                    proved (some (fn [[result record]]
-                                  (when (= :proved (:status result)) [result record]))
+                                  (when (and (= :proved (:status result)) (admit (get-in result [:proof :proof/term]))) [result record]))
                                 (:results outcomes))]
                (if proved
                  (let [[proved-result proved-record] proved
@@ -1589,7 +1500,7 @@
                                         (:results outcomes))
                        [frontier visited deduplicated created]
                        (reduce (fn [[queue seen duplicates count-created] [next-state next-depth]]
-                                 (let [hash (state-hash next-state)]
+                                 (let [hash (state-key next-state)]
                                    (if (contains? seen hash)
                                      [queue seen (inc duplicates) count-created]
                                      [(conj queue [next-state next-depth])

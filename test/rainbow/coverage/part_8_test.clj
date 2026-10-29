@@ -6,26 +6,26 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.main :as main]
-            [rainbow.math.lemmas.chisq-readings :as m0]
-            [rainbow.math.lemmas.claimpay-readings :as m1]
-            [rainbow.math.lemmas.clv-geometric :as m2]
-            [rainbow.math.lemmas.combined-ratio :as m3]
-            [rainbow.math.lemmas.cournot-readings :as m4]
-            [rainbow.math.lemmas.cover-cut :as m5]
-            [rainbow.math.lemmas.cpm-makespan :as m6]
-            [rainbow.math.lemmas.crash-readings :as m7]
-            [rainbow.math.lemmas.credibility-readings :as m8]
-            [rainbow.math.lemmas.dc-power-flow :as m9]
-            [rainbow.math.lemmas.dea-efficiency :as m10]
-            [rainbow.math.lemmas.durbin-bounds :as m11]
-            [rainbow.math.lemmas.economic-dispatch :as m12]
-            [rainbow.math.lemmas.edf-readings :as m13]
-            [rainbow.math.lemmas.fcast-readings :as m14]
-            [rainbow.math.lemmas.fgt-order :as m15]
-            [rainbow.math.lemmas.frankw-corner :as m16]
-            [rainbow.math.lemmas.fulfil-readings :as m17]
-            [rainbow.math.lemmas.game-value :as m18]
-            [rainbow.math.lemmas.gilmore-pricing :as m19]))
+            [rainbow.math.lemmas.claimpay-readings :as m0]
+            [rainbow.math.lemmas.clv-geometric :as m1]
+            [rainbow.math.lemmas.combined-ratio :as m2]
+            [rainbow.math.lemmas.cournot-readings :as m3]
+            [rainbow.math.lemmas.cover-cut :as m4]
+            [rainbow.math.lemmas.cpm-makespan :as m5]
+            [rainbow.math.lemmas.crash-readings :as m6]
+            [rainbow.math.lemmas.credibility-readings :as m7]
+            [rainbow.math.lemmas.dc-power-flow :as m8]
+            [rainbow.math.lemmas.dea-efficiency :as m9]
+            [rainbow.math.lemmas.durbin-bounds :as m10]
+            [rainbow.math.lemmas.economic-dispatch :as m11]
+            [rainbow.math.lemmas.edf-readings :as m12]
+            [rainbow.math.lemmas.fcast-readings :as m13]
+            [rainbow.math.lemmas.fgt-order :as m14]
+            [rainbow.math.lemmas.frankw-corner :as m15]
+            [rainbow.math.lemmas.fulfil-readings :as m16]
+            [rainbow.math.lemmas.game-value :as m17]
+            [rainbow.math.lemmas.gilmore-pricing :as m18]
+            [rainbow.math.lemmas.headway-wait :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -39,7 +39,9 @@
     set/infinite-nonempty #{logic/excluded-middle} set/infinite-nontrivial #{logic/excluded-middle}
     set/infinite-or-finite #{logic/excluded-middle} set/not-infinite-equivalence #{logic/excluded-middle}
     set/infinite-union-equivalence #{logic/excluded-middle}
-    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}})
+    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}
+    logic/proof-irrelevance-from-proposition-extensionality #{logic/proposition-extensionality}
+    logic/prop-unit-equals-inhabited #{logic/proposition-extensionality}})
 
 (defn- rechecks [ns-sym]
   (let [{:keys [error theorems bundle?]} (main/verify-namespace @base ns-sym)
@@ -51,62 +53,62 @@
         (is (= :checked status))
         (is (= (set (map #(environment/resolve-id @env %) (classical name))) axioms))))))
 
-(deftest rechecks-0-chisq-readings
-  (rechecks 'rainbow.math.lemmas.chisq-readings))
-
-(deftest rechecks-1-claimpay-readings
+(deftest rechecks-0-claimpay-readings
   (rechecks 'rainbow.math.lemmas.claimpay-readings))
 
-(deftest rechecks-2-clv-geometric
+(deftest rechecks-1-clv-geometric
   (rechecks 'rainbow.math.lemmas.clv-geometric))
 
-(deftest rechecks-3-combined-ratio
+(deftest rechecks-2-combined-ratio
   (rechecks 'rainbow.math.lemmas.combined-ratio))
 
-(deftest rechecks-4-cournot-readings
+(deftest rechecks-3-cournot-readings
   (rechecks 'rainbow.math.lemmas.cournot-readings))
 
-(deftest rechecks-5-cover-cut
+(deftest rechecks-4-cover-cut
   (rechecks 'rainbow.math.lemmas.cover-cut))
 
-(deftest rechecks-6-cpm-makespan
+(deftest rechecks-5-cpm-makespan
   (rechecks 'rainbow.math.lemmas.cpm-makespan))
 
-(deftest rechecks-7-crash-readings
+(deftest rechecks-6-crash-readings
   (rechecks 'rainbow.math.lemmas.crash-readings))
 
-(deftest rechecks-8-credibility-readings
+(deftest rechecks-7-credibility-readings
   (rechecks 'rainbow.math.lemmas.credibility-readings))
 
-(deftest rechecks-9-dc-power-flow
+(deftest rechecks-8-dc-power-flow
   (rechecks 'rainbow.math.lemmas.dc-power-flow))
 
-(deftest rechecks-10-dea-efficiency
+(deftest rechecks-9-dea-efficiency
   (rechecks 'rainbow.math.lemmas.dea-efficiency))
 
-(deftest rechecks-11-durbin-bounds
+(deftest rechecks-10-durbin-bounds
   (rechecks 'rainbow.math.lemmas.durbin-bounds))
 
-(deftest rechecks-12-economic-dispatch
+(deftest rechecks-11-economic-dispatch
   (rechecks 'rainbow.math.lemmas.economic-dispatch))
 
-(deftest rechecks-13-edf-readings
+(deftest rechecks-12-edf-readings
   (rechecks 'rainbow.math.lemmas.edf-readings))
 
-(deftest rechecks-14-fcast-readings
+(deftest rechecks-13-fcast-readings
   (rechecks 'rainbow.math.lemmas.fcast-readings))
 
-(deftest rechecks-15-fgt-order
+(deftest rechecks-14-fgt-order
   (rechecks 'rainbow.math.lemmas.fgt-order))
 
-(deftest rechecks-16-frankw-corner
+(deftest rechecks-15-frankw-corner
   (rechecks 'rainbow.math.lemmas.frankw-corner))
 
-(deftest rechecks-17-fulfil-readings
+(deftest rechecks-16-fulfil-readings
   (rechecks 'rainbow.math.lemmas.fulfil-readings))
 
-(deftest rechecks-18-game-value
+(deftest rechecks-17-game-value
   (rechecks 'rainbow.math.lemmas.game-value))
 
-(deftest rechecks-19-gilmore-pricing
+(deftest rechecks-18-gilmore-pricing
   (rechecks 'rainbow.math.lemmas.gilmore-pricing))
+
+(deftest rechecks-19-headway-wait
+  (rechecks 'rainbow.math.lemmas.headway-wait))

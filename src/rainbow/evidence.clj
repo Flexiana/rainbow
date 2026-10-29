@@ -115,7 +115,7 @@
            machinery (remove corpus? src)
            corpus (filter corpus? src)]
        {:audited-machinery-lines (reduce + (map line-count machinery))
-        :audited-machinery-cap v1/machinery-line-cap
+        :audited-machinery-cap :none
         :proof-corpus-lines (reduce + (map line-count corpus))
         :proof-corpus-cap :none
         :corpus-prefixes v1/corpus-prefixes
@@ -153,8 +153,7 @@
         (println "  source lines:     " (get-in bundle [:corpus :source-lines]))
         (println "  test namespaces:  " (get-in bundle [:corpus :test-namespaces]))
         (println "  trusted base:     " (get-in bundle [:trusted-base :lines]) "lines")
-        (println "  audited machinery:" (get-in bundle [:compactness :audited-machinery-lines])
-                 "of" (get-in bundle [:compactness :audited-machinery-cap]) "line cap")
+        (println "  audited machinery:" (get-in bundle [:compactness :audited-machinery-lines]) "lines")
         (println "  checked corpus:   " (get-in bundle [:compactness :proof-corpus-lines])
                  "lines, uncapped by design")
         (println "  manifests:        " (get-in bundle [:maturity :manifests])

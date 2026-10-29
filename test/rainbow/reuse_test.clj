@@ -5,6 +5,7 @@
             [rainbow.data.inductive :as inductive]
             [rainbow.elaborate :as elaborate]
             [rainbow.math.logic.function :as f]
+            [rainbow.math.logic.proposition :as proposition]
             [rainbow.environment :as environment]
             [rainbow.proof :as proof]
             [rainbow.reuse :as reuse]
@@ -199,3 +200,35 @@
     (is (= :none (get-in value [:claim-boundaries :trusted-base-change])))
     (is (= :explicitly-quarantined
            (get-in value [:claim-boundaries :universe-polymorphic-retrieval])))))
+
+(deftest native-logic-steps-take-lemmas-through-the-index-policy-and-hold-out
+  ;; B and A from A and B: the native conjunction steps use proposition/left, right and
+  ;; conjoin. They used to take them from the environment past the index; now a lemma held
+  ;; out of the index (or outside its policy) is not used, as for an indexed lemma.
+  (let [environment (proposition/build-environment)
+        target (:term (elaborate/core-expression
+                       environment
+                       (proposition/forall [['A 'Prop] ['B 'Prop] ['evidence (proposition/conjunction 'A 'B)]]
+                                           (proposition/conjunction 'B 'A))))
+        index (reuse/build-index environment {:incremental? true})
+        options {:states 256 :depth 32 :wall-ms 5000 :native-logic-focus? true :native-logic-prune? true}
+        search #(search/prove (:state (proof/start environment target)) (merge options %))
+        lemmas (fn [result] (set (filter #(= :theorem (:rainbow/kind (environment/declaration environment %)))
+                                         (term/constants (get-in result [:proof :proof/term])))))
+        full (search {:reuse-index index})
+        used (lemmas full)
+        held-out (fn [ids] (-> index
+                               (update :reuse/entries #(filterv (comp not ids :reuse/declaration-id) %))
+                               (update :reuse/by-type #(into (sorted-map) (keep (fn [[k v]] (let [v (filterv (comp not ids) v)] (when (seq v) [k v])))) %))))
+        without (search {:reuse-index (held-out used)})
+        denied (search {:reuse-index index :reuse-policy {:denied-dependencies (set (mapcat #(:rainbow/dependencies (environment/declaration environment %)) used))}})]
+    (is (= :proved (:status full)))
+    (is (= 3 (count used)))
+    (is (= :proved (:status (search {}))) "without an index the native steps are unchanged")
+    (is (empty? (some-> (get-in without [:proof :proof/term]) term/constants (filter used))))
+    (is (= :blocked (:status without)))
+    (is (not= :proved (:status denied)))
+    (is (true? ((reuse/admits index environment {} nil) [(term/constant (first used) [])])))
+    (is (false? ((reuse/admits (held-out used) environment {} nil) [[:hole "g-1"] (term/constant (first used) [])])))
+    (is (true? ((reuse/admits (held-out used) environment {} [:app (term/constant (first used) []) [:hole "g-0"]])
+                [(term/constant (first used) [])])) "a proposal's own lemmas pass")))

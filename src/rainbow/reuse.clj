@@ -9,9 +9,13 @@
             [rainbow.canonical-stream :as canonical-stream]
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
+            [rainbow.proof :as proof]
             [rainbow.term :as term]))
 
 (def schema-version 1)
+
+(defn environment-id [environment]   ; a search asks per state; remembered for the latest environment
+  (proof/memoized ::environment-id environment nil #(environment/environment-id environment)))
 
 (def default-policy
   {:allowed-axioms #{}
@@ -78,8 +82,9 @@
    (normalized-type-key checked-environment type nil))
   ([checked-environment type universe-parameters]
    (normalized-type-key checked-environment type universe-parameters {}))
-  ([checked-environment type universe-parameters {:keys [incremental?]}]
-   (let [normalized (kernel/normalize checked-environment type)
+  ([checked-environment type universe-parameters {:keys [incremental? normal]}]
+   (let [normalized (if normal {:status (if (normal) :normalized :rejected) :term (normal)}   ; a memoized normal form
+                        (kernel/normalize checked-environment type))
          content-id (if incremental? canonical-stream/content-id-incremental canonical/content-id)]
      (when-not (= :normalized (:status normalized))
        (throw (ex-info "Cannot index a type that does not normalize"
@@ -228,6 +233,33 @@
        (term/constant (:reuse/declaration-id entry)
                       (mapv (fn [parameter] [:param parameter]) levels))))))
 
+(def ^:private views (atom nil))
+(defn- index-view
+  "Lookups built once per index value: entries by id, each entry's shape-concept bits, and the
+  eligible entry positions per [policy target-levels]."
+  [index]
+  (let [[latest view] @views]
+    (if (identical? latest index) view
+        (let [entries (:reuse/entries index)
+              bits (zipmap (distinct (mapcat #(filter (comp #{"shape"} namespace) (:reuse/concepts %)) entries))
+                           (map #(bit-shift-left 1 %) (range)))]
+          (peek (reset! views [index {:by-id (into {} (map (juxt :reuse/declaration-id identity)) entries) :bits bits
+                                      :masks (mapv #(reduce bit-or 0 (keep bits (:reuse/concepts %))) entries)
+                                      :eligible (atom {})}]))))))
+
+(defn admits
+  "A predicate on a step's terms (holes allowed) for a search over `index`: each theorem constant
+  in them is an index entry eligible under `policy` (so a hold-out applies), each axiom an allowed
+  one. Constants of `seed` (a proposal's partial proof: the caller's own choice) pass."
+  [index environment policy seed]
+  (let [policy (merge default-policy policy) by-id (:by-id (index-view index))
+        ids #(keep (fn [x] (when (and (vector? x) (= :const (first x))) (second x))) (tree-seq vector? seq %))
+        ok? (memoize #(case (:rainbow/kind (environment/declaration environment %))
+                        :theorem (boolean (some-> (by-id %) (eligible? policy)))
+                        :axiom (contains? (:allowed-axioms policy) %) true))
+        seeded (set (ids seed))]
+    (fn [value] (every? #(or (seeded %) (ok? %)) (ids value)))))
+
 (defn query
   "Returns exact normalized-type matches in deterministic semantic order.
 
@@ -236,7 +268,7 @@
   ([index checked-environment target] (query index checked-environment target {}))
   ([index checked-environment target policy]
    (let [policy (merge default-policy policy)
-         environment-id (environment/environment-id checked-environment)]
+         environment-id (environment-id checked-environment)]
      (if-not (= environment-id (:reuse/environment-id index))
        {:status :rejected
         :error/category :reuse/environment-mismatch
@@ -244,10 +276,10 @@
         :actual environment-id
         :candidates []}
        (let [target-universes (ordered-level-parameters target)
-             type-key (normalized-type-key checked-environment target
-                                           target-universes {:incremental? true})
-             entries-by-id (into {} (map (juxt :reuse/declaration-id identity))
-                                 (:reuse/entries index))
+             type-key (proof/memoized ::type-key checked-environment [target target-universes]
+                                      #(normalized-type-key checked-environment target target-universes
+                                                            {:incremental? true :normal (fn [] (proof/normal checked-environment target))}))
+             entries-by-id (:by-id (index-view index))
              target-dependencies (term/constants target)
              candidates
              (->> (get-in index [:reuse/by-type type-key] [])
@@ -300,7 +332,7 @@
    (query-related index checked-environment target {}))
   ([index checked-environment target {:keys [limit] :as options}]
    (let [policy (merge default-policy (dissoc options :limit))
-         environment-id (environment/environment-id checked-environment)]
+         environment-id (environment-id checked-environment)]
      (if-not (= environment-id (:reuse/environment-id index))
        {:status :rejected
         :error/category :reuse/environment-mismatch
@@ -309,45 +341,36 @@
         :candidates []}
        (let [target-levels (term-level-params target)
              target-dependencies (term/constants target)
-             target-concepts (shape-concepts target)
+             {:keys [bits masks eligible]} (index-view index)
+             entries (:reuse/entries index)
+             ;; a target's concepts are shapes, so its overlap with an entry is a count of shared shape bits
+             target-mask (reduce bit-or 0 (keep bits (shape-concepts target)))
+             positions (or (get @eligible [policy target-levels])
+                           (let [found (filterv #(and (eligible? (entries %) policy) (reusable-in-target? (entries %) target-levels))
+                                                (range (count entries)))]
+                             (swap! eligible #(assoc (if (< (count %) 64) % {}) [policy target-levels] found))
+                             found))
              candidates
-             (->> (:reuse/entries index)
-                  (filter #(eligible? % policy))
-                  (filter #(reusable-in-target? % target-levels))
-                  (map (fn [entry]
-                         (let [score
-                               {:concept-overlap
-                                (count (set/intersection
-                                        target-concepts
-                                        (:reuse/concepts entry)))
-                                :dependency-overlap
-                                (count (set/intersection
-                                        target-dependencies
-                                        (:reuse/dependencies entry)))
-                                :successful-uses
-                                (get-in entry [:reuse/evidence
-                                               :successful-uses] 0)
-                                :failed-uses
-                                (get-in entry [:reuse/evidence
-                                               :failed-uses] 0)}]
-                           {:reuse/declaration-id (:reuse/declaration-id entry)
-                            :reuse/term (reuse-term entry)
-                            :reuse/score score
-                            :reuse/axioms (:reuse/axioms entry)
-                            :reuse/source (:reuse/source entry)})))
-                  (filter (fn [candidate]
-                            (let [score (:reuse/score candidate)]
-                              (or (pos? (:dependency-overlap score))
-                                  (>= (:concept-overlap score) 3)))))
-                  (sort-by (fn [candidate]
-                             (let [score (:reuse/score candidate)]
-                               [(- (:dependency-overlap score))
-                                (- (:concept-overlap score))
-                                (- (:successful-uses score))
-                                (:failed-uses score)
-                                (:reuse/declaration-id candidate)])))
+             (->> positions
+                  (keep (fn [position]
+                          (let [entry (entries position)
+                                score {:concept-overlap (Long/bitCount (bit-and target-mask (masks position)))
+                                       :dependency-overlap (count (set/intersection target-dependencies
+                                                                                    (:reuse/dependencies entry)))
+                                       :successful-uses (get-in entry [:reuse/evidence :successful-uses] 0)
+                                       :failed-uses (get-in entry [:reuse/evidence :failed-uses] 0)}]
+                            (when (or (pos? (:dependency-overlap score)) (>= (:concept-overlap score) 3))
+                              [score entry]))))
+                  (sort-by (fn [[score entry]]
+                             [(- (:dependency-overlap score)) (- (:concept-overlap score))
+                              (- (:successful-uses score)) (:failed-uses score) (:reuse/declaration-id entry)]))
                   (take (or limit 16))
-                  vec)]
+                  (mapv (fn [[score entry]]
+                          {:reuse/declaration-id (:reuse/declaration-id entry)
+                           :reuse/term (reuse-term entry)
+                           :reuse/score score
+                           :reuse/axioms (:reuse/axioms entry)
+                           :reuse/source (:reuse/source entry)})))]
          {:status :matched
           :candidates candidates
           :examined (count (:reuse/entries index))

@@ -6,26 +6,26 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.main :as main]
-            [rainbow.math.lemmas.mctrans-step :as m0]
-            [rainbow.math.lemmas.minimax-regret :as m1]
-            [rainbow.math.lemmas.mmck-unique :as m2]
-            [rainbow.math.lemmas.mnl-assortment :as m3]
-            [rainbow.math.lemmas.ncd-readings :as m4]
-            [rainbow.math.lemmas.ncyc-infeasible :as m5]
-            [rainbow.math.lemmas.nmb-decision :as m6]
-            [rainbow.math.lemmas.nsfr-reading :as m7]
-            [rainbow.math.lemmas.nvcost-readings :as m8]
-            [rainbow.math.lemmas.odd-cycle-cut :as m9]
-            [rainbow.math.lemmas.oee-factors :as m10]
-            [rainbow.math.lemmas.one-center :as m11]
-            [rainbow.math.lemmas.payasbid-readings :as m12]
-            [rainbow.math.lemmas.pcmax-lower-bound :as m13]
-            [rainbow.math.lemmas.pfs-readings :as m14]
-            [rainbow.math.lemmas.pindex-readings :as m15]
-            [rainbow.math.lemmas.prf-readings :as m16]
-            [rainbow.math.lemmas.projgrad-clamp :as m17]
-            [rainbow.math.lemmas.qp-kkt :as m18]
-            [rainbow.math.lemmas.rccp-readings :as m19]))
+            [rainbow.math.lemmas.minimax-regret :as m0]
+            [rainbow.math.lemmas.mmck-unique :as m1]
+            [rainbow.math.lemmas.mnl-assortment :as m2]
+            [rainbow.math.lemmas.ncd-readings :as m3]
+            [rainbow.math.lemmas.ncyc-infeasible :as m4]
+            [rainbow.math.lemmas.nmb-decision :as m5]
+            [rainbow.math.lemmas.nsfr-reading :as m6]
+            [rainbow.math.lemmas.nvcost-readings :as m7]
+            [rainbow.math.lemmas.odd-cycle-cut :as m8]
+            [rainbow.math.lemmas.oee-factors :as m9]
+            [rainbow.math.lemmas.one-center :as m10]
+            [rainbow.math.lemmas.payasbid-readings :as m11]
+            [rainbow.math.lemmas.pcmax-lower-bound :as m12]
+            [rainbow.math.lemmas.pfs-readings :as m13]
+            [rainbow.math.lemmas.pindex-readings :as m14]
+            [rainbow.math.lemmas.prf-readings :as m15]
+            [rainbow.math.lemmas.projgrad-clamp :as m16]
+            [rainbow.math.lemmas.qp-kkt :as m17]
+            [rainbow.math.lemmas.rccp-readings :as m18]
+            [rainbow.math.lemmas.reservoir-readings :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -39,7 +39,9 @@
     set/infinite-nonempty #{logic/excluded-middle} set/infinite-nontrivial #{logic/excluded-middle}
     set/infinite-or-finite #{logic/excluded-middle} set/not-infinite-equivalence #{logic/excluded-middle}
     set/infinite-union-equivalence #{logic/excluded-middle}
-    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}})
+    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}
+    logic/proof-irrelevance-from-proposition-extensionality #{logic/proposition-extensionality}
+    logic/prop-unit-equals-inhabited #{logic/proposition-extensionality}})
 
 (defn- rechecks [ns-sym]
   (let [{:keys [error theorems bundle?]} (main/verify-namespace @base ns-sym)
@@ -51,62 +53,62 @@
         (is (= :checked status))
         (is (= (set (map #(environment/resolve-id @env %) (classical name))) axioms))))))
 
-(deftest rechecks-0-mctrans-step
-  (rechecks 'rainbow.math.lemmas.mctrans-step))
-
-(deftest rechecks-1-minimax-regret
+(deftest rechecks-0-minimax-regret
   (rechecks 'rainbow.math.lemmas.minimax-regret))
 
-(deftest rechecks-2-mmck-unique
+(deftest rechecks-1-mmck-unique
   (rechecks 'rainbow.math.lemmas.mmck-unique))
 
-(deftest rechecks-3-mnl-assortment
+(deftest rechecks-2-mnl-assortment
   (rechecks 'rainbow.math.lemmas.mnl-assortment))
 
-(deftest rechecks-4-ncd-readings
+(deftest rechecks-3-ncd-readings
   (rechecks 'rainbow.math.lemmas.ncd-readings))
 
-(deftest rechecks-5-ncyc-infeasible
+(deftest rechecks-4-ncyc-infeasible
   (rechecks 'rainbow.math.lemmas.ncyc-infeasible))
 
-(deftest rechecks-6-nmb-decision
+(deftest rechecks-5-nmb-decision
   (rechecks 'rainbow.math.lemmas.nmb-decision))
 
-(deftest rechecks-7-nsfr-reading
+(deftest rechecks-6-nsfr-reading
   (rechecks 'rainbow.math.lemmas.nsfr-reading))
 
-(deftest rechecks-8-nvcost-readings
+(deftest rechecks-7-nvcost-readings
   (rechecks 'rainbow.math.lemmas.nvcost-readings))
 
-(deftest rechecks-9-odd-cycle-cut
+(deftest rechecks-8-odd-cycle-cut
   (rechecks 'rainbow.math.lemmas.odd-cycle-cut))
 
-(deftest rechecks-10-oee-factors
+(deftest rechecks-9-oee-factors
   (rechecks 'rainbow.math.lemmas.oee-factors))
 
-(deftest rechecks-11-one-center
+(deftest rechecks-10-one-center
   (rechecks 'rainbow.math.lemmas.one-center))
 
-(deftest rechecks-12-payasbid-readings
+(deftest rechecks-11-payasbid-readings
   (rechecks 'rainbow.math.lemmas.payasbid-readings))
 
-(deftest rechecks-13-pcmax-lower-bound
+(deftest rechecks-12-pcmax-lower-bound
   (rechecks 'rainbow.math.lemmas.pcmax-lower-bound))
 
-(deftest rechecks-14-pfs-readings
+(deftest rechecks-13-pfs-readings
   (rechecks 'rainbow.math.lemmas.pfs-readings))
 
-(deftest rechecks-15-pindex-readings
+(deftest rechecks-14-pindex-readings
   (rechecks 'rainbow.math.lemmas.pindex-readings))
 
-(deftest rechecks-16-prf-readings
+(deftest rechecks-15-prf-readings
   (rechecks 'rainbow.math.lemmas.prf-readings))
 
-(deftest rechecks-17-projgrad-clamp
+(deftest rechecks-16-projgrad-clamp
   (rechecks 'rainbow.math.lemmas.projgrad-clamp))
 
-(deftest rechecks-18-qp-kkt
+(deftest rechecks-17-qp-kkt
   (rechecks 'rainbow.math.lemmas.qp-kkt))
 
-(deftest rechecks-19-rccp-readings
+(deftest rechecks-18-rccp-readings
   (rechecks 'rainbow.math.lemmas.rccp-readings))
+
+(deftest rechecks-19-reservoir-readings
+  (rechecks 'rainbow.math.lemmas.reservoir-readings))

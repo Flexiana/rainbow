@@ -1,6 +1,6 @@
 # The corpus
 
-Every proof module in the open core: 1185 modules, grouped by folder. Each line links to the source and
+Every proof module in the open core: 1196 modules, grouped by folder. Each line links to the source and
 quotes the first sentence of its docstring. Re-check any of them with `lein verify <namespace>`.
 This file is generated from the source tree; do not edit it by hand.
 
@@ -634,7 +634,7 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.rational.nnrat.weighted-sum-scaling`](../src/rainbow/math/rational/nnrat/weighted_sum_scaling.clj) | Publicly named finite-sum scaling bridge for contraction proofs. |
 | [`rainbow.math.rational.nnrat.weighted-term-bound`](../src/rainbow/math/rational/nnrat/weighted_term_bound.clj) | Scalar weighted-term monotonicity for the finite mixture proof. |
 
-## Signed rationals (`src/rainbow/math/rational/signed/`, 136)
+## Signed rationals (`src/rainbow/math/rational/signed/`, 147)
 
 | namespace | |
 |---|---|
@@ -702,14 +702,25 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.rational.signed.lp-capacity-sensitivity`](../src/rainbow/math/rational/signed/lp_capacity_sensitivity.clj) | Capacity sensitivity for signed LP dual bounds. |
 | [`rainbow.math.rational.signed.lp-certificate`](../src/rainbow/math/rational/signed/lp_certificate.clj) | A worked LP optimality certificate on concrete numbers, including a NEGATIVE cost -- the per-instance end of the verified-optimization pipeline. |
 | [`rainbow.math.rational.signed.lp-certificate-reflect`](../src/rainbow/math/rational/signed/lp_certificate_reflect.clj) | LP optimality certificates by reflection over finite row and column lists. |
+| [`rainbow.math.rational.signed.lp-dual-correspondence-bridge`](../src/rainbow/math/rational/signed/lp_dual_correspondence_bridge.clj) | Collect original inequality/free-equality prices into actual expanded dual columns and objective. |
 | [`rainbow.math.rational.signed.lp-duality`](../src/rainbow/math/rational/signed/lp_duality.clj) | Linear-programming weak duality and the optimality certificate over SIGNED rationals -- arbitrary matrix, costs and right-hand side, any of them negative. |
 | [`rainbow.math.rational.signed.lp-duality-on`](../src/rainbow/math/rational/signed/lp_duality_on.clj) | LP weak duality and the optimality certificate, quantified over the rows and columns an instance actually has. |
+| [`rainbow.math.rational.signed.lp-equality-price-bridge`](../src/rainbow/math/rational/signed/lp_equality_price_bridge.clj) | Untrusted producer of instance-specific equality-price translation evidence. |
 | [`rainbow.math.rational.signed.lp-equality-row`](../src/rainbow/math/rational/signed/lp_equality_row.clj) | Formal equality-row expansion into two signed inequality rows. |
+| [`rainbow.math.rational.signed.lp-equality-row-bridge`](../src/rainbow/math/rational/signed/lp_equality_row_bridge.clj) | Instance evidence relating supplied actual expanded rows/RHS to an original equality. |
 | [`rainbow.math.rational.signed.lp-equality-row-transport`](../src/rainbow/math/rational/signed/lp_equality_row_transport.clj) | Generic feasibility transport from an original equality to certified actual positive/negative row maps and RHS entries. |
+| [`rainbow.math.rational.signed.lp-feasibility-bridge`](../src/rainbow/math/rational/signed/lp_feasibility_bridge.clj) | Proof-producing assembly of original inequalities/equalities versus actual expanded listed constraints. |
 | [`rainbow.math.rational.signed.lp-free-price`](../src/rainbow/math/rational/signed/lp_free_price.clj) | Equality dual-price splitting over signed rationals. |
+| [`rainbow.math.rational.signed.lp-gap-quality-bridge`](../src/rainbow/math/rational/signed/lp_gap_quality_bridge.clj) | LP instantiation of additive epsilon quality for ORIGINAL constraints/plans. |
+| [`rainbow.math.rational.signed.lp-minimization-bridge`](../src/rainbow/math/rational/signed/lp_minimization_bridge.clj) | Instance-specific translation evidence for actual minimization coefficient tables. |
 | [`rainbow.math.rational.signed.lp-objective-negate`](../src/rainbow/math/rational/signed/lp_objective_negate.clj) | Generic finite-sum negation and formal LP minimization sense transport. |
+| [`rainbow.math.rational.signed.lp-original-bound-bridge`](../src/rainbow/math/rational/signed/lp_original_bound_bridge.clj) | Universal original-problem bounds, including original equality constraints. |
+| [`rainbow.math.rational.signed.lp-plan-report-bridge`](../src/rainbow/math/rational/signed/lp_plan_report_bridge.clj) | Original submitted-plan/report evidence and optional tight-bound optimality. |
+| [`rainbow.math.rational.signed.lp-pointwise-bridge`](../src/rainbow/math/rational/signed/lp_pointwise_bridge.clj) | Experimental LP scaling-bridge proof PRODUCER, lifted out of a diagnostic script into a reusable module (the pointwise-correspondence result). |
+| [`rainbow.math.rational.signed.lp-report-bridge`](../src/rainbow/math/rational/signed/lp_report_bridge.clj) | Experimental producer binding supplied numeric reports to original LP sums. |
 | [`rainbow.math.rational.signed.lp-scaling-bound`](../src/rainbow/math/rational/signed/lp_scaling_bound.clj) | Transport a bound between formal D^2/D-scaled objectives to original sums. |
 | [`rainbow.math.rational.signed.lp-scaling-feasibility`](../src/rainbow/math/rational/signed/lp_scaling_feasibility.clj) | Forward feasibility scaling and universal-bound transport on listed indices. |
+| [`rainbow.math.rational.signed.lp-witness-bridge`](../src/rainbow/math/rational/signed/lp_witness_bridge.clj) | Original standard-form primal/dual witnesses and a reported universal bound. |
 | [`rainbow.math.rational.signed.magnitude`](../src/rainbow/math/rational/signed/magnitude.clj) | Layer 3 (capstone) of the signed->nnrat magnitude foundation. |
 | [`rainbow.math.rational.signed.magnitude-monotone`](../src/rainbow/math/rational/signed/magnitude_monotone.clj) | B6 prerequisite: magnitude is monotone on nonnegatives. |
 | [`rainbow.math.rational.signed.map-sum-algebra`](../src/rainbow/math/rational/signed/map_sum_algebra.clj) | Algebra of signed finite sums: congruence, splitting, and the weighted bound. |

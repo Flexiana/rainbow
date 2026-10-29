@@ -3,6 +3,120 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-10-29
+
+Proof search is much faster and gains a simp-like rewriting engine. The kernel adds a lazy
+conversion check to type checking. Two auditor tools arrive in the open core: `lein explore`, a
+Proof Explorer page, and `lein lp-view`, together with the LP certificate checker itself, which
+moves here from Rainbow Pro. The Lean exporter now handles inductive types and axioms. The trusted
+base grows from 1,548 to 1,661 lines.
+
+### Changed (trusted base)
+- **Lazy conversion in type checking.** When `check*` compares an inferred type with the
+  expected one, it first tries a lazy comparison: head reduction without unfolding definitions,
+  congruence on equal heads, and unfolding one definition at a time. If that fails, it falls back
+  to the original full-normalisation procedure, unchanged. Every lazy step is a conversion rule the
+  original procedure already uses, so a lazy success means the normal forms are equal. The public
+  `kernel/definitionally-equal?` still uses the original procedure.
+  - Measured: a `kernel/check` that succeeds on a signed-sum step is 85-280x faster (68 ms to
+    0.24 ms). A check that fails is 2.1x slower (67 ms to 142 ms), because the lazy attempt runs
+    first. Lazy conversion alone does not speed up proof search, which spends its time in the
+    public `definitionally-equal?`, `infer` and `normalize`; the gain is in checking and replaying
+    proofs whose steps check.
+  - Trusted base: 1,548 to 1,661 lines (`kernel.clj` 1,248, `term.clj` 320, `environment.clj` 48,
+    `canonical.clj` 45), pinned by the release test.
+
+### Added
+- **`lein explore`: the Proof Explorer.** `lein explore <checkpoint-or-bundle> [out-dir] [--roots a,b]`
+  writes a static page (data inline, opens from disk; `--offline` inlines the vendored MIT
+  libraries) with the dependency graph, proof trees, axiom closures and kernel-computed example
+  values for natural-number and nonnegative-rational equations. A bundle is replayed as
+  `lein verify --bundle` does before anything is drawn.
+- **LP certificate checker in the open core, and `lein lp-view`.** The LP optimality certificate
+  checker (`rainbow.or.lp-certificate`, `certify`) moves from Rainbow Pro to the open core,
+  together with what an auditor needs to check an LP result: the proof-value wire format
+  (`rainbow.or.lp-certificate-wire`), the original-plan and report verifiers
+  (`rainbow.or.lp-original-plan-verifier`, `rainbow.or.lp-report-verifier`), the derivation of an
+  instance from named activities and resources with its `explain` (`rainbow.or.lp-model`), and the
+  LP bridge proof modules (`rainbow.math.rational.signed.lp-*-bridge`). They keep the names Rainbow
+  Pro 1.4.x used, so code that requires them is unchanged. `lein lp-view <instance.edn>
+  <certificate.edn> [out-dir]` runs `certify` and writes the LP Certificate Viewer, a static page
+  with its data inline. The verdict is the kernel's check of one instance of
+  `optimization/signed-lp-optimality-certificate-on`; the page also shows every comparison that
+  proof is built from, each confirmed by its own kernel check, so a refused certificate names the
+  comparison that failed. Negative controls must be refused, or nothing is written.
+- **Simp engine (`rainbow.simp`, search option `:native-simp?`).** An untrusted search step. Its
+  rules are the environment's theorems and the local hypotheses, oriented as rewrite rules, with
+  conditional rewriting, backward chaining and definitional reflexivity. A rule is used only when
+  the reuse index and policy admit it, so a held-out theorem stays held out. Each rewrite is a
+  Leibniz transport, and the kernel checks every result like any other step.
+- **One reuse policy for every lemma.** With a reuse index, every lemma a search step takes passes
+  through `reuse/admits`, including native logic steps, tautology plans and application terms, and
+  so does every theorem or axiom in a returned proof. Without an explicit `:reuse-policy`, indexed
+  lemmas may now use the axioms the job allows; before, reuse was silently limited to axiom-free
+  lemmas.
+- **Lean exporter: inductive types and axioms, with universe splitting.** A unit whose sort is
+  Prop for only some universe values (List, Option, Sum, Product) is exported as copies with that
+  universe set to 0 and to a successor, each with Rainbow's exact type. The earlier lifted
+  `Sort (max 1 l)` workaround is removed.
+- Four proving-loop benchmark goals (`loop/successor-bound`, `loop/three-transitive`,
+  `loop/range-start-monotone`, `loop/range-unique`) and four lemmas now have kernel-checked, axiom-free
+  proofs, checked by `proving-loop-benchmark-proofs-test`. The search found the two short goals
+  from their decompositions; the two range goals needed hand-written steps where the search
+  returned them blocked.
+
+### Performance
+- **Search is about 24-170x faster in states per second and 90-630x faster in attempted steps
+  per second** on the five proving-loop benchmark goals. A "certainly different" pre-test uses the
+  kernel's own whnf, inference runs in the goal's context, and normal forms, goal hashes and
+  inferred types are memoized. This code is untrusted; every proof is still kernel-checked against
+  the original goal. Goals that were already fast barely change.
+- On 200 theorems sampled from the default checkpoint, each held out with everything that
+  depends on it, 30 s per goal and no AI help, the search proves 171 using only the theorem's
+  dependency closure (136 without simp), and 175 with the whole environment index. This measures
+  Rainbow's search against itself; it is not a comparison with Lean.
+
+### Fixed
+- `lein share-bundle` with a missing or truncated input, and `lein show` with a module that
+  cannot be loaded, print `FAIL ...` with what to check instead of a raw exception.
+- `lein verify --checkpoint` and `lein verify --bundle` report why a checkpoint could not be
+  loaded or replayed (a missing or unreadable file, or the replay category), instead of
+  "did not replay: :rejected", which read like a kernel rejection.
+- The generated coverage tests expected an empty axiom set for
+  `logic/proof-irrelevance-from-proposition-extensionality` and `logic/prop-unit-equals-inhabited`;
+  both depend on `logic/proposition-extensionality`, as the 1.4.4 entry states.
+- `scripts/run-suite-chunked.sh` runs five namespaces per fresh JVM by default (one JVM with
+  twenty proof environments ran out of a 5 GB heap) and closes stdin.
+- `project.clj` runs tests with a 512 MB thread stack: the elaborator recurses on term depth, and
+  a large signed literal overflowed the default stack.
+
+### Changed
+- The release gate reports the amount of ordinary Clojure a reader must audit instead of capping
+  it (20,182 lines in this repository at 1.5.0). The trusted base keeps its exact pin.
+
+### Verified
+- Generated from internal 10e3908b. Every store id is the SHA-256 of its declaration (6,309 of
+  6,309; Pro 6,323 of 6,323), the same declarations as 1.4.4.
+- `lein reproduce --all` in this repository: 53 of 53 rebuilt checkpoints match their recorded
+  content ids under the 1.5.0 kernel. `finite-nat`, `nat-distance`, `nat-distance-core` and
+  `nat-metric-separation` were not rebuilt, because the Mathlib catalog was not present.
+- This repository on its own, at the draft build before the last fixes: 1,021 test namespaces,
+  2,211 tests, 62,210 assertions, 8 failures, 0 errors. The failures were the names-id test reading
+  a packed checkpoint raw and two generated coverage tests expecting an empty axiom set (both under
+  Fixed). After the fixes, the 24 test namespaces that load the changed code passed: 327 tests,
+  2,336 assertions, 0 failures, 0 errors.
+- The internal suite in full at eac0365a: 2,332 test namespaces, 6,061 tests, 391,187 assertions,
+  0 failures, 0 errors. The release commit adds only the names-id test fix and the suite runner
+  change; both pass.
+- Lean, as a second checker: every theorem in every checkpoint of the tree this release is
+  generated from (2,107 distinct theorems, including the full default checkpoint of 1,721; it
+  contains this repository's checkpoints) was exported with its exact type and accepted
+  by Lean 4.30.0 and by Lean 4.35.0. `#print axioms` agrees with Rainbow's axiom report on every
+  one, and each of the 2,276 statements negated with their proofs kept was rejected. This checks
+  the exported theorems; it is not a proof about Rainbow's kernel.
+- Trusted base 1,661 lines (`kernel.clj` 1,248, `term.clj` 320, `environment.clj` 48,
+  `canonical.clj` 45).
+
 ## [1.4.4] - 2026-10-27
 
 Five fixes to what Rainbow's claims say, and a kernel change that makes it accept proofs it

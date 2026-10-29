@@ -1,0 +1,623 @@
+<meta charset="utf-8">
+<title>LP Certificate Viewer</title>
+<meta name="description" content="A linear program and the certificate Rainbow's kernel checked for it: feasible region, binding constraints, dual prices and every check step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=STIX+Two+Text:ital,wght@0,500;1,400;1,500&display=swap">
+<style>
+/* Layout: an auditor's worksheet. One column of read-top-to-bottom sections; the program and its
+   picture side by side on wide screens; the check is a numbered sequence because the order is real. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --fg: #161a2b;
+  --muted: #586078;
+  --rule: #d8dce6;
+  --accent: #2b56c9;
+  --accent-soft: rgba(43, 86, 201, 0.14);
+  --pass: #17734a;
+  --pass-soft: rgba(23, 115, 74, 0.10);
+  --fail: #b0281f;
+  --fail-soft: rgba(176, 40, 31, 0.10);
+  --bind: #9a5b00;
+  --bind-soft: rgba(154, 91, 0, 0.12);
+  --other: #7a4fb3;
+  --other-soft: rgba(122, 79, 179, 0.13);
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-math: "STIX Two Text", "STIX Two Math", "Cambria Math", "Times New Roman", serif;
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-3: 2rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f121a; --surface: #161a25; --fg: #e5e8f1; --muted: #9ba3ba; --rule: #2a3043;
+    --accent: #85a3ff; --accent-soft: rgba(133, 163, 255, 0.18);
+    --pass: #52c48d; --pass-soft: rgba(82, 196, 141, 0.13);
+    --fail: #ff7d70; --fail-soft: rgba(255, 125, 112, 0.14);
+    --bind: #f0b24c; --bind-soft: rgba(240, 178, 76, 0.15);
+    --other: #c09bf2; --other-soft: rgba(192, 155, 242, 0.15);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f121a; --surface: #161a25; --fg: #e5e8f1; --muted: #9ba3ba; --rule: #2a3043;
+  --accent: #85a3ff; --accent-soft: rgba(133, 163, 255, 0.18);
+  --pass: #52c48d; --pass-soft: rgba(82, 196, 141, 0.13);
+  --fail: #ff7d70; --fail-soft: rgba(255, 125, 112, 0.14);
+  --bind: #f0b24c; --bind-soft: rgba(240, 178, 76, 0.15);
+  --other: #c09bf2; --other-soft: rgba(192, 155, 242, 0.15);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: var(--step-0); line-height: 1.55;
+  padding-inline: 16px; padding-block: 24px 48px;
+}
+.wrap { max-width: 1080px; margin-inline: auto; display: grid; gap: 28px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: var(--step-3); font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: var(--step-2); font-weight: 600; }
+h3 { font-size: var(--step-1); font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+code, .data { font-family: var(--font-data); font-size: 0.92em; overflow-wrap: anywhere; }
+.eyebrow { font-size: var(--step--1); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.muted { color: var(--muted); }
+.stack { display: grid; gap: 12px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+header.top { display: grid; gap: 10px; }
+header.top p { color: var(--muted); }
+
+/* the tab strip */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+.tab {
+  font: inherit; font-size: var(--step--1); font-weight: 500; color: var(--fg);
+  background: transparent; border: 1px solid var(--rule); border-radius: 999px;
+  padding: 6px 14px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center;
+}
+.tab:hover { border-color: var(--accent); }
+.tab[aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.tab .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.tab .dot.pass { background: var(--pass); }
+.tab .dot.fail { background: var(--fail); }
+
+/* verdict banner */
+.verdict { display: grid; gap: 8px; padding: 18px 20px; border-radius: 10px; background: var(--surface); border: 1px solid var(--rule); }
+.verdict.pass { border-color: var(--pass); background: linear-gradient(var(--pass-soft), var(--pass-soft)), var(--surface); }
+.verdict.fail { border-color: var(--fail); background: linear-gradient(var(--fail-soft), var(--fail-soft)), var(--surface); }
+.verdict .headline { font-size: var(--step-1); font-weight: 600; }
+.verdict.pass .headline { color: var(--pass); }
+.verdict.fail .headline { color: var(--fail); }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 820px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.grid2 > * { min-width: 0; }
+
+/* algebraic form */
+.program { font-family: var(--font-math); font-size: 1.2rem; line-height: 1.8; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+.program table { border-collapse: collapse; }
+.program td { padding: 0 6px; white-space: nowrap; vertical-align: baseline; }
+.program td.kw { font-family: var(--font-body); font-size: var(--step--1); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding-right: 14px; }
+.program td.lhs { text-align: right; }
+.program td.label { font-family: var(--font-body); font-size: var(--step--1); color: var(--muted); padding-left: 16px; white-space: normal; min-width: 9rem; }
+.program tr.row-hl td { background: var(--accent-soft); }
+var.v { font-style: italic; font-family: var(--font-math); }
+var.v sub { font-style: normal; font-size: 0.7em; }
+.frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; line-height: 1; font-size: 0.82em; margin-inline: 1px; }
+.frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 2px 1px; }
+.frac > span:last-child { padding: 1px 2px 0; }
+
+/* figure */
+figure { margin: 0; display: grid; gap: 8px; }
+.plot { width: 100%; height: auto; margin-inline: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; display: block; }
+.plot text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+.plot .axis { stroke: var(--muted); stroke-width: 1; fill: none; }
+.plot .grid { stroke: var(--rule); stroke-width: 1; fill: none; }
+.plot .region { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.plot .region.other { fill: var(--other-soft); stroke: var(--other); stroke-dasharray: 5 4; }
+.plot .cline { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+.plot .cline.binding { stroke: var(--bind); stroke-width: 2.5; }
+.plot .cline.hl { stroke: var(--accent); stroke-width: 3.5; }
+.plot .iso { stroke: var(--fg); stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
+.plot .iso.user { stroke: var(--accent); stroke-dasharray: 2 4; }
+.plot .arrow { stroke: var(--fg); stroke-width: 2; fill: none; }
+.plot .arrowhead { fill: var(--fg); stroke: none; }
+.plot .opt { fill: var(--fg); stroke: var(--surface); stroke-width: 2; }
+.plot .clabel { fill: var(--fg); font-family: var(--font-body); font-size: 11px; }
+.plot .clabel.binding { fill: var(--bind); }
+.plot .optlabel { fill: var(--fg); font-family: var(--font-body); font-size: 12px; font-weight: 600; }
+figcaption { font-size: var(--step--1); color: var(--muted); }
+.slider { display: grid; gap: 4px; font-size: var(--step--1); color: var(--muted); }
+.slider input { width: 100%; accent-color: var(--accent); }
+
+/* tables */
+.tablebox { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; }
+table.t { border-collapse: collapse; width: 100%; font-size: var(--step--1); font-variant-numeric: tabular-nums; }
+table.t th, table.t td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.t th { font-weight: 500; color: var(--muted); font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; }
+table.t td.num { text-align: right; font-family: var(--font-data); }
+table.t tbody tr:last-child td { border-bottom: none; }
+table.t tbody tr[tabindex] { cursor: default; }
+table.t tbody tr.row-hl td { background: var(--accent-soft); }
+table.t td.wrap { white-space: normal; min-width: 10rem; }
+
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 500; border-radius: 999px; padding: 2px 9px; white-space: nowrap; font-family: var(--font-body); }
+.chip.pass { color: var(--pass); background: var(--pass-soft); }
+.chip.fail { color: var(--fail); background: var(--fail-soft); }
+.chip.bind { color: var(--bind); background: var(--bind-soft); }
+.chip.slack { color: var(--muted); background: transparent; border: 1px solid var(--rule); }
+
+/* the check sequence */
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: step; }
+ol.steps > li { counter-increment: step; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 4px 12px; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+ol.steps > li::before { content: counter(step); font-family: var(--font-data); font-size: var(--step-1); color: var(--muted); grid-row: span 3; }
+ol.steps > li.fail { border-color: var(--fail); }
+.step-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.step-head h3 { font-size: var(--step-0); }
+.step-why { font-size: var(--step--1); color: var(--muted); }
+ul.lines { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+ul.lines li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; border-top: 1px dashed var(--rule); padding-top: 6px; }
+ul.lines li .eq { font-family: var(--font-math); font-size: 1.05rem; overflow-wrap: anywhere; }
+ul.lines li .who { font-family: var(--font-body); font-size: var(--step--1); color: var(--muted); margin-right: 6px; }
+
+/* Farkas sum */
+.farkas { font-family: var(--font-math); font-size: 1.15rem; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+.farkas table { border-collapse: collapse; }
+.farkas td { padding: 3px 8px; white-space: nowrap; }
+.farkas td.mult { text-align: right; color: var(--accent); }
+.farkas td.lab { font-family: var(--font-body); font-size: var(--step--1); color: var(--muted); }
+.farkas tr.zero td:not(.lab) { opacity: 0.45; }
+.farkas tr.sum td { border-top: 2px solid var(--fg); padding-top: 8px; font-weight: 500; }
+.farkas .conclusion { font-family: var(--font-body); font-size: var(--step-0); margin-top: 12px; max-width: 68ch; }
+
+/* claims panel */
+.claims { display: grid; gap: 14px; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; }
+.claims dl { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: 10px 18px; margin: 0; }
+@media (max-width: 620px) { .claims dl { grid-template-columns: minmax(0, 1fr); gap: 2px 0; } .claims dd { margin-bottom: 10px; } }
+.claims dt { font-weight: 600; font-size: var(--step--1); }
+.claims dd { margin: 0; font-size: var(--step--1); min-width: 0; overflow-wrap: anywhere; }
+.level { font-family: var(--font-data); font-weight: 500; color: var(--accent); }
+
+.prov { font-size: var(--step--1); color: var(--muted); display: grid; gap: 4px; overflow-wrap: anywhere; }
+.err { color: var(--fail); }
+@media (prefers-reduced-motion: no-preference) {
+  .plot .iso.user { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Rainbow · operations research</span>
+    <h1>LP Certificate Viewer</h1>
+    <p>A linear program, the certificate a solver handed over, and what Rainbow's kernel checked about it. Every number and every pass or fail mark on this page was computed by Rainbow (<code>lein lp-view</code>) and is also in <code>lp-view.json</code> next to this page; nothing here was typed in by hand. The names and descriptions of rows and variables come from the instance file and are not checked.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Examples" id="tabs"></nav>
+
+  <main id="view" class="stack" aria-live="polite">
+    <p class="muted">Reading the certificate data…</p>
+  </main>
+
+  <section class="claims" aria-labelledby="claims-h">
+    <h2 id="claims-h">What is established, and at which level</h2>
+    <p class="muted">Rainbow grades every claim on its maturity scale (<code>doc/maturity-levels.md</code>): L3 is a kernel-checked theorem about a mathematical model, L4 is the kernel checking one particular output against such a theorem, L5 adds a proved link to a printed program, and no artifact in the repository is L6. The levels below are the ones the repository records.</p>
+    <dl id="claims"></dl>
+  </section>
+
+  <footer class="prov" id="prov"></footer>
+</div>
+
+<script id="rainbow-data" type="application/json">/*RAINBOW-DATA*/</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = null, current = 0, hl = null, userIso = null;
+  var view = document.getElementById("view");
+  var tabs = document.getElementById("tabs");
+
+  // ---- exact numbers as text -------------------------------------------------------------
+  function parts(s) {
+    s = String(s);
+    var neg = s.charAt(0) === "-";
+    if (neg) s = s.slice(1);
+    var p = s.split("/");
+    return { neg: neg, n: p[0], d: p.length > 1 ? p[1] : null };
+  }
+  function num(s) { var p = parts(s); var v = Number(p.n) / (p.d ? Number(p.d) : 1); return p.neg ? -v : v; }
+  function isZero(s) { return num(s) === 0; }
+  function fmt(s) {
+    var p = parts(s);
+    var body = p.d ? '<span class="frac" aria-label="' + p.n + " over " + p.d + '"><span>' + p.n + "</span><span>" + p.d + "</span></span>" : p.n;
+    return (p.neg ? "−" : "") + body;
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function v(name) { var m = /^([a-z]+)(\d+)$/.exec(name); return m ? '<var class="v">' + m[1] + "<sub>" + m[2] + "</sub></var>" : '<var class="v">' + esc(name) + "</var>"; }
+
+  // a linear form from exact coefficients, skipping zeros
+  function linform(coeffs, vars) {
+    var out = "", first = true;
+    coeffs.forEach(function (c, j) {
+      if (isZero(c)) return;
+      var p = parts(c);
+      var mag = p.d ? fmt(p.n + "/" + p.d) : (p.n === "1" ? "" : p.n);
+      if (first) out += (p.neg ? "−" : "") + mag + v(vars[j]);
+      else out += (p.neg ? " − " : " + ") + mag + v(vars[j]);
+      first = false;
+    });
+    return first ? "0" : out;
+  }
+  // a written-out evaluation such as 1·2 + 0·6, using only exported numbers
+  function evaluation(coeffs, values) {
+    function fp(t) { return parts(t).neg ? "(" + fmt(t) + ")" : fmt(t); }
+    return coeffs.map(function (c, j) { return fp(c) + "\u00b7" + fp(values[j]); }).join(" + ");
+  }
+
+  function mark(k, okText) {
+    if (!k) return '<span class="chip fail">missing</span>';
+    if (k.kernel === "checked") return '<span class="chip pass">✓ ' + (okText || "kernel checked") + "</span>";
+    return '<span class="chip fail">✗ kernel rejected' + (k.category ? " (" + esc(k.category) + ")" : "") + "</span>";
+  }
+  function ok(k) { return !!k && k.kernel === "checked"; }
+  function allOk(list) { return list.every(ok); }
+  function expectRejected(k) {
+    return k && k.kernel === "rejected"
+      ? '<span class="chip pass">✓ refused, as it must be</span>'
+      : '<span class="chip fail">✗ accepted (the instrument is broken)</span>';
+  }
+
+  function verdictOf(e) {
+    if (e.kind === "infeasibility") return ok(e["checker-accepts"]) && ok(e["no-feasible-plan"]);
+    return e.certify.status === "certified";
+  }
+
+  // ---- the plot ------------------------------------------------------------------------------
+  function clip(poly, a, b) { // keep a·p <= b
+    var out = [];
+    for (var i = 0; i < poly.length; i++) {
+      var P = poly[i], Q = poly[(i + 1) % poly.length];
+      var fp = a[0] * P[0] + a[1] * P[1] - b, fq = a[0] * Q[0] + a[1] * Q[1] - b;
+      if (fp <= 1e-12) out.push(P);
+      if ((fp < -1e-12 && fq > 1e-12) || (fp > 1e-12 && fq < -1e-12)) {
+        var t = fp / (fp - fq); out.push([P[0] + t * (Q[0] - P[0]), P[1] + t * (Q[1] - P[1])]);
+      }
+    }
+    return out;
+  }
+  function plotSVG(e) {
+    var A = e.instance.matrix.map(function (r) { return r.map(num); });
+    var b = e.instance.capacities.map(num);
+    var bindingRows = e.kind === "optimality" ? e.steps.rows.map(function (r) { return r.binding; }) : A.map(function () { return false; });
+    // the extent: every positive axis intercept, plus the plan
+    var X = 1, Y = 1;
+    A.forEach(function (a, i) {
+      if (a[0] !== 0 && b[i] / a[0] > 0) X = Math.max(X, b[i] / a[0]);
+      if (a[1] !== 0 && b[i] / a[1] > 0) Y = Math.max(Y, b[i] / a[1]);
+    });
+    if (e.kind === "optimality") { var pl = e.instance.plan.map(num); X = Math.max(X, pl[0]); Y = Math.max(Y, pl[1]); }
+    X = Math.ceil(X * 1.15); Y = Math.ceil(Y * 1.15);
+    var pad = { l: 36, r: 16, t: 16, b: 32 };
+    var s = 400 / Math.max(X, Y);             // one scale for both axes: drawn to scale
+    var W = Math.round(X * s + pad.l + pad.r);
+    var H = Math.round(Y * s + pad.t + pad.b);
+    function px(x) { return pad.l + x * s; }
+    function py(y) { return H - pad.b - y * s; }
+    var rect = [[0, 0], [X, 0], [X, Y], [0, Y]];
+    var svg = [];
+    svg.push('<svg class="plot" style="max-width:' + Math.round(W * 1.2) + 'px" viewBox="0 0 ' + W + " " + H + '" role="img" aria-labelledby="plot-t plot-d">');
+    svg.push('<title id="plot-t">Feasible region of ' + esc(e.title) + "</title>");
+    svg.push('<desc id="plot-d">' + (e.kind === "optimality"
+      ? "The shaded polygon is the set of plans meeting every constraint. Highlighted lines are binding at the submitted plan; the dashed line is the objective at the plan, the arrow its direction of increase."
+      : "The shaded polygon meets the hour limits; the dashed region meets the contract minimum. They do not overlap in the nonnegative quadrant.") + "</desc>");
+    var step = X > 12 ? 2 : 1;
+    for (var gx = 0; gx <= X; gx += step) {
+      svg.push('<line class="grid" x1="' + px(gx) + '" y1="' + py(0) + '" x2="' + px(gx) + '" y2="' + py(Y) + '"/>');
+      svg.push('<text x="' + px(gx) + '" y="' + (py(0) + 16) + '" text-anchor="middle">' + gx + "</text>");
+    }
+    for (var gy = 0; gy <= Y; gy += step) {
+      svg.push('<line class="grid" x1="' + px(0) + '" y1="' + py(gy) + '" x2="' + px(X) + '" y2="' + py(gy) + '"/>');
+      if (gy > 0) svg.push('<text x="' + (px(0) - 8) + '" y="' + (py(gy) + 4) + '" text-anchor="end">' + gy + "</text>");
+    }
+    function polyPath(poly, cls) {
+      if (poly.length < 3) return;
+      svg.push('<polygon class="' + cls + '" points="' + poly.map(function (p) { return px(p[0]) + "," + py(p[1]); }).join(" ") + '"/>');
+    }
+    if (e.kind === "optimality") {
+      var region = rect;
+      A.forEach(function (a, i) { region = clip(region, a, b[i]); });
+      polyPath(region, "region");
+    } else {
+      // rows whose right-hand side is nonnegative are limits; the negative one is the contract minimum
+      var limits = rect, contract = rect;
+      A.forEach(function (a, i) { if (b[i] >= 0) limits = clip(limits, a, b[i]); else contract = clip(contract, a, b[i]); });
+      polyPath(contract, "region other");
+      polyPath(limits, "region");
+    }
+    // constraint lines, clipped to the drawing
+    A.forEach(function (a, i) {
+      var pts = [];
+      if (a[1] !== 0) { [0, X].forEach(function (x) { var y = (b[i] - a[0] * x) / a[1]; if (y >= -1e-9 && y <= Y + 1e-9) pts.push([x, y]); }); }
+      if (a[0] !== 0) { [0, Y].forEach(function (y) { var x = (b[i] - a[1] * y) / a[0]; if (x >= -1e-9 && x <= X + 1e-9) pts.push([x, y]); }); }
+      if (pts.length < 2) return;
+      pts.sort(function (p, q) { return p[0] - q[0] || p[1] - q[1]; });
+      var P = pts[0], Q = pts[pts.length - 1];
+      var cls = "cline" + (bindingRows[i] ? " binding" : "") + (hl === i ? " hl" : "");
+      svg.push('<line class="' + cls + '" data-row="' + i + '" x1="' + px(P[0]) + '" y1="' + py(P[1]) + '" x2="' + px(Q[0]) + '" y2="' + py(Q[1]) + '"/>');
+      // label near the upper end of the segment, kept inside the frame
+      var L = P[1] >= Q[1] ? P : Q;
+      var lx = Math.min(Math.max(px(L[0]) + 6, pad.l + 4), W - pad.r - 4), ly = Math.min(Math.max(py(L[1]) + 14, pad.t + 10), H - pad.b - 6);
+      var anchor = lx > W - 80 ? "end" : "start";
+      if (anchor === "end") lx = W - pad.r - 4;
+      svg.push('<text class="clabel' + (bindingRows[i] ? " binding" : "") + '" x="' + lx + '" y="' + ly + '" text-anchor="' + anchor + '">(' + (i + 1) + ") " + esc(e.constraints[i].replace(/ \(.*\)$/, "")) + "</text>");
+    });
+    if (e.kind === "optimality") {
+      var c = e.instance.margins.map(num), x = e.instance.plan.map(num);
+      var z = num(e.steps["primal-objective"].value);
+      function isoLine(level, cls) {
+        var ps = [];
+        if (c[1] !== 0) [0, X].forEach(function (xx) { var yy = (level - c[0] * xx) / c[1]; if (yy >= 0 && yy <= Y) ps.push([xx, yy]); });
+        if (c[0] !== 0) [0, Y].forEach(function (yy) { var xx = (level - c[1] * yy) / c[0]; if (xx >= 0 && xx <= X) ps.push([xx, yy]); });
+        if (ps.length >= 2) {
+          ps.sort(function (p, q) { return p[0] - q[0] || p[1] - q[1]; });
+          svg.push('<line class="' + cls + '" x1="' + px(ps[0][0]) + '" y1="' + py(ps[0][1]) + '" x2="' + px(ps[ps.length - 1][0]) + '" y2="' + py(ps[ps.length - 1][1]) + '"/>');
+        }
+      }
+      isoLine(z, "iso");
+      if (userIso !== null && userIso !== z) isoLine(userIso, "iso user");
+      // objective direction: the margin vector, drawn from the plan
+      var len = Math.hypot(c[0], c[1]), L2 = Math.min(X, Y) * 0.22;
+      var ex = x[0] + c[0] / len * L2, ey = x[1] + c[1] / len * L2;
+      var ax = px(ex), ay = py(ey), ang = Math.atan2(-(c[1]), c[0]);
+      svg.push('<line class="arrow" x1="' + px(x[0]) + '" y1="' + py(x[1]) + '" x2="' + ax + '" y2="' + ay + '"/>');
+      var h = 8, a1 = ang + Math.PI * 0.85, a2 = ang - Math.PI * 0.85;
+      svg.push('<polygon class="arrowhead" points="' + ax + "," + ay + " " + (ax + h * Math.cos(a1)) + "," + (ay + h * Math.sin(a1)) + " " + (ax + h * Math.cos(a2)) + "," + (ay + h * Math.sin(a2)) + '"/>');
+      svg.push('<circle class="opt" cx="' + px(x[0]) + '" cy="' + py(x[1]) + '" r="5.5"/>');
+      var ox = px(x[0]) - 10, oy = py(x[1]) - 10, anc = "end";
+      if (ox < pad.l + 90) { ox = px(x[0]) + 10; anc = "start"; }
+      svg.push('<text class="optlabel" x="' + ox + '" y="' + Math.max(oy, pad.t + 12) + '" text-anchor="' + anc + '">plan (' + e.instance.plan.map(function (t) { return t.replace("-", "−"); }).join(", ") + ")</text>");
+    }
+    svg.push('<text x="' + (W - pad.r) + '" y="' + (py(0) + 28) + '" text-anchor="end">x1 →</text>');
+    svg.push('<text x="' + (pad.l + 4) + '" y="' + (pad.t + 2) + '">x2 ↑</text>');
+    svg.push("</svg>");
+    return svg.join("");
+  }
+
+  // ---- program in algebraic form -------------------------------------------------------------
+  function programHTML(e) {
+    var vars = e.variables.map(function (x) { return x.name; });
+    var rows = e.instance.matrix.map(function (r, i) {
+      return '<tr data-row="' + i + '"><td class="kw">' + (i === 0 ? "subject to" : "") + '</td><td class="lhs">' + linform(r, vars) + "</td><td>≤</td><td>" + fmt(e.instance.capacities[i]) + '</td><td class="label">(' + (i + 1) + ") " + esc(e.constraints[i]) + "</td></tr>";
+    }).join("");
+    var head = e.kind === "optimality"
+      ? '<tr><td class="kw">maximize</td><td class="lhs" colspan="3" style="text-align:left">' + linform(e.instance.margins, vars) + '</td><td class="label">' + esc(e["objective-label"]) + "</td></tr>"
+      : '<tr><td class="kw">find</td><td class="lhs" colspan="3" style="text-align:left">' + vars.map(v).join(", ") + '</td><td class="label">any plan at all</td></tr>';
+    var nn = '<tr><td class="kw"></td><td class="lhs" colspan="3" style="text-align:left">' + vars.map(v).join(", ") + " ≥ 0</td><td></td></tr>";
+    var legend = e.variables.map(function (x) { return v(x.name) + " = " + esc(x.label); }).join("; ");
+    return '<div class="program"><table><tbody>' + head + rows + nn + '</tbody></table></div><p class="muted" style="font-size:var(--step--1)">' + legend + ". Constraints are shown in the form the checker reads, <span class=\"data\">A x ≤ b</span>; a “at least” row is negated." + (e.instance.note ? " " + esc(e.instance.note) : "") + "</p>";
+  }
+
+  // ---- optimality view -------------------------------------------------------------------------
+  function optimalityHTML(e) {
+    var st = e.steps, inst = e.instance, vars = e.variables.map(function (x) { return x.name; });
+    var cert = e.certify, good = cert.status === "certified";
+    var out = [];
+    out.push('<div class="verdict ' + (good ? "pass" : "fail") + '"><span class="eyebrow">Verdict from <code>' + esc(cert.function) + "</code></span>");
+    out.push('<span class="headline">' + (good
+      ? "Certified optimal (L4): no feasible plan " + (cert.sense === "minimize" ? "costs less" : "earns more") + " than " + fmt(cert.objective) + "."
+      : "Refused: this certificate does not prove the plan optimal.") + "</span>");
+    out.push("<p>" + esc(e.story) + "</p>");
+    if (!good) out.push('<p>Kernel reason: <code>' + esc(cert["kernel-category"] || cert.message || "rejected") + "</code>. A refusal is the correct outcome here; the steps below show which comparison failed.</p>");
+    out.push("</div>");
+
+    out.push('<div class="grid2"><div class="stack"><h2>The program</h2>' + programHTML(e) + "</div>");
+    if (vars.length === 2) {
+      out.push('<figure class="stack"><h2>Feasible region</h2>' + plotSVG(e) +
+        '<div class="slider"><label for="iso">Move a profit line across the region (your value, not part of the certificate): <span id="iso-val" class="data"></span></label>' +
+        '<input id="iso" type="range" min="0" max="' + Math.ceil(num(st["primal-objective"].value) * 1.25) + '" step="1" value="' + (userIso === null ? 0 : userIso) + '"></div>' +
+        "<figcaption>Drawn to scale from the exported matrix and capacities. Thick amber lines are binding at the plan (slack 0); the dashed line is " + esc(e["objective-label"]) + " = " + fmt(st["primal-objective"].value) + " through the plan, and the arrow points along the margins, the direction of increasing " + esc(e["objective-label"]) + ".</figcaption></figure>");
+    } else {
+      out.push('<div class="stack"><h2>Why no picture</h2><p class="muted">This program has ' + vars.length + " variables, so its feasible region is a polytope in " + vars.length + " dimensions. The tables below carry the same information: which constraints are tight at the plan and what each one is worth.</p></div>");
+    }
+    out.push("</div>");
+
+    // constraint table
+    out.push('<section class="stack" aria-labelledby="ct-h"><h2 id="ct-h">Constraints at the submitted plan</h2>');
+    out.push('<p class="muted">Slack is capacity minus use. A constraint is binding when its slack is 0. Its dual price is what one more unit of capacity is worth at the optimum; complementary slackness asks price × slack = 0 on every row.</p>');
+    out.push('<div class="tablebox"><table class="t"><thead><tr><th>Constraint</th><th>Row</th><th class="num">Used</th><th class="num">Capacity</th><th class="num">Slack</th><th class="num">Dual price</th><th class="num">Price × slack</th><th>Status</th></tr></thead><tbody>');
+    st.rows.forEach(function (r, i) {
+      out.push('<tr tabindex="0" data-row="' + i + '"' + (hl === i ? ' class="row-hl"' : "") + '><td class="wrap">(' + (i + 1) + ") " + esc(e.constraints[i]) + '</td><td style="font-family:var(--font-math)">' + linform(inst.matrix[i], vars) + '</td><td class="num">' + fmt(r.activity.value) + '</td><td class="num">' + fmt(r.capacity) + '</td><td class="num">' + fmt(r.slack.value) + '</td><td class="num">' + fmt(r.price) + '</td><td class="num">' + fmt(r.complementary) + "</td><td>" + (r.binding ? '<span class="chip bind">binding</span>' : '<span class="chip slack">slack</span>') + "</td></tr>");
+    });
+    out.push("</tbody></table></div>");
+    out.push('<div class="tablebox"><table class="t"><thead><tr><th>Variable</th><th class="num">Plan</th><th class="num">Margin</th><th class="num">Column price</th><th class="num">Reduced cost</th><th class="num">Plan × reduced cost</th></tr></thead><tbody>');
+    st.columns.forEach(function (c, j) {
+      out.push('<tr><td>' + v(vars[j]) + " " + esc(e.variables[j].label) + '</td><td class="num">' + fmt(c.plan) + '</td><td class="num">' + fmt(c.margin) + '</td><td class="num">' + fmt(c["column-price"].value) + '</td><td class="num">' + fmt(c["reduced-cost"].value) + '</td><td class="num">' + fmt(c.complementary) + "</td></tr>");
+    });
+    out.push("</tbody></table></div>");
+    out.push('<p class="muted" style="font-size:var(--step--1)">Column price is <span class="data">Σ a<sub>ij</sub> y<sub>i</sub></span>, what the prices charge for one unit of the variable; reduced cost is column price minus margin. Every number in both tables was confirmed by the kernel, which checked the equation between the instance term and the exported value.</p></section>');
+
+    // the check
+    var rowsOk = st.rows.map(function (r) { return r["within-capacity"]; });
+    var planOk = st.columns.map(function (c) { return c["plan-nonnegative"]; });
+    var colOk = st.columns.map(function (c) { return c["covers-margin"]; });
+    var priceOk = st.rows.map(function (r) { return r["price-nonnegative"]; });
+    function stepLI(title, why, okFlag, lines) {
+      return '<li class="' + (okFlag ? "" : "fail") + '"><div class="step-head"><h3>' + title + "</h3>" + (okFlag ? '<span class="chip pass">✓ pass</span>' : '<span class="chip fail">✗ fail</span>') + '</div><p class="step-why">' + why + '</p><ul class="lines">' + lines.join("") + "</ul></li>";
+    }
+    function line(who, eq, k) { return '<li><span class="eq"><span class="who">' + who + "</span>" + eq + "</span>" + mark(k) + "</li>"; }
+    out.push('<section class="stack" aria-labelledby="chk-h"><h2 id="chk-h">The certificate check, step by step</h2>');
+    out.push('<p class="muted">These are the comparisons the certificate is built from, in the order the proof uses them. Each was decided by the kernel on its own, so a failing one can be named; the last step is the kernel checking the whole proof.</p><ol class="steps">');
+    out.push(stepLI("The plan meets every constraint", "Primal feasibility: for each row, use ≤ capacity.", allOk(rowsOk),
+      st.rows.map(function (r, i) { return line("(" + (i + 1) + ")", evaluation(inst.matrix[i], inst.plan) + " = " + fmt(r.activity.value) + " ≤ " + fmt(r.capacity), r["within-capacity"]); })));
+    out.push(stepLI("The plan is nonnegative", "No variable runs at a negative level.", allOk(planOk),
+      st.columns.map(function (c, j) { return line("", v(vars[j]) + " = " + fmt(c.plan) + " ≥ 0", c["plan-nonnegative"]); })));
+    out.push(stepLI("The prices cover every margin", "Dual feasibility: for each variable, column price ≥ margin. This is what makes capacities · prices an upper bound on any plan.", allOk(colOk),
+      st.columns.map(function (c, j) { return line(v(vars[j]), evaluation(inst.matrix.map(function (r) { return r[j]; }), inst.prices) + " = " + fmt(c["column-price"].value) + " ≥ " + fmt(c.margin), c["covers-margin"]); })));
+    out.push(stepLI("The prices are nonnegative", "A ≤ row can only carry a price ≥ 0.", allOk(priceOk),
+      st.rows.map(function (r, i) { return line("(" + (i + 1) + ")", "y<sub>" + (i + 1) + "</sub> = " + fmt(r.price) + " ≥ 0", r["price-nonnegative"]); })));
+    out.push(stepLI("The plan reaches the bound", "Objective values equal: margins · plan = capacities · prices, so the gap is closed. Gap here: " + fmt(st.gap) + ".", ok(st["objectives-equal"]),
+      [line("plan", evaluation(inst.margins, inst.plan) + " = " + fmt(st["primal-objective"].value), st["primal-objective"]),
+       line("bound", evaluation(inst.capacities, inst.prices) + " = " + fmt(st["dual-objective"].value), st["dual-objective"]),
+       line("equal", fmt(st["primal-objective"].value) + " = " + fmt(st["dual-objective"].value), st["objectives-equal"])]));
+    var decl = cert.declarations.map(function (d) {
+      return '<li><span class="eq" style="font-family:var(--font-data);font-size:0.8rem"><span class="who">' + esc(d.name) + "</span>" + esc(d.id.slice(0, 19)) + "… axioms: " + (d.axioms.length ? esc(d.axioms.join(", ")) : "none") + "</span>" + mark({ kernel: d.status }) + "</li>";
+    });
+    if (!decl.length) decl = ['<li><span class="eq"><span class="who">certify</span>no declaration was accepted</span>' + mark({ kernel: "rejected", category: cert["kernel-category"] }) + "</li>"];
+    out.push(stepLI("The kernel accepts the whole certificate", "One proof term instantiates <code>" + esc(DATA.theorems.optimality.name) + "</code> with this instance's data; a second states the plan's objective value. Checked in " + cert.milliseconds + " ms." + (cert["audit-id"] ? " Audit id <code>" + esc(cert["audit-id"]) + "</code>." : ""), good, decl));
+    out.push("</ol></section>");
+    out.push(controlsHTML(st.controls, {
+      "objective-off-by-one": "objective stated as plan value + 1",
+      "activity-off-by-one": "row (1) use stated as true value + 1",
+      "capacity-exceeded": "row (1) capacity + 1 ≤ capacity"
+    }));
+    return out.join("");
+  }
+
+  function controlsHTML(ctrl, labels) {
+    if (!ctrl) return "";
+    var items = Object.keys(ctrl).map(function (k) { return "<tr><td class=\"wrap\">" + esc(labels[k] || k) + "</td><td>" + expectRejected(ctrl[k]) + "</td></tr>"; }).join("");
+    return '<section class="stack" aria-labelledby="ctl-h"><h3 id="ctl-h">Negative controls</h3><p class="muted" style="font-size:var(--step--1)">The same kernel checks run on deliberately wrong numbers. They must be refused, or the check marks above would mean nothing. The export refuses to write its file if any control is accepted.</p><div class="tablebox"><table class="t"><thead><tr><th>Wrong claim submitted to the kernel</th><th>Result</th></tr></thead><tbody>' + items + "</tbody></table></div></section>";
+  }
+
+  // ---- infeasibility view ----------------------------------------------------------------------
+  function infeasibilityHTML(e) {
+    var inst = e.instance, st = e.steps, vars = e.variables.map(function (x) { return x.name; });
+    var good = verdictOf(e), out = [];
+    var combined = st.columns.map(function (c) { return c["combined-coefficient"].value; });
+    out.push('<div class="verdict ' + (good ? "pass" : "fail") + '"><span class="eyebrow">Verdict from the kernel and the Farkas checker</span>');
+    out.push('<span class="headline">' + (good ? "Certified infeasible: no plan with nonnegative quantities meets all constraints." : "Not certified.") + "</span>");
+    out.push("<p>" + esc(e.story) + "</p></div>");
+    out.push('<div class="grid2"><div class="stack"><h2>The program</h2>' + programHTML(e) + "</div>");
+    out.push('<figure class="stack"><h2>Why there is no feasible region</h2>' + plotSVG(e) + "<figcaption>Drawn to scale from the exported data. Blue: plans within the hour limits (1) and (2). Violet, dashed outline: plans meeting the contract minimum (3). The two sets do not meet.</figcaption></figure></div>");
+
+    out.push('<section class="stack" aria-labelledby="fk-h"><h2 id="fk-h">The Farkas certificate as a weighted sum</h2>');
+    out.push('<p class="muted">The certificate is one nonnegative multiplier per constraint. Add the constraints with these weights and every variable gets a coefficient ≥ 0 while the right-hand side becomes negative.</p>');
+    var rows = inst.matrix.map(function (r, i) {
+      return '<tr class="' + (isZero(inst.multipliers[i]) ? "zero" : "") + '"><td class="mult">' + fmt(inst.multipliers[i]) + " ×</td><td>(</td><td style=\"text-align:right\">" + linform(r, vars) + "</td><td>≤</td><td>" + fmt(inst.capacities[i]) + '</td><td>)</td><td class="lab">(' + (i + 1) + ") " + esc(e.constraints[i].replace(/ \(.*\)$/, "")) + "</td></tr>";
+    }).join("");
+    var sum = '<tr class="sum"><td class="mult">sum</td><td></td><td style="text-align:right">' + combined.map(function (c, j) { return (j ? " + " : "") + fmt(c) + "·" + v(vars[j]); }).join("") + "</td><td>≤</td><td>" + fmt(st.rhs["combined-rhs"].value) + '</td><td></td><td class="lab">combined row</td></tr>';
+    out.push('<div class="farkas"><table><tbody>' + rows + sum + "</tbody></table>");
+    out.push('<p class="conclusion">Every plan has ' + vars.map(v).join(", ") + " ≥ 0 and every combined coefficient (" + combined.map(fmt).join(", ") + ") is ≥ 0, so the left side of the combined row is at least 0. Any feasible plan would therefore give <strong>0 ≤ " + fmt(st.rhs["combined-rhs"].value) + "</strong>, which is false. So no feasible plan exists.</p></div></section>");
+
+    function stepLI(title, why, okFlag, lines) {
+      return '<li class="' + (okFlag ? "" : "fail") + '"><div class="step-head"><h3>' + title + "</h3>" + (okFlag ? '<span class="chip pass">✓ pass</span>' : '<span class="chip fail">✗ fail</span>') + '</div><p class="step-why">' + why + '</p><ul class="lines">' + lines.join("") + "</ul></li>";
+    }
+    function line(who, eq, k, txt) { return '<li><span class="eq"><span class="who">' + who + "</span>" + eq + "</span>" + mark(k, txt) + "</li>"; }
+    var acc = e["checker-accepts"], nf = e["no-feasible-plan"], cp = e.compiled;
+    out.push('<section class="stack" aria-labelledby="chk-h"><h2 id="chk-h">The certificate check, step by step</h2><p class="muted">The checker’s three conditions, each decided by the kernel on its own, then the kernel’s verdict on the whole statement.</p><ol class="steps">');
+    out.push(stepLI("Multipliers are nonnegative", "y ≥ 0, so adding weighted ≤ rows keeps the direction of the inequality.", allOk(st.multipliers.map(function (m) { return m.nonnegative; })),
+      st.multipliers.map(function (m, i) { return line("(" + (i + 1) + ")", "y<sub>" + (i + 1) + "</sub> = " + fmt(m.multiplier) + " ≥ 0", m.nonnegative); })));
+    out.push(stepLI("Combined coefficients are nonnegative", "A<sup>T</sup>y ≥ 0 column by column.", allOk(st.columns.map(function (c) { return c.nonnegative; })),
+      st.columns.map(function (c, j) { return line(v(vars[j]), evaluation(inst.multipliers, inst.matrix.map(function (r) { return r[j]; })) + " = " + fmt(c["combined-coefficient"].value) + " ≥ 0", c.nonnegative); })));
+    out.push(stepLI("Combined right-hand side is negative", "y · b < 0. The kernel computes the sum and decides that 0 ≤ y · b is false.", ok(st.rhs["combined-rhs"]) && ok(st.rhs["strictly-negative"]),
+      [line("y·b", evaluation(inst.multipliers, inst.capacities) + " = " + fmt(st.rhs["combined-rhs"].value), st.rhs["combined-rhs"]),
+       line("", fmt(st.rhs["combined-rhs"].value) + " < 0", st.rhs["strictly-negative"])]));
+    out.push(stepLI("The checker accepts", "The kernel evaluates the Farkas checker on this instance: <code>" + esc(acc.statement) + "</code> (" + acc.milliseconds + " ms).", ok(acc),
+      [line("value", "checker(A, b, y) = 1", acc)]));
+    out.push(stepLI("No feasible plan exists", "The kernel checks the theorem <code>" + esc(nf.theorem) + "</code> applied to this instance: for every plan x with x ≥ 0 and A x ≤ b, a contradiction follows. Axioms: " + (nf.axioms.length ? esc(nf.axioms.join(", ")) : "none") + " (" + nf.milliseconds + " ms).", ok(nf),
+      [line("statement", "no x ≥ 0 with A x ≤ b", nf)]));
+    var tam = cp["tampered-multipliers"];
+    out.push(stepLI("The compiled checker agrees", "The program family <code>" + esc(cp.family) + "</code>, printed to JVM code at this shape (print certificate: " + esc(cp["print-certificate"]) + "), run on the same numbers.", cp.answer === "1" && (!tam || cp["tampered-answer"] === "0"),
+      [line("answer", "on y = (" + inst.multipliers.map(fmt).join(", ") + "): " + esc(cp.answer), { kernel: cp.answer === "1" ? "checked" : "rejected" }, "accepts"),
+       tam ? line("tampered", "on y = (" + tam.map(fmt).join(", ") + "): " + esc(cp["tampered-answer"]), { kernel: cp["tampered-answer"] === "0" ? "checked" : "rejected" }, "refuses") : ""]));
+    out.push("</ol></section>");
+    out.push(controlsHTML(e.controls, {
+      "rhs-off-by-one": "y · b stated as its value + 1",
+      "tampered-accepted": "checker value = 1 for y = (" + (tam || []).map(fmt).join(", ") + ")"
+    }));
+    return out.join("");
+  }
+
+  // ---- claims and provenance ---------------------------------------------------------------------
+  function renderClaims() {
+    var t = DATA.theorems;
+    var items = [
+      ["Optimality certificate", '<span class="level">L4, output verification</span>: when the verdict is certified, the kernel checked a proof, for this instance, that no nonnegative plan with A x ≤ b scores above the submitted plan. The general theorem <code>' + esc(t.optimality.name) + "</code> is a kernel-checked theorem about the LP model (L3), axioms: " + (t.optimality.axioms.length ? esc(t.optimality.axioms.join(", ")) : "none") + "."],
+      ["Not established", "That the solver which produced the plan is correct (it is not trusted at all; its output is checked). That <code>rainbow.or.lp-certificate</code> itself is correct: a bug there yields a refused proof, never a wrong one. That the model describes the real plant or business. No L5 or L6 claim for this checker."],
+      ["Numbers", "Exact rationals throughout, never floating point. Each value in the tables was confirmed by a kernel check of the equation between the instance term and the exported value; the plot is drawn from the exported data."]
+    ];
+    document.getElementById("claims").innerHTML = items.map(function (p) { return "<dt>" + p[0] + "</dt><dd>" + p[1] + "</dd>"; }).join("");
+    document.getElementById("prov").innerHTML =
+      "<span>Generated by <code>" + esc(DATA["generated-by"]) + "</code> at " + esc(DATA.generated) + ".</span>" +
+      "<span>Source of the current example: " + esc(DATA.examples[current].source) + "</span>";
+  }
+
+  // ---- tabs and interaction ---------------------------------------------------------------------
+  function renderTabs() {
+    tabs.innerHTML = DATA.examples.map(function (e, i) {
+      var good = verdictOf(e);
+      var tag = e.kind === "infeasibility" ? "infeasible" : (good ? "optimal" : "refused");
+      return '<button class="tab" role="tab" id="tab-' + esc(e.id) + '" aria-controls="view" aria-selected="' + (i === current) + '" tabindex="' + (i === current ? 0 : -1) + '" data-i="' + i + '"><span class="dot ' + (good ? "pass" : "fail") + '" aria-hidden="true"></span>' + esc(e.title) + ' <span class="muted">· ' + tag + "</span></button>";
+    }).join("");
+  }
+  function render() {
+    var e = DATA.examples[current];
+    view.setAttribute("aria-labelledby", "tab-" + e.id);
+    view.innerHTML = e.kind === "infeasibility" ? infeasibilityHTML(e) : optimalityHTML(e);
+    renderClaims();
+    bind();
+  }
+  function select(i, focus) {
+    current = i; hl = null; userIso = null;
+    renderTabs(); render();
+    try { history.replaceState(null, "", "#" + DATA.examples[i].id); } catch (err) { /* sandboxed */ }
+    if (focus) document.getElementById("tab-" + DATA.examples[i].id).focus();
+  }
+  function setHighlight(i) {
+    hl = i;
+    var fig = view.querySelector("figure .plot");
+    if (fig) {
+      var e = DATA.examples[current];
+      var holder = document.createElement("div");
+      holder.innerHTML = plotSVG(e);
+      fig.replaceWith(holder.firstChild);
+    }
+    view.querySelectorAll("[data-row]").forEach(function (el) {
+      if (el.tagName === "line") return;
+      el.classList.toggle("row-hl", hl !== null && String(hl) === el.getAttribute("data-row"));
+    });
+  }
+  function bind() {
+    view.querySelectorAll("tr[data-row]").forEach(function (tr) {
+      var i = Number(tr.getAttribute("data-row"));
+      tr.addEventListener("mouseenter", function () { setHighlight(i); });
+      tr.addEventListener("mouseleave", function () { setHighlight(null); });
+      tr.addEventListener("focus", function () { setHighlight(i); });
+      tr.addEventListener("blur", function () { setHighlight(null); });
+    });
+    var iso = document.getElementById("iso");
+    if (iso) {
+      var out = document.getElementById("iso-val");
+      var show = function () { out.textContent = iso.value; };
+      show();
+      iso.addEventListener("input", function () { userIso = Number(iso.value); show(); setHighlight(hl); });
+    }
+  }
+  tabs.addEventListener("click", function (ev) {
+    var b = ev.target.closest(".tab"); if (b) select(Number(b.getAttribute("data-i")), false);
+  });
+  tabs.addEventListener("keydown", function (ev) {
+    var n = DATA ? DATA.examples.length : 0, i = current;
+    if (ev.key === "ArrowRight") i = (current + 1) % n;
+    else if (ev.key === "ArrowLeft") i = (current - 1 + n) % n;
+    else if (ev.key === "Home") i = 0;
+    else if (ev.key === "End") i = n - 1;
+    else return;
+    ev.preventDefault(); select(i, true);
+  });
+
+  try {
+    DATA = JSON.parse(document.getElementById("rainbow-data").textContent);
+    var want = (location.hash || "").slice(1);
+    DATA.examples.forEach(function (e, i) { if (e.id === want) current = i; });
+    renderTabs(); render();
+  } catch (err) {
+    view.innerHTML = '<p class="err">The certificate data could not be read: ' + esc(err.message) + ".</p>";
+  }
+})();
+</script>

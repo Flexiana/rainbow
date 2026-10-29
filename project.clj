@@ -1,4 +1,4 @@
-(defproject org.flexiana/rainbow "1.4.4"
+(defproject org.flexiana/rainbow "1.5.0"
   :description "Rainbow: data-oriented, kernel-checked mathematics for Clojure (Levels 1-3, open core)"
   :url "https://github.com/flexiana/rainbow"
   :license {:name "Apache-2.0" :url "https://www.apache.org/licenses/LICENSE-2.0"}
@@ -67,4 +67,6 @@
             "ahof-o56" ["run" "-m" "rainbow.milestones.ahof-o56-qp"]
             "ahof-d46" ["run" "-m" "rainbow.milestones.ahof-d46-reinforce"]
             "or40" ["run" "-m" "rainbow.curriculum.operations-research"]
-            "v1" ["run" "-m" "rainbow.history.release-gate"]})
+            "v1" ["run" "-m" "rainbow.history.release-gate"]
+            "explore" ["run" "-m" "rainbow.view"]
+            "lp-view" ["run" "-m" "rainbow.view.lp"]})

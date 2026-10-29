@@ -300,6 +300,106 @@
                (:message result)
                (:error result)))))
 
+;; ---- lazy conversion ------------------------------------------------------------
+;; Before normalising both sides completely, try to show them equal lazily: reduce each
+;; head without unfolding definitions (beta, zeta, iota, the pinned nat operations),
+;; compare equal heads argument by argument, and otherwise unfold one head definition
+;; and try again. Every step is a conversion rule the full procedure also uses (the
+;; reductions are this kernel's own; congruence holds for definitional equality), so a
+;; lazy success is a pair whose normal forms are equal. A lazy failure decides nothing:
+;; the full procedure below runs as before. Binder modes and constant universe
+;; arguments must match exactly, as they must in normal forms.
+(def ^:dynamic ^:private *lazy-fuel* nil)
+(def ^:dynamic ^:private *lazy-failed* nil)
+
+(defn- lazy-step! []
+  (when (neg? (vswap! *lazy-fuel* dec))
+    (throw (ex-info "Lazy conversion budget exhausted" {::lazy-exhausted true}))))
+
+(defn- whnf-core
+  "Head reduction without unfolding a definition at the head."
+  [environment expression]
+  (loop [expression expression]
+    (case (fst expression)
+      :let (do (lazy-step!) (recur (term/instantiate (nth expression 3) (nth expression 2))))
+      :app (let [[head arguments] (application-spine expression)]
+             (if-let [[computed _] (native-step environment head arguments *reduction-budget* #{})]
+               (do (lazy-step!) (recur computed))
+               (if (= :lam (fst head))
+                 (do (lazy-step!)
+                     (recur (apply-arguments (term/instantiate (nth head 2) (first arguments)) (subvec arguments 1))))
+                 (if-let [[next-expression _ reduced?] (recursor-step environment expression *reduction-budget* #{})]
+                   (if reduced? (do (lazy-step!) (recur next-expression)) next-expression)
+                   expression))))
+      expression)))
+
+(defn- unfold-head
+  "The expression with its head definition unfolded once, or nil when the head is not one."
+  [environment expression]
+  (let [[head arguments] (application-spine expression)]
+    (when (= :const (fst head))
+      (let [declaration (environment/declaration environment (snd head))]
+        (when (and (unfoldable? declaration)
+                   (= (count (:rainbow/universes declaration)) (count (nth head 2))))
+          (lazy-step!)
+          [(snd head)
+           (apply-arguments (term/instantiate-universes (:rainbow/value declaration)
+                                                        (zipmap (:rainbow/universes declaration) (nth head 2)))
+                            arguments)])))))
+
+(declare lazy-equal?)
+
+(defn- congruent? [environment left right]
+  (let [tag (fst left)]
+    (cond
+      (not= tag (fst right)) false
+      (= :sort tag) (= (term/normalize-level (snd left)) (term/normalize-level (snd right)))
+      (#{:lam :pi} tag) (and (= (nth left 3) (nth right 3))
+                             (lazy-equal? environment (snd left) (snd right))
+                             (lazy-equal? environment (nth left 2) (nth right 2)))
+      (= :app tag) (let [[left-head left-arguments] (application-spine left)
+                         [right-head right-arguments] (application-spine right)]
+                     (and (= left-head right-head)
+                          (= (count left-arguments) (count right-arguments))
+                          (every? true? (map #(lazy-equal? environment %1 %2) left-arguments right-arguments))))
+      :else false)))
+
+(defn- depends-on? [environment id other]
+  (contains? (set (:rainbow/dependencies (environment/declaration environment id))) other))
+
+(defn- lazy-equal? [environment left right]
+  (cond
+    (= left right) true
+    (contains? @*lazy-failed* [left right]) false
+    :else
+    (do
+      (lazy-step!)
+      (let [left (whnf-core environment left)
+            right (whnf-core environment right)]
+        (or (= left right)
+            (congruent? environment left right)
+            (let [[left-id left-unfolded] (unfold-head environment left)
+                  [right-id right-unfolded] (unfold-head environment right)]
+              (cond
+                (and left-unfolded right-unfolded)
+                (cond (= left-id right-id) (lazy-equal? environment left-unfolded right-unfolded)
+                      (depends-on? environment right-id left-id) (lazy-equal? environment left right-unfolded)
+                      (depends-on? environment left-id right-id) (lazy-equal? environment left-unfolded right)
+                      :else (lazy-equal? environment left-unfolded right-unfolded))
+                left-unfolded (lazy-equal? environment left-unfolded right)
+                right-unfolded (lazy-equal? environment left right-unfolded)
+                :else false))
+            (do (vswap! *lazy-failed* conj [left right]) false))))))
+
+(defn- lazily-equal? [environment left right]
+  (binding [*lazy-fuel* (volatile! *reduction-budget*)
+            *lazy-failed* (volatile! #{})]
+    (try
+      (true? (lazy-equal? environment left right))
+      ;; any failure (budget, a rejection, the host stack) leaves the decision to the full procedure
+      (catch clojure.lang.ExceptionInfo _ false)
+      (catch StackOverflowError _ false))))
+
 (defn- definitionally-equal!* [environment left right]
   ;; Keep the original decision procedure. Untyped congruence/eta shortcuts can
   ;; erase binder annotations or bypass rejection inside a shared subterm.
@@ -310,6 +410,19 @@
         (let [left (normal-form! environment left)
               right (normal-form! environment right)]
           (or (= left right) (term/equivalent-up-to-levels? left right))))))
+
+(defn- convertible!*
+  "Type checking's conversion test: the lazy attempt, then the original procedure.
+  Used only where one side is the inferred type of a checked term (and the other a
+  checked expected type, or a binder domain that is itself checked next), so no
+  rejection inside a shared subterm can be bypassed: a well-typed side contains no
+  unknown constant and no malformed recursor application, and the lazy path never
+  equates such a subterm with anything else. The public definitionally-equal? keeps
+  the original procedure exactly."
+  [environment left right]
+  (or (= left right)
+      (lazily-equal? environment left right)
+      (definitionally-equal!* environment left right)))
 
 (defn definitionally-equal?
   ([environment left right] (definitionally-equal? environment left right nil))
@@ -365,7 +478,7 @@
         (reject! :kernel/binder-mode-mismatch
                  "Lambda binder mode differs from expected Pi binder"
                  {:expected (nth expected-pi 3) :actual (nth expression 3)}))
-      (when-not (definitionally-equal!* environment actual-domain expected-domain)
+      (when-not (convertible!* environment actual-domain expected-domain)
         (reject! :kernel/type-mismatch
                  "Lambda domain does not match expected Pi domain"
                  {:expected expected-domain :actual actual-domain}))
@@ -375,7 +488,7 @@
               (nth expression 2)
               (nth expected-pi 2)))
     (let [actual (infer* environment context expression)]
-      (when-not (definitionally-equal!* environment actual expected)
+      (when-not (convertible!* environment actual expected)
         (reject! :kernel/type-mismatch
                  "Term does not inhabit expected type"
                  {:expected expected :actual actual :term expression}))))

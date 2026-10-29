@@ -6,26 +6,26 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.main :as main]
-            [rainbow.math.finite.set-union :as m0]
-            [rainbow.math.lemmas.abc-class :as m1]
-            [rainbow.math.lemmas.acf-bound :as m2]
-            [rainbow.math.lemmas.aggplan-balance :as m3]
-            [rainbow.math.lemmas.anova-readings :as m4]
-            [rainbow.math.lemmas.assign-dual :as m5]
-            [rainbow.math.lemmas.auc-readings :as m6]
-            [rainbow.math.lemmas.auction-assignment :as m7]
-            [rainbow.math.lemmas.basestock-readings :as m8]
-            [rainbow.math.lemmas.battery-readings :as m9]
-            [rainbow.math.lemmas.bb-leaf-bound :as m10]
-            [rainbow.math.lemmas.benders-cut :as m11]
-            [rainbow.math.lemmas.bin-packing-bound :as m12]
-            [rainbow.math.lemmas.borda :as m13]
-            [rainbow.math.lemmas.bottleneck-assignment :as m14]
-            [rainbow.math.lemmas.capital-ratio :as m15]
-            [rainbow.math.lemmas.capm-normal :as m16]
-            [rainbow.math.lemmas.cashbudget-balance :as m17]
-            [rainbow.math.lemmas.cea-rule :as m18]
-            [rainbow.math.lemmas.census-readings :as m19]))
+            [rainbow.math.lemmas.abc-class :as m0]
+            [rainbow.math.lemmas.acf-bound :as m1]
+            [rainbow.math.lemmas.aggplan-balance :as m2]
+            [rainbow.math.lemmas.anova-readings :as m3]
+            [rainbow.math.lemmas.assign-dual :as m4]
+            [rainbow.math.lemmas.auc-readings :as m5]
+            [rainbow.math.lemmas.auction-assignment :as m6]
+            [rainbow.math.lemmas.basestock-readings :as m7]
+            [rainbow.math.lemmas.battery-readings :as m8]
+            [rainbow.math.lemmas.bb-leaf-bound :as m9]
+            [rainbow.math.lemmas.benders-cut :as m10]
+            [rainbow.math.lemmas.bin-packing-bound :as m11]
+            [rainbow.math.lemmas.borda :as m12]
+            [rainbow.math.lemmas.bottleneck-assignment :as m13]
+            [rainbow.math.lemmas.capital-ratio :as m14]
+            [rainbow.math.lemmas.capm-normal :as m15]
+            [rainbow.math.lemmas.cashbudget-balance :as m16]
+            [rainbow.math.lemmas.cea-rule :as m17]
+            [rainbow.math.lemmas.census-readings :as m18]
+            [rainbow.math.lemmas.chisq-readings :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -39,7 +39,9 @@
     set/infinite-nonempty #{logic/excluded-middle} set/infinite-nontrivial #{logic/excluded-middle}
     set/infinite-or-finite #{logic/excluded-middle} set/not-infinite-equivalence #{logic/excluded-middle}
     set/infinite-union-equivalence #{logic/excluded-middle}
-    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}})
+    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}
+    logic/proof-irrelevance-from-proposition-extensionality #{logic/proposition-extensionality}
+    logic/prop-unit-equals-inhabited #{logic/proposition-extensionality}})
 
 (defn- rechecks [ns-sym]
   (let [{:keys [error theorems bundle?]} (main/verify-namespace @base ns-sym)
@@ -51,62 +53,62 @@
         (is (= :checked status))
         (is (= (set (map #(environment/resolve-id @env %) (classical name))) axioms))))))
 
-(deftest rechecks-0-set-union
-  (rechecks 'rainbow.math.finite.set-union))
-
-(deftest rechecks-1-abc-class
+(deftest rechecks-0-abc-class
   (rechecks 'rainbow.math.lemmas.abc-class))
 
-(deftest rechecks-2-acf-bound
+(deftest rechecks-1-acf-bound
   (rechecks 'rainbow.math.lemmas.acf-bound))
 
-(deftest rechecks-3-aggplan-balance
+(deftest rechecks-2-aggplan-balance
   (rechecks 'rainbow.math.lemmas.aggplan-balance))
 
-(deftest rechecks-4-anova-readings
+(deftest rechecks-3-anova-readings
   (rechecks 'rainbow.math.lemmas.anova-readings))
 
-(deftest rechecks-5-assign-dual
+(deftest rechecks-4-assign-dual
   (rechecks 'rainbow.math.lemmas.assign-dual))
 
-(deftest rechecks-6-auc-readings
+(deftest rechecks-5-auc-readings
   (rechecks 'rainbow.math.lemmas.auc-readings))
 
-(deftest rechecks-7-auction-assignment
+(deftest rechecks-6-auction-assignment
   (rechecks 'rainbow.math.lemmas.auction-assignment))
 
-(deftest rechecks-8-basestock-readings
+(deftest rechecks-7-basestock-readings
   (rechecks 'rainbow.math.lemmas.basestock-readings))
 
-(deftest rechecks-9-battery-readings
+(deftest rechecks-8-battery-readings
   (rechecks 'rainbow.math.lemmas.battery-readings))
 
-(deftest rechecks-10-bb-leaf-bound
+(deftest rechecks-9-bb-leaf-bound
   (rechecks 'rainbow.math.lemmas.bb-leaf-bound))
 
-(deftest rechecks-11-benders-cut
+(deftest rechecks-10-benders-cut
   (rechecks 'rainbow.math.lemmas.benders-cut))
 
-(deftest rechecks-12-bin-packing-bound
+(deftest rechecks-11-bin-packing-bound
   (rechecks 'rainbow.math.lemmas.bin-packing-bound))
 
-(deftest rechecks-13-borda
+(deftest rechecks-12-borda
   (rechecks 'rainbow.math.lemmas.borda))
 
-(deftest rechecks-14-bottleneck-assignment
+(deftest rechecks-13-bottleneck-assignment
   (rechecks 'rainbow.math.lemmas.bottleneck-assignment))
 
-(deftest rechecks-15-capital-ratio
+(deftest rechecks-14-capital-ratio
   (rechecks 'rainbow.math.lemmas.capital-ratio))
 
-(deftest rechecks-16-capm-normal
+(deftest rechecks-15-capm-normal
   (rechecks 'rainbow.math.lemmas.capm-normal))
 
-(deftest rechecks-17-cashbudget-balance
+(deftest rechecks-16-cashbudget-balance
   (rechecks 'rainbow.math.lemmas.cashbudget-balance))
 
-(deftest rechecks-18-cea-rule
+(deftest rechecks-17-cea-rule
   (rechecks 'rainbow.math.lemmas.cea-rule))
 
-(deftest rechecks-19-census-readings
+(deftest rechecks-18-census-readings
   (rechecks 'rainbow.math.lemmas.census-readings))
+
+(deftest rechecks-19-chisq-readings
+  (rechecks 'rainbow.math.lemmas.chisq-readings))

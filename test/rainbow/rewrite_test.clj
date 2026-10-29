@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [rainbow.elaborate :as elaborate]
             [rainbow.environment :as environment]
+            [rainbow.kernel :as kernel]
             [rainbow.math.logic.equality :as equality]
             [rainbow.proof :as proof]
             [rainbow.tactic :as tactic]))
@@ -82,3 +83,50 @@
     (is (= :proved (:status result)))
     (is (= :checked (get-in result [:kernel :status])))
     (is (= :calc (get-in result [:proof :proof/history 6 :event/tactic])))))
+
+(deftest rewrite-direction-convention-and-the-other-direction-hint
+  ;; chain : start (succ i) = end i. :forward replaces the RIGHT side (end i) by the left;
+  ;; :backward replaces the LEFT side, start (succ i), by end i.
+  (let [environment (equality/build-environment)
+        surface (equality/forall
+                 [['A equality/sort-u] ['start (equality/arrow 'A 'A)] ['end (equality/arrow 'A 'A)]
+                  ['succ (equality/arrow 'A 'A)] ['i 'A]
+                  ['chain (equality/eq 'A (equality/app 'start (equality/app 'succ 'i))
+                                       (equality/app 'end 'i))]
+                  ['R (equality/arrow 'A 'A 'Prop)]
+                  ['r (equality/app 'R (equality/app 'start 'i) (equality/app 'end 'i))]]
+                 (equality/app 'R (equality/app 'start 'i) (equality/app 'start (equality/app 'succ 'i))))
+        introduced (introduce environment (:term (elaborate/core-expression environment surface)) 8)
+        forward (tactic/run (:state introduced) (tactic/rewrite [:bound 2]))
+        backward (tactic/run (:state introduced) (tactic/rewrite [:bound 2] {:direction :backward}))
+        result (tactic/run (:state backward) (tactic/assumption))]
+    (is (= :tactic/no-rewrite-occurrence (get-in forward [:failure :failure/category])))
+    (is (true? (get-in forward [:failure :failure/detail :other-direction-occurs?])))
+    (is (= :progress (:status backward)))
+    (is (= :proved (:status result)))
+    (is (= :checked (get-in result [:kernel :status])))
+    (is (re-find #":forward, the\s+default, replaces occurrences of r in the goal by l"
+                 (:doc (meta #'tactic/rewrite))))))
+
+(deftest rewrite-sees-equality-through-beta-and-its-unfolded-leibniz-body
+  ;; Normalizing a statement unfolds Eq A x y to its Leibniz body
+  ;; Pi (P : A -> Prop), P x -> P y; apply produces such subgoals, and a hypothesis
+  ;; introduced from one is still an equality.
+  (let [environment (equality/build-environment)
+        target (:term (kernel/normalize environment (theorem-target environment 'equality/substitution)))
+        introduced (introduce environment target 6)
+        rewritten (tactic/run (:state introduced) (tactic/rewrite [:bound 2]))
+        result (tactic/run (:state rewritten) (tactic/assumption))
+        redex-surface (equality/forall
+                       [['A equality/sort-u] ['a 'A] ['b 'A]
+                        ['he (equality/app (equality/lam [['e 'A]] (equality/eq 'A 'e 'b)) 'a)]
+                        ['P (equality/arrow 'A 'Prop)] ['pa (equality/app 'P 'a)]]
+                       (equality/app 'P 'b))
+        redex (introduce environment (:term (elaborate/core-expression environment redex-surface)) 6)
+        redex-result (tactic/run (:state redex) (tactic/then (tactic/rewrite [:bound 2]) (tactic/assumption)))]
+    (is (= :pi (first (get-in introduced [:state :proof/goals 0 :goal/context 2 :goal/type]))))
+    (is (= :progress (:status rewritten)) (pr-str (:failure rewritten)))
+    (is (= :proved (:status result)))
+    (is (= :checked (get-in result [:kernel :status])))
+    (is (= :proved (:status redex-result)))
+    (is (= :checked (get-in redex-result [:kernel :status])))))

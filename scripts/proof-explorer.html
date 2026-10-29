@@ -1,0 +1,497 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rainbow Proof Explorer</title>
+<meta name="description" content="Kernel-checked Rainbow declarations: dependency graph, proof structure, axioms and kernel-computed example values, written by lein explore.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: three panes on desktop (theorem list | dependency graph | detail), stacked on phones. */
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --raised: #eef0f4; --fg: #1b1f2a; --muted: #5d6475; --line: #d8dce4;
+  --accent: #2a4fd6; --accent-soft: #e4e9fb;
+  --free: #1f7a5a; --free-soft: #ddf1e8; --uses: #a35f00; --uses-soft: #fbecd6; --axiom: #b3263e; --axiom-soft: #f8dfe4;
+  --def: #6b4fbf; --ind: #0f6f8f;
+  --lean: #0b5f8a; --lean-soft: #dceef8; --loop: #7a3e9d; --loop-soft: #f1e4f8;
+  --display: "Newsreader", Georgia, serif; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1218; --surface: #161a23; --raised: #1d2230; --fg: #e3e7ef; --muted: #9aa2b4; --line: #2b3243;
+  --accent: #8aa4ff; --accent-soft: #1f2a4d;
+  --free: #5fd0a4; --free-soft: #143528; --uses: #f0ad4e; --uses-soft: #3a2a12; --axiom: #ff7d92; --axiom-soft: #3d1820;
+  --def: #b39dff; --ind: #5cc6e6;
+  --lean: #6cc4ee; --lean-soft: #12303f; --loop: #d29bf0; --loop-soft: #33203f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1218; --surface: #161a23; --raised: #1d2230; --fg: #e3e7ef; --muted: #9aa2b4; --line: #2b3243;
+  --accent: #8aa4ff; --accent-soft: #1f2a4d;
+  --free: #5fd0a4; --free-soft: #143528; --uses: #f0ad4e; --uses-soft: #3a2a12; --axiom: #ff7d92; --axiom-soft: #3d1820;
+  --def: #b39dff; --ind: #5cc6e6;
+  --lean: #6cc4ee; --lean-soft: #12303f; --loop: #d29bf0; --loop-soft: #33203f; color-scheme: dark }
+* { box-sizing: border-box }
+html, body { height: 100% }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--body); display: flex; flex-direction: column }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface); flex: none }
+header h1 { font: 600 1.35rem/1.2 var(--display); margin: 0 }
+header .prov { font: .72rem/1.4 var(--mono); color: var(--muted); min-width: 0; overflow-wrap: anywhere }
+header .note { color: var(--muted); font-size: .82rem; flex-basis: 100% }
+main { display: grid; grid-template-columns: 260px minmax(0, 1fr) minmax(0, 440px); grid-template-rows: minmax(0, 1fr); flex: 1 1 0; min-height: 520px }
+aside, #graphpane, #detail { min-width: 0; min-height: 0 }
+aside { border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column }
+aside .controls { padding: 10px 12px; display: grid; gap: 8px; border-bottom: 1px solid var(--line) }
+input[type=search], select { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit }
+#list { overflow: auto; flex: 1; padding: 4px 0 }
+#list button { display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--fg); padding: 7px 12px; cursor: pointer; font: .82rem/1.35 var(--mono); border-left: 3px solid transparent }
+#list button:hover, #list button:focus-visible { background: var(--raised); outline: none }
+#list button.on { background: var(--accent-soft); border-left-color: var(--accent) }
+#list .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px }
+#list .tags { display: inline-flex; gap: 4px; margin-left: 6px; vertical-align: 1px }
+#graphpane { position: relative; display: flex; flex-direction: column }
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface) }
+.toolbar button, .btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 5px 10px; font: 500 .8rem var(--body); cursor: pointer }
+.toolbar button:hover, .btn:hover { border-color: var(--accent) }
+.toolbar button:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+.toolbar button[disabled], .btn[disabled] { opacity: .45; cursor: default }
+.toolbar #tour { border-color: var(--accent); color: var(--accent); font-weight: 600 }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-left: auto; font-size: .75rem; color: var(--muted) }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; background: var(--c); border: 1px solid var(--b, var(--c)) }
+.legend span.dbl::before { border: 3px double var(--loop); width: 8px; height: 8px }
+#caption { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--line); background: var(--accent-soft); font-size: .84rem; line-height: 1.45 }
+#caption[hidden] { display: none }
+#caption .txt { flex: 1 1 260px; min-width: 0 }
+#caption .step { font: 600 .72rem var(--mono); color: var(--accent); white-space: nowrap }
+#caption .acts { display: flex; gap: 6px; flex-wrap: wrap }
+#caption .x { border: 0; background: none; color: var(--muted); cursor: pointer; font: 1rem var(--body); padding: 0 4px }
+#cy { flex: 1; min-height: 320px }
+#tip { position: fixed; z-index: 10; max-width: min(420px, 90vw); background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; box-shadow: 0 6px 24px rgba(0,0,0,.18); font-size: .8rem; pointer-events: none }
+#tip pre { margin: 6px 0 0; white-space: pre-wrap; font: .76rem/1.4 var(--mono) }
+#detail { border-left: 1px solid var(--line); background: var(--surface); overflow: auto; padding: 14px 16px 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-content: start }
+#detail h2 { font: 600 1.15rem/1.25 var(--display); margin: 0; overflow-wrap: anywhere }
+#detail h3 { font: 600 .74rem/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { font: 500 .74rem/1 var(--mono); padding: 5px 8px; border-radius: 999px; background: var(--raised); color: var(--fg) }
+.chip.free { background: var(--free-soft); color: var(--free) }
+.chip.uses { background: var(--uses-soft); color: var(--uses) }
+.chip.axiom { background: var(--axiom-soft); color: var(--axiom) }
+.chip.lean, .tag.lean { background: var(--lean-soft); color: var(--lean); border: 1px solid var(--lean) }
+.chip.loop, .tag.loop { background: var(--loop-soft); color: var(--loop); border: 1px solid var(--loop) }
+.chip.loop.hand, .tag.loop.hand { border-style: dashed }
+.tag { font: 600 .62rem/1 var(--body); letter-spacing: .03em; padding: 2px 5px; border-radius: 4px; white-space: nowrap }
+pre.stmt { margin: 0; padding: 10px 12px; background: var(--raised); border-radius: 8px; overflow-x: auto; font: .8rem/1.5 var(--mono); white-space: pre }
+.sub { font-size: .76rem; color: var(--muted); margin-top: 6px }
+.rows { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px }
+.rows button { font: .76rem var(--mono); border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 6px; padding: 4px 8px; cursor: pointer }
+.rows button.on { border-color: var(--accent); background: var(--accent-soft) }
+table.trace, table.tele, table.ax { width: 100%; border-collapse: collapse; font: .8rem/1.4 var(--mono); font-variant-numeric: tabular-nums }
+table.trace td, table.tele td, table.tele th, table.ax td, table.ax th { padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left }
+table.tele th, table.ax th { font: 600 .68rem/1.2 var(--body); color: var(--muted); text-transform: uppercase; letter-spacing: .04em }
+table.tele td.n { text-align: right; white-space: nowrap }
+table.tele tr.proved td { color: var(--free) }
+table.trace td.v { text-align: right; font-weight: 500; white-space: nowrap }
+table.trace tr { transition: background .25s }
+table.trace tr.lit { background: var(--accent-soft) }
+table.trace tr.pending td { color: var(--muted) }
+table.trace tr.pending td.v { visibility: hidden }
+.tablewrap { overflow-x: auto }
+.verdict { margin-top: 10px; font-size: .84rem; padding: 8px 10px; border-radius: 6px; background: var(--free-soft); color: var(--free) }
+.verdict.bad { background: var(--axiom-soft); color: var(--axiom) }
+.how { font-size: .86rem; padding: 9px 11px; border-radius: 8px; background: var(--loop-soft); border-left: 3px solid var(--loop) }
+.how.hand { border-left-style: dashed }
+.stat { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline }
+.stat b { font: 600 1.5rem/1 var(--display); font-variant-numeric: tabular-nums }
+.stat span { color: var(--muted); font-size: .8rem }
+.empty { color: var(--muted); font-size: .84rem }
+.crumbs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font: .74rem var(--mono); color: var(--muted); margin-bottom: 8px }
+.crumbs button { border: 0; background: none; color: var(--accent); cursor: pointer; font: inherit; padding: 2px 3px }
+ul.tree, ul.tree ul { list-style: none; margin: 0; padding-left: 16px; border-left: 1px dashed var(--line) }
+ul.tree { padding-left: 2px; border-left: 0 }
+ul.tree li { margin: 2px 0 }
+.node { display: inline-flex; gap: 6px; align-items: baseline; max-width: 100%; padding: 2px 6px; border-radius: 5px; font: .78rem/1.45 var(--mono); cursor: default }
+.node:hover { background: var(--raised) }
+.node .tg { border: 0; background: none; color: var(--muted); cursor: pointer; width: 14px; padding: 0; font: inherit }
+.node .lbl { overflow-wrap: anywhere; min-width: 0 }
+.node .k { font: 600 .62rem/1 var(--body); text-transform: uppercase; letter-spacing: .05em; padding: 3px 5px; border-radius: 4px; background: var(--raised); color: var(--muted); flex: none }
+.node .k.induction { background: var(--accent-soft); color: var(--accent) }
+.node .k.use { background: var(--free-soft); color: var(--free) }
+.node .k.more { background: var(--uses-soft); color: var(--uses) }
+.node a { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px }
+.node .zoom { border: 0; background: none; color: var(--muted); cursor: pointer; font: .72rem var(--body); padding: 0 2px; flex: none }
+.node .zoom:hover { color: var(--accent) }
+.howto { font-size: .8rem; color: var(--muted); line-height: 1.5 }
+@media (max-width: 980px) {
+  body { display: block }
+  main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; height: auto }
+  aside { border-right: 0; border-bottom: 1px solid var(--line); max-height: 260px }
+  #cy { height: 420px; flex: none }
+  #detail { border-left: 0; border-top: 1px solid var(--line) }
+  .legend { margin-left: 0 }
+}
+@media (prefers-reduced-motion: reduce) { table.trace tr { transition: none } }
+</style>
+
+<header>
+  <h1>Rainbow Proof Explorer</h1>
+  <span class="prov" id="prov">loading checked data…</span>
+  <span class="note">Every statement is printed from the kernel-checked term and every example value is computed by the Rainbow kernel. Nothing on this page is drawn by hand. <span id="scope"></span></span>
+  <span class="note" id="claims" hidden></span>
+</header>
+<main>
+  <aside>
+    <div class="controls">
+      <input type="search" id="q" placeholder="Search theorems" aria-label="Search theorems">
+      <select id="filter" aria-label="Filter theorems">
+        <option value="all">All starting theorems</option>
+        <option value="free">Axiom-free only</option>
+        <option value="uses">Using an axiom</option>
+        <option value="examples">With example values</option>
+        <option value="loop" hidden>Proved by the proving loop</option>
+        <option value="lean" hidden>Accepted by Lean</option>
+      </select>
+    </div>
+    <div id="list" role="listbox" aria-label="Theorems"></div>
+  </aside>
+  <section id="graphpane" aria-label="Dependency graph">
+    <div class="toolbar">
+      <button id="tour" title="Step through a few chosen declarations">Tour</button>
+      <button id="back" title="Previous theorem" disabled>← Back</button>
+      <button id="fwd" title="Next theorem" disabled>Forward →</button>
+      <button id="fit">Fit</button>
+      <button id="depth">Show all dependencies</button>
+      <div class="legend">
+        <span style="--c:var(--free-soft);--b:var(--free)">axiom-free</span>
+        <span style="--c:var(--uses-soft);--b:var(--uses)">uses an axiom</span>
+        <span style="--c:var(--axiom-soft);--b:var(--axiom)">axiom</span>
+        <span style="--c:var(--surface);--b:var(--def)">definition</span>
+        <span style="--c:var(--surface);--b:var(--ind)">type, constructor, recursor</span>
+        <span class="dbl" id="legend-loop" hidden>proved by the loop</span>
+      </div>
+    </div>
+    <div id="caption" hidden></div>
+    <div id="cy"></div>
+  </section>
+  <section id="detail" aria-live="polite"></section>
+</main>
+<div id="tip" hidden></div>
+
+<!-- written by lein explore: the data is inline below and also in data.json next to this page.
+     The graph libraries are pinned by version and integrity hash; lein explore --offline inlines them. -->
+<script id="rainbow-data" type="application/json">/*RAINBOW-DATA*/</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js" integrity="sha384-J7Q85oZE4GJ/e7+n2aOQsLXfDwwfnA8S2nZAL5BpFsfpCF84zQD7LroZ/dMnLgex" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js" integrity="sha384-2IH3T69EIKYC4c+RXZifZRvaH5SRUdacJW7j6HtE5rQbvLhKKdawxq6vpIzJ7j9M" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js" integrity="sha384-u69h9ebXeSjlg6q/rb1zKTRAGu/h8deCl0409xpS/QJctMKnc4M9Fzkm01VOQdeF" crossorigin="anonymous"></script>
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  let DATA, byId = {}, dependents = {}, cy, current = null, hist = [], pos = -1, levels = 2;
+  let tourStep = -1, captionClosed = false;
+
+  function status(n) { return n.kind === "axiom" ? "axiom" : (n.axioms.length ? "uses" : "free"); }
+  function short(a) { return a.length > 34 ? a.slice(0, 33) + "…" : a; }
+  function kindWord(k) { return {theorem: "theorem", definition: "definition", inductive: "inductive type", constructor: "constructor", recursor: "recursor", axiom: "axiom"}[k] || k; }
+  function plural(n, w) { return `${n.toLocaleString("en")} ${w}${n === 1 ? "" : "s"}`; }
+
+  // ------------------------------------------------------------ badges
+  const HOW = {search: "found by search", ai: "AI proposal", hand: "hand-written after search blocked"};
+  function howLabel(n) { return n.howClass === "ai" && /by hand/.test(n.how) ? "AI proposal, hand-fixed" : HOW[n.howClass]; }
+  function leanTitle(n) {
+    return `Lean: accepted in the supplied cross-check. ` +
+      `Lean #print axioms: ${n.lean.axioms.length ? n.lean.axioms.join(", ") : "none"}. Rainbow axioms: ${n.axioms.length ? n.axioms.join(", ") : "none"}.`;
+  }
+  function loopTitle(n) { return `Proving loop: ${n.how}`; }
+  function tagsHTML(n) {
+    return (n.lean ? `<span class="tag lean" title="${esc(leanTitle(n))}">Lean ✓</span>` : "") +
+      (n.how ? `<span class="tag loop ${n.howClass}" title="${esc(loopTitle(n))}">${n.howClass === "search" ? "loop" : n.howClass === "ai" ? "loop · AI" : "loop · hand"}</span>` : "");
+  }
+
+  // ------------------------------------------------------------ list
+  function renderList() {
+    const q = $("#q").value.toLowerCase(), f = $("#filter").value;
+    const roots = DATA.nodes.filter(n => n.root && n.alias.toLowerCase().includes(q) &&
+      (f === "all" || (f === "free" && !n.axioms.length) || (f === "uses" && n.axioms.length) ||
+       (f === "examples" && n.examples && n.examples.length) || (f === "loop" && n.how) || (f === "lean" && n.lean)));
+    $("#list").innerHTML = roots.length ? roots.map(n =>
+      `<button role="option" data-id="${n.id}" class="${current === n.id ? "on" : ""}" aria-selected="${current === n.id}">
+        <span class="dot" style="background:var(--${status(n)})"></span>${esc(n.alias)}<span class="tags">${tagsHTML(n)}</span></button>`).join("")
+      : `<p class="empty" style="padding:10px 12px">No theorem matches.</p>`;
+  }
+
+  // ------------------------------------------------------------ graph
+  // the declarations within `max` dependency steps of id (Infinity: all of them)
+  function closure(id, max) {
+    const seen = new Set([id]), out = [id];
+    const depthOf = {[id]: 0};
+    for (let i = 0; i < out.length; i++) {
+      const n = byId[out[i]];
+      if (depthOf[out[i]] >= max) continue;
+      for (const d of n.deps) if (!seen.has(d) && byId[d]) { seen.add(d); out.push(d); depthOf[d] = depthOf[out[i]] + 1; }
+    }
+    return out;
+  }
+  function drawGraph() {
+    if (typeof cytoscape === "undefined") {
+      $("#cy").innerHTML = `<p class="empty" style="padding:16px">The graph library did not load (this page fetches it from a pinned CDN; run <code>lein explore --offline</code> for a page with it inline). The list and the detail pane work without it.</p>`;
+      $("#depth").disabled = true; return;
+    }
+    const ids = closure(current, levels), set = new Set(ids);
+    const els = [];
+    for (const id of ids) {
+      const n = byId[id], st = status(n);
+      els.push({data: {id, label: short(n.alias), kind: n.kind, st, focus: id === current ? 1 : 0, loop: n.how ? 1 : 0}});
+      for (const d of n.deps) if (set.has(d)) els.push({data: {id: id + ">" + d, source: id, target: d}});
+    }
+    const all = closure(current, Infinity).length, hiddenDeps = all - ids.length;
+    const nextLevels = levels === 1 && closure(current, 2).length > ids.length ? 2 : hiddenDeps ? Infinity : 2;
+    $("#depth").textContent = !hiddenDeps ? (levels === Infinity && all > closure(current, 2).length ? "Show two levels" : "All dependencies shown")
+      : nextLevels === 2 ? `Show two levels (+${closure(current, 2).length - ids.length})` : `Show all dependencies (+${hiddenDeps})`;
+    $("#depth").disabled = !hiddenDeps && !(levels === Infinity && all > closure(current, 2).length);
+    $("#depth").dataset.next = hiddenDeps ? nextLevels : 2;
+    if (!cy) {
+      cy = cytoscape({container: $("#cy"), wheelSensitivity: 0.25, minZoom: 0.15, maxZoom: 3, boxSelectionEnabled: false});
+      cy.on("tap", "node", e => go(e.target.id()));
+      cy.on("mouseover", "node", e => showTip(byId[e.target.id()], e.originalEvent));
+      cy.on("mousemove", "node", e => moveTip(e.originalEvent));
+      cy.on("mouseout", "node", hideTip);
+    }
+    cy.style(graphStyle());
+    cy.elements().remove();
+    cy.add(els);
+    // a wide closure reads better left to right: many boxes of one rank stack instead of shrinking
+    cy.layout({name: "dagre", rankDir: ids.length > 16 ? "LR" : "TB", nodeSep: 18, rankSep: 46, padding: 24, animate: false}).run();
+    cy.fit(undefined, 30);
+  }
+  function graphStyle() {
+    const fill = {free: css("--free-soft"), uses: css("--uses-soft"), axiom: css("--axiom-soft")};
+    const edge = {free: css("--free"), uses: css("--uses"), axiom: css("--axiom")};
+    return [
+      {selector: "node", style: {"shape": "round-rectangle", "label": "data(label)", "font-family": "IBM Plex Mono, monospace", "font-size": 10,
+        "color": css("--fg"), "text-valign": "center", "text-halign": "center", "width": "label", "height": 22, "padding": "7px",
+        "background-color": n => fill[n.data("st")], "border-width": 1.5, "border-color": n => edge[n.data("st")]}},
+      {selector: "node[kind = 'definition']", style: {"background-color": css("--surface"), "border-color": css("--def"), "border-style": "solid"}},
+      {selector: "node[kind = 'inductive'], node[kind = 'constructor'], node[kind = 'recursor']", style: {"background-color": css("--surface"), "border-color": css("--ind"), "border-style": "dashed"}},
+      {selector: "node[loop = 1]", style: {"border-style": "double", "border-width": 4, "border-color": css("--loop")}},
+      {selector: "node[focus = 1]", style: {"border-width": 3, "border-color": css("--accent"), "font-weight": 600, "font-size": 11}},
+      {selector: "node[focus = 1][loop = 1]", style: {"border-style": "double", "border-width": 5}},
+      {selector: "edge", style: {"width": 1, "line-color": css("--line"), "target-arrow-shape": "triangle", "target-arrow-color": css("--line"), "curve-style": "bezier", "arrow-scale": 0.7}}
+    ];
+  }
+
+  // ------------------------------------------------------------ tooltip
+  function showTip(n, ev) {
+    const t = $("#tip");
+    t.innerHTML = `<strong>${esc(n.alias)}</strong> · ${kindWord(n.kind)}<br>` +
+      (n.kind === "axiom" ? "Assumed, not proved. Theorems that use it list it." :
+        n.axioms.length ? `Depends on: ${n.axioms.map(esc).join(", ")}` : "Axiom-free: proved from definitions alone.") +
+      (n.lean ? `<br><span style="color:var(--lean)">Lean: accepted · #print axioms: ${esc(n.lean.axioms.join(", ") || "none")}</span>` : "") +
+      (n.how ? `<br><span style="color:var(--loop)">Proving loop: ${esc(n.how)}</span>` : "") +
+      `<pre>${esc(n.statement)}</pre>` +
+      (dependents[n.id] ? `<div style="margin-top:6px;color:var(--muted)">Used by ${dependents[n.id].length} declaration(s) shown here. Click to open.</div>` : "");
+    t.hidden = false; moveTip(ev);
+  }
+  function moveTip(ev) { if (!ev) return; const t = $("#tip"), w = t.offsetWidth, h = t.offsetHeight;
+    t.style.left = Math.min(ev.clientX + 14, innerWidth - w - 8) + "px"; t.style.top = Math.min(ev.clientY + 14, innerHeight - h - 8) + "px"; }
+  function hideTip() { $("#tip").hidden = true; }
+
+  // ------------------------------------------------------------ caption: landing explanation and tour
+  function renderCaption() {
+    const c = $("#caption");
+    $("#tour").textContent = tourStep >= 0 ? "End tour" : "Tour";
+    if (tourStep >= 0) {
+      const s = DATA.tour[tourStep], last = tourStep === DATA.tour.length - 1;
+      c.innerHTML = `<span class="step">Tour ${tourStep + 1} / ${DATA.tour.length}</span><span class="txt">${esc(s.caption)}</span>
+        <span class="acts"><button class="btn" data-tour="prev" ${tourStep ? "" : "disabled"}>← Previous</button>
+        <button class="btn" data-tour="${last ? "end" : "next"}">${last ? "End tour" : "Next →"}</button>
+        ${last ? "" : `<button class="btn" data-tour="end">End</button>`}</span>`;
+      c.hidden = false;
+    } else if (!captionClosed) {
+      c.innerHTML = `<span class="txt"><strong>How to read this.</strong> Each box is a checked declaration and arrows point to what it uses.
+        Green: axiom-free. Amber: uses an axiom (named on the box's detail). Red: an axiom itself. A double purple border means the proving loop
+        produced the proof; its badge says how: <span class="tag loop">loop</span> found by search, <span class="tag loop ai">loop · AI</span> from an AI proposal,
+        <span class="tag loop hand">loop · hand</span> hand-written after the search blocked. <span class="tag lean">Lean ✓</span> means Lean also accepted it in the supplied cross-check. Badges appear only when their data files were given.</span>
+        <span class="acts"><button class="btn" data-tour="start">Start tour</button><button class="x" data-tour="close" aria-label="Hide this explanation">×</button></span>`;
+      c.hidden = false;
+    } else c.hidden = true;
+    c.querySelectorAll("[data-tour]").forEach(b => b.addEventListener("click", () => tourAction(b.dataset.tour)));
+  }
+  function tourAction(a) {
+    if (a === "start") tourStep = 0;
+    else if (a === "next") tourStep = Math.min(tourStep + 1, DATA.tour.length - 1);
+    else if (a === "prev") tourStep = Math.max(tourStep - 1, 0);
+    else if (a === "end") { tourStep = -1; captionClosed = true; }
+    else if (a === "close") captionClosed = true;
+    if (tourStep >= 0) go(DATA.tour[tourStep].id); else renderCaption();
+  }
+
+  // ------------------------------------------------------------ detail
+  let zoomPath = [], exampleRow = 0, playTimer = null;
+  function renderDetail() {
+    const n = byId[current], st = status(n);
+    const uses = dependents[n.id] || [];
+    $("#detail").innerHTML = `
+      <div>
+        <h2>${esc(n.alias)}</h2>
+        <div class="chips" style="margin-top:8px">
+          <span class="chip">${kindWord(n.kind)}</span>
+          ${st === "axiom" ? `<span class="chip axiom">axiom: assumed, not proved</span>` :
+            n.axioms.length ? n.axioms.map(a => `<span class="chip uses">uses ${esc(a)}</span>`).join("") : `<span class="chip free">axiom-free</span>`}
+          ${n.lean ? `<span class="chip lean" title="${esc(leanTitle(n))}">Lean ✓</span>` : ""}
+          ${n.how ? `<span class="chip loop ${n.howClass}" title="${esc(loopTitle(n))}">${esc(howLabel(n))}</span>` : ""}
+        </div>
+      </div>
+      <div><h3>Statement</h3><pre class="stmt">${esc(n.statement)}</pre>
+        ${n.statementNames ? `<div class="sub">Binder names: ${n.statementNames === "source" ? "from the source statement (re-elaborated to exactly this type)" : "generated (no source statement elaborates to exactly this type)"}.</div>` : ""}</div>
+      ${howHTML(n)}
+      ${leanHTML(n)}
+      ${sizeHTML(n)}
+      ${examplesHTML(n)}
+      <div><h3>Proof structure</h3>${proofHTML(n)}</div>
+      <div><h3>Depends on (${n.deps.length})</h3><div class="chips">${n.deps.map(d => byId[d] ? `<button class="btn" data-go="${d}">${esc(byId[d].alias)}</button>` : "").join("") || '<span class="empty">Nothing: it is built from the kernel alone.</span>'}</div></div>
+      <div><h3>Used by (${uses.length})</h3><div class="chips">${uses.map(d => `<button class="btn" data-go="${d}">${esc(byId[d].alias)}</button>`).join("") || '<span class="empty">Nothing on this page uses it.</span>'}</div></div>
+      <div class="howto">Click a box in the graph, a lemma in the proof, or a name above to move to it. Scroll or pinch the graph to zoom; drag to pan. In the proof, ▸ opens a step and "zoom" shows only that part.</div>`;
+    bindDetail(n);
+  }
+  function howHTML(n) {
+    if (!n.how) return "";
+    const t = n.telemetry || [];
+    return `<div><h3>How this proof was found</h3>
+      <div class="how ${n.howClass}"><strong>${esc(howLabel(n))}.</strong> Recorded with the proof: “${esc(n.how)}”.
+        The kernel re-checked the installed proof; the record says who produced each part.</div>
+      ${t.length ? `<div class="sub" style="margin:10px 0 6px">Search telemetry recorded for exactly this goal (same goal hash) in the supplied loop report${DATA.loop && DATA.loop.reportDate ? " of " + esc(DATA.loop.reportDate) : ""}:</div>
+        <div class="tablewrap"><table class="tele"><thead><tr><th>stage</th><th>result</th><th style="text-align:right">states</th><th style="text-align:right">kernel checks</th><th style="text-align:right">wall</th></tr></thead><tbody>
+        ${t.map(r => `<tr class="${r.status === "proved" ? "proved" : ""}"><td>${esc(r.stage)}</td><td>${esc(r.status)}${r.reason ? ` (${esc(r.reason)})` : ""}${r.kernel ? `, kernel ${esc(r.kernel)}` : ""}</td>
+          <td class="n">${r.states}</td><td class="n">${r.kernelChecks}${r.countsComplete === false ? "+" : ""}</td><td class="n">${(r.wallMs / 1000).toFixed(1)} s</td></tr>`).join("")}
+        </tbody></table></div>
+        <div class="sub">“+”: a lower bound (the run did not count every check).</div>`
+      : `<div class="sub">No search telemetry is recorded for this goal.</div>`}</div>`;
+  }
+  function leanHTML(n) {
+    if (!n.lean) return "";
+    const ra = n.axioms.length ? n.axioms.map(esc).join("<br>") : "none", la = n.lean.axioms.length ? n.lean.axioms.map(esc).join("<br>") : "none";
+    return `<div><h3>Lean cross-check</h3>
+      <div class="sub" style="margin:0 0 8px">Exported to Lean and accepted (supplied cross-check: ${DATA.lean.accepted.toLocaleString("en")} of ${DATA.lean.total.toLocaleString("en")} theorems accepted).</div>
+      <table class="ax"><thead><tr><th>Rainbow axioms</th><th>Lean #print axioms</th></tr></thead><tbody><tr><td>${ra}</td><td>${la}</td></tr></tbody></table></div>`;
+  }
+  function sizeHTML(n) {
+    if (n.kind !== "theorem" || !n.size) return "";
+    const cut = n.proof && n.shown >= DATA.treeCap;
+    return `<div><h3>Proof size</h3><div class="stat"><b>${n.size.toLocaleString("en")}</b><span>term nodes in the checked proof</span></div>
+      ${n.proofNames ? `<div class="sub">The proof tree below shows ${plural(n.shown, "step")}${cut ? `, cut at ${DATA.treeCap}; every cut is marked with the number of term nodes it hides` : ""}. Names of the outer assumptions: ${n.proofNames === "source" ? "the statement's source names" : "generated"}.</div>` : ""}</div>`;
+  }
+  function frac(q) { return `${q.n}/${q.d}`; }
+  function gcd(a, b) { while (b) [a, b] = [b, a % b]; return a; }
+  function fracFull(q) { const g = gcd(q.n, q.d) || 1; return g > 1 ? `${q.n}/${q.d} = ${q.n / g}/${q.d / g}` : frac(q); }
+  function valueText(s) { return s.q ? fracFull(s.q) : String(s.value); }
+  function examplesHTML(n) {
+    if (!n.examples || !n.examples.length)
+      return n.kind === "theorem" ? `<div><h3>Example values</h3><p class="empty">This statement is not an equation between natural numbers or non-negative rationals that the kernel evaluated within its budget, so no example values are shown.</p></div>` : "";
+    const ex = n.examples[Math.min(exampleRow, n.examples.length - 1)];
+    const q = ex.type === "nnrat";
+    const side = v => q ? fracFull(v) : String(v);
+    const meaning = !q ? "equal, as the theorem says for every input." :
+      ex.rel === "equiv-q" ? "equal as rationals (nnrat/equivalent: n·d′ = n′·d), as the theorem says for every input." :
+      "the same value, as equality/Eq requires for every input.";
+    return `<div><h3>Example values, computed by the kernel</h3>
+      ${q ? `<div class="sub" style="margin:0 0 8px">A non-negative rational is a pair (n, d) meaning n/(d+1); it is shown here as a fraction n/(d+1).</div>` : ""}
+      <div class="rows">${n.examples.map((e, i) => `<button data-row="${i}" class="${i === exampleRow ? "on" : ""}">inputs ${e.inputs.join(", ")}</button>`).join("")}</div>
+      <div class="tablewrap"><table class="trace"><tbody>${ex.steps.map((s, i) => `<tr data-step="${i}"><td>${esc(s.expr)}</td><td class="v">${esc(valueText(s))}</td></tr>`).join("")}</tbody></table></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px"><button class="btn" id="play">Run step by step</button>
+      <span class="empty">${ex.steps.length} sub-expressions evaluated</span></div>
+      <div class="verdict ${ex.equal ? "" : "bad"}">Left side ${esc(side(ex.lhs))}, right side ${esc(side(ex.rhs))}: ${ex.equal ? meaning : "NOT equal."}</div></div>`;
+  }
+  function proofHTML(n) {
+    if (!n.proof) return `<p class="empty">${n.kind === "theorem" ? "No proof term stored." : n.kind === "axiom" ? "An axiom has no proof: it is assumed." : "Not a theorem; its definition is part of the statement above."}</p>`;
+    let node = n.proof; const crumbs = [{label: "whole proof", path: []}];
+    for (let i = 0; i < zoomPath.length; i++) { node = node.children[zoomPath[i]]; crumbs.push({label: node.label, path: zoomPath.slice(0, i + 1)}); }
+    return `<div class="crumbs">${crumbs.map((c, i) => i === crumbs.length - 1 ? `<span>${esc(trunc(c.label, 40))}</span>` : `<button data-zoom="${c.path.join(".")}">${esc(trunc(c.label, 28))}</button> ›`).join(" ")}</div>
+      <ul class="tree">${treeHTML(node, zoomPath, 0)}</ul>`;
+  }
+  function trunc(s, n) { return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+  function treeHTML(t, path, depth) {
+    const kids = t.children || [], open = depth < 3;
+    const label = t.ref && byId[t.ref] ? esc(t.label).replace(esc(byId[t.ref].alias), `<a data-go="${t.ref}">${esc(byId[t.ref].alias)}</a>`) : esc(t.label);
+    return `<li><span class="node" data-explain="${esc(t.explain)}">
+      ${kids.length ? `<button class="tg" aria-label="open or close">${open ? "▾" : "▸"}</button>` : `<span style="width:14px"></span>`}
+      <span class="k ${t.k}">${t.k}</span><span class="lbl">${label}</span>
+      ${kids.length ? `<button class="zoom" data-zoom="${path.join(".")}">zoom</button>` : ""}</span>
+      ${kids.length ? `<ul ${open ? "" : "hidden"}>${kids.map((c, i) => treeHTML(c, path.concat(i), depth + 1)).join("")}</ul>` : ""}</li>`;
+  }
+  function bindDetail(n) {
+    const d = $("#detail");
+    d.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
+    d.querySelectorAll("[data-row]").forEach(b => b.addEventListener("click", () => { exampleRow = +b.dataset.row; stopPlay(); renderDetail(); }));
+    d.querySelectorAll("[data-zoom]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); zoomPath = b.dataset.zoom === "" ? [] : b.dataset.zoom.split(".").map(Number); renderDetail(); }));
+    d.querySelectorAll(".tg").forEach(b => b.addEventListener("click", () => { const ul = b.closest("li").querySelector(":scope > ul"); ul.hidden = !ul.hidden; b.textContent = ul.hidden ? "▸" : "▾"; }));
+    d.querySelectorAll(".node").forEach(s => {
+      s.addEventListener("mouseenter", ev => { const t = $("#tip"); t.innerHTML = esc(s.dataset.explain); t.hidden = false; moveTip(ev); });
+      s.addEventListener("mousemove", moveTip); s.addEventListener("mouseleave", hideTip);
+    });
+    const play = $("#play"); if (play) play.addEventListener("click", startPlay);
+  }
+  function stopPlay() { if (playTimer) { clearInterval(playTimer); playTimer = null; } }
+  function startPlay() {
+    stopPlay();
+    const rows = [...document.querySelectorAll("table.trace tr")];
+    rows.forEach(r => { r.classList.add("pending"); r.classList.remove("lit"); });
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let i = 0;
+    playTimer = setInterval(() => {
+      if (i > 0) rows[i - 1].classList.remove("lit");
+      if (i >= rows.length) { stopPlay(); return; }
+      rows[i].classList.remove("pending"); rows[i].classList.add("lit"); i++;
+    }, reduce ? 60 : 650);
+  }
+
+  // ------------------------------------------------------------ navigation
+  function go(id, fromHistory) {
+    if (!byId[id]) return;
+    stopPlay(); hideTip();
+    current = id; zoomPath = []; exampleRow = 0;
+    levels = closure(id, 2).length > 30 ? 1 : 2;   // a crowded two-level graph opens one level deep
+    if (!fromHistory) { hist = hist.slice(0, pos + 1); hist.push(id); pos = hist.length - 1; }
+    $("#back").disabled = pos <= 0; $("#fwd").disabled = pos >= hist.length - 1;
+    renderList(); renderCaption(); drawGraph(); renderDetail();
+    $("#detail").scrollTop = 0;
+    try { history.replaceState(null, "", "#" + id.slice(7, 19)); } catch (e) {}
+  }
+
+  async function start() {
+    try {
+      DATA = JSON.parse($("#rainbow-data").textContent);
+    } catch (e) {
+      $("#detail").innerHTML = `<p class="empty">The checked data did not load (${esc(e.message)}).</p>`; return;
+    }
+    for (const n of DATA.nodes) byId[n.id] = n;
+    for (const n of DATA.nodes) for (const d of n.deps) (dependents[d] = dependents[d] || []).push(n.id);
+    const src = DATA.source || {};
+    $("#prov").textContent = `environment ${DATA.environment.slice(0, 19)}… · names ${DATA.names.slice(0, 19)}… · ${DATA.nodes.length} declarations · ` +
+      `${DATA.roots.length} starting theorems · exported ${DATA.generated.slice(0, 10)}`;
+    $("#scope").textContent = src.kind === "bundle" ? `Declarations of the proof bundle ${src.path}, replayed by the kernel on its base ${src.checkpoint}` +
+        (src.modules.length ? ` with ${src.modules.join(", ")}` : "") + "."
+      : (src.path ? `Declarations of the checkpoint ${src.path}, replayed by the kernel` : "Declarations checked by the kernel") + (src.modules && src.modules.length ? `, with ${src.modules.join(", ")} installed` : "") +
+        (DATA.loop ? `, plus ${DATA.loop.proofs} proving-loop proofs added by the kernel` : "") + ".";
+    if (DATA.claims) {
+      const bad = DATA.claims.filter(c => !c.ok);
+      $("#claims").hidden = false;
+      $("#claims").innerHTML = bad.length ? `<strong style="color:var(--axiom)">${bad.length} bundle claim(s) do not match their record: ${bad.map(c => esc(c.alias)).join(", ")}.</strong>`
+        : `All ${DATA.claims.length} bundle claim(s) resolve to their recorded ids with their recorded axioms.`;
+    }
+    if (DATA.loop) { document.querySelector('#filter option[value="loop"]').hidden = false; $("#legend-loop").hidden = false; }
+    if (DATA.lean) document.querySelector('#filter option[value="lean"]').hidden = false;
+    if (!DATA.tour.length) $("#tour").hidden = true;
+    $("#q").addEventListener("input", renderList);
+    $("#filter").addEventListener("change", renderList);
+    $("#list").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b) go(b.dataset.id); });
+    $("#back").addEventListener("click", () => { if (pos > 0) go(hist[--pos], true); });
+    $("#fwd").addEventListener("click", () => { if (pos < hist.length - 1) go(hist[++pos], true); });
+    $("#fit").addEventListener("click", () => cy && cy.fit(undefined, 30));
+    $("#depth").addEventListener("click", () => { levels = +$("#depth").dataset.next; drawGraph(); });
+    $("#tour").addEventListener("click", () => tourAction(tourStep >= 0 ? "end" : "start"));
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => cy && cy.style(graphStyle()));
+    new MutationObserver(() => cy && cy.style(graphStyle())).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+    const h = location.hash.slice(1);
+    const fromHash = h && DATA.nodes.find(n => n.id.slice(7, 19) === h);
+    go((fromHash || byId[DATA.landing] || DATA.nodes.find(n => n.root)).id);
+  }
+  start();
+})();
+</script>

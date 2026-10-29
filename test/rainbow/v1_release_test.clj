@@ -23,13 +23,13 @@
   (is (= 9 (get-in @live-report [:replay :checked-environments])))
   (is (true? (get-in @live-report [:replay :proof-graph]))))
 
-(deftest compactness-bounds-audited-machinery-not-the-kernel-checked-corpus
+(deftest compactness-reports-audited-machinery-and-pins-the-trusted-base
   (let [compactness (:compactness @live-report)]
-    (is (< (:audited-machinery-lines compactness)
-           (:audited-machinery-cap compactness)))
+    (is (pos? (:audited-machinery-lines compactness)))
+    (is (= :none (:audited-machinery-cap compactness)) "machinery is reported, not capped (Jiri, 2026-10-27)")
     (is (pos? (:proof-corpus-lines compactness)))
     (is (= :none (:proof-corpus-cap compactness)))
-    (is (= 1548 (:trusted-base-lines compactness)))
+    (is (= 1661 (:trusted-base-lines compactness)))
     (testing "the split is exhaustive, so nothing escapes both buckets"
       (is (= (:production-source-lines compactness)
              (+ (:audited-machinery-lines compactness)

@@ -40,32 +40,100 @@
           expression
           context))
 
-(defn check-in-context
-  ([environment context expression expected]
-   (check-in-context environment context expression expected #{}))
-  ([environment context expression expected universe-parameters]
-   (kernel/check environment
-                 (close-over-context context expression term/lambda-term)
-                 (close-over-context context expected term/pi-term)
-                 universe-parameters)))
+;; ---- untrusted search-side conversion: fast answers the kernel would give; it rechecks every proof ----
+(defn application-spine [expression]
+  (loop [current expression arguments []]
+    (if (= :app (first current)) (recur (second current) (into [(nth current 2)] arguments)) [current arguments])))
 
-(defn infer-in-context [environment context expression universe-parameters]
-  (let [closed (close-over-context context expression term/lambda-term)
-        result (kernel/infer environment closed universe-parameters)]
-    (if-not (= :checked (:status result))
-      result
-      (loop [type (:type result)
-             remaining (count context)]
-        (if (zero? remaining)
-          {:status :checked :type type}
-          (let [head (if (= :pi (first type))
-                       type
-                       (:term (kernel/normalize environment type)))]
-            (if (= :pi (first head))
-              (recur (nth head 2) (dec remaining))
-              {:status :rejected
-               :error {:error/category :proof/context-inference-failed
-                       :type type}})))))))
+(def ^:private memos (atom {}))
+(defn memoized
+  "A pure function of (environment, key), remembered for the latest environment: 256 results per
+  `kind` (65536 for ::infer), so a search pays for a normal form, type or hash once."
+  [kind environment key compute]
+  (let [[latest cache] (get @memos kind)]
+    (if-let [hit (and (identical? latest environment) (find cache key))]
+      (val hit)
+      (let [value (compute)]
+        (swap! memos update kind (fn [[latest cache]] (if (and (identical? latest environment) (< (count cache) (if (= kind ::infer) 65536 256)))
+                                                        [latest (assoc cache key value)] [environment {key value}])))
+        value))))
+
+(defn normal [environment expression]
+  (memoized ::normal environment expression #(:term (kernel/normalize environment expression))))
+
+(def ^:private numerals #{(second @#'kernel/zero-term) (second @#'kernel/succ-term)})
+(defn- head-view [environment expression]   ; the kernel's own whnf (read-only use), or nil
+  (try (first (#'kernel/whnf* environment expression 100000 #{})) (catch clojure.lang.ExceptionInfo _ nil)))
+
+(defn rigid-view
+  "The whnf of `expression` when its head fixes its normal form's outer shape (Pi, sort, bound
+  variable, or a non-numeral constant: whnf leaves no redex at a constant head), else nil."
+  [environment expression]
+  (let [view (head-view environment expression) [head arguments] (application-spine view)]
+    (when (case (first head) (:pi :sort) (empty? arguments) :bound true :const (not (numerals (second head))) false)
+      view)))
+
+(defn distinct-normal-forms?
+  "True only when the normal forms differ (so kernel definitional equality, which compares them up
+  to levels, is false): rigid views differ in shape, head, arity or a corresponding part."
+  [environment left right depth]
+  (let [l (when (and (pos? depth) (not= left right)) (rigid-view environment left))
+        r (when l (rigid-view environment right))
+        [lh la] (application-spine l) [rh ra] (application-spine r)
+        different? #(distinct-normal-forms? environment %1 %2 (dec depth))]
+    (boolean
+     (when r
+       (cond (not= (first lh) (first rh)) true
+             (= :sort (first lh)) false
+             (= :pi (first lh)) (or (not= (nth lh 3) (nth rh 3)) (different? (second lh) (second rh))
+                                    (different? (nth lh 2) (nth rh 2)))
+             (or (not= (second lh) (second rh)) (not= (count la) (count ra))) true
+             :else (some true? (map different? la ra)))))))
+
+(defn convertible? [environment left right & _]   ; = (true? (kernel/definitionally-equal? ...))
+  (and (not (distinct-normal-forms? environment left right 24))
+       (true? (kernel/definitionally-equal? environment left right))))
+
+(defn rigidly-free?
+  "True only when bound `index` survives in the normal form: it occurs at a rigid head or in a part
+  of a Pi or of an application with a constant or variable head."
+  [environment expression index depth]
+  (let [view (when (pos? depth) (head-view environment expression))
+        [head arguments] (application-spine view)
+        free? #(rigidly-free? environment %1 %2 (dec depth))]
+    (boolean (case (first head)
+               :bound (or (= index (second head)) (some #(free? % index) arguments))
+               :pi (or (free? (second head) index) (free? (nth head 2) (inc index)))
+               :const (some #(free? % index) arguments)
+               false))))
+
+(defn- in-context
+  "The kernel's own infer* / check* run directly in a goal's context (which proof states build from
+  checked types) instead of re-checking that context for each candidate."
+  [operation environment context expression & expected]
+  (try (clojure.core/apply operation environment (mapv :goal/type context) expression expected)
+       (catch Exception exception   ; a malformed term fails here too (no assert-term! walk)
+         {:status :rejected :error (ex-data exception) :message (ex-message exception)})))
+
+(defn check-in-context
+  ([environment context expression expected] (check-in-context environment context expression expected #{}))
+  ([environment context expression expected _universe-parameters]
+   (in-context #(do (#'kernel/check* %1 %2 %3 %4) {:status :checked :term %3 :type %4})
+               environment context expression expected)))
+
+(defn infer-in-context [environment context expression _universe-parameters]
+  (memoized
+   ::infer environment [(mapv :goal/type context) expression]
+   ;; an application the kernel must reject (a part fails, the function's type is no Pi, or the
+   ;; argument's type is certainly not its domain) is rejected without normalizing anything
+   (fn [] (let [part (fn [e] (:type (infer-in-context environment context e nil)))
+                [function argument] (when (= :app (first expression)) (map part (rest expression)))
+                view (when function (memoized ::view environment function (fn [] (rigid-view environment function))))]
+      (if (and (= :app (first expression))
+               (or (nil? function) (nil? argument)
+                   (and view (or (not= :pi (first view)) (distinct-normal-forms? environment (second view) argument 24)))))
+        {:status :rejected :error {:error/category :proof/certain-type-mismatch}}
+        (in-context #(hash-map :status :checked :type (#'kernel/infer* %1 %2 %3)) environment context expression))))))
 
 (defn session-id [environment target context universes]
   (canonical/content-id

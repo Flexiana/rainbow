@@ -8,17 +8,19 @@ import unittest
 
 
 class SuiteRunnerTest(unittest.TestCase):
-    def run_suite(self, *, exit_code=0, summary=True, tests=1, chunk="1", start="1"):
+    def run_suite(self, *, exit_code=0, summary=True, tests=1, chunk="1", start="1", namespaces=1, guard=False):
         with tempfile.TemporaryDirectory(prefix="rainbow-suite-control-") as directory:
             root = Path(directory)
             (root / "scripts").mkdir()
             runner = root / "scripts/run-suite-chunked.sh"
             shutil.copyfile(Path(__file__).with_name(runner.name), runner)
             (root / "test/rainbow").mkdir(parents=True)
-            (root / "test/rainbow/control_test.clj").write_text("(ns rainbow.control-test)\n")
+            for n in range(namespaces):
+                (root / f"test/rainbow/control_{n}_test.clj").write_text(f"(ns rainbow.control-{n}-test)\n")
             (root / "bin").mkdir()
             lein = root / "bin/lein"
             lein.write_text("#!/bin/sh\n" +
+                            ('test "$#" -le 6 || exit 9\nread unexpected && exit 8\n' if guard else "") +
                             (f"printf 'Ran {tests} tests containing {tests} assertions.\\n"
                              "0 failures, 0 errors.\\n'\n" if summary else "") +
                             f"exit {exit_code}\n")
@@ -29,8 +31,15 @@ class SuiteRunnerTest(unittest.TestCase):
                                RAINBOW_START_CHUNK=start, RAINBOW_MIN_FREE_PAGES="0",
                                RAINBOW_NS_FILTER="")
             result = subprocess.run(["bash", str(runner), chunk, str(results)],
-                                    env=environment, capture_output=True, text=True, timeout=10)
+                                    env=environment, capture_output=True, text=True, input="must-not-reach-lein\n", timeout=10)
             return result, results.read_text() if results.exists() else ""
+
+    def test_default_bounds_retained_environments_and_closes_stdin(self):
+        result, table = self.run_suite(chunk="", namespaces=11, guard=True)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        rows = table.splitlines()[1:]
+        self.assertEqual(["5", "5", "1"], [row.split("\t")[6] for row in rows])
+        self.assertEqual(3, table.count("\tPASS\t"))
 
     def test_success_requires_a_successful_child(self):
         result, table = self.run_suite()

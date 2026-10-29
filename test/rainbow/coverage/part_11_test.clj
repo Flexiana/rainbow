@@ -6,26 +6,26 @@
             [rainbow.checkpoint :as checkpoint]
             [rainbow.environment :as environment]
             [rainbow.main :as main]
-            [rainbow.math.lemmas.reservoir-readings :as m0]
-            [rainbow.math.lemmas.rippl-readings :as m1]
-            [rainbow.math.lemmas.salesq-readings :as m2]
-            [rainbow.math.lemmas.sigtime-readings :as m3]
-            [rainbow.math.lemmas.sir-readings :as m4]
-            [rainbow.math.lemmas.slo-budget :as m5]
-            [rainbow.math.lemmas.sproj-projection :as m6]
-            [rainbow.math.lemmas.sspol-readings :as m7]
-            [rainbow.math.lemmas.state-price :as m8]
-            [rainbow.math.lemmas.stochastic-dominance :as m9]
-            [rainbow.math.lemmas.stoploss-bounds :as m10]
-            [rainbow.math.lemmas.subgrad-duality :as m11]
-            [rainbow.math.lemmas.transport-dual :as m12]
-            [rainbow.math.lemmas.trigg-bound :as m13]
-            [rainbow.math.lemmas.twoline-readings :as m14]
-            [rainbow.math.lemmas.ufl-gap :as m15]
-            [rainbow.math.lemmas.unifpx-readings :as m16]
-            [rainbow.math.lemmas.vertex-cover-approx :as m17]
-            [rainbow.math.lemmas.vickrey-dsic :as m18]
-            [rainbow.math.lemmas.voter-readings :as m19]))
+            [rainbow.math.lemmas.rippl-readings :as m0]
+            [rainbow.math.lemmas.salesq-readings :as m1]
+            [rainbow.math.lemmas.sigtime-readings :as m2]
+            [rainbow.math.lemmas.sir-readings :as m3]
+            [rainbow.math.lemmas.slo-budget :as m4]
+            [rainbow.math.lemmas.sproj-projection :as m5]
+            [rainbow.math.lemmas.sspol-readings :as m6]
+            [rainbow.math.lemmas.state-price :as m7]
+            [rainbow.math.lemmas.stochastic-dominance :as m8]
+            [rainbow.math.lemmas.stoploss-bounds :as m9]
+            [rainbow.math.lemmas.subgrad-duality :as m10]
+            [rainbow.math.lemmas.transport-dual :as m11]
+            [rainbow.math.lemmas.trigg-bound :as m12]
+            [rainbow.math.lemmas.twoline-readings :as m13]
+            [rainbow.math.lemmas.ufl-gap :as m14]
+            [rainbow.math.lemmas.unifpx-readings :as m15]
+            [rainbow.math.lemmas.vertex-cover-approx :as m16]
+            [rainbow.math.lemmas.vickrey-dsic :as m17]
+            [rainbow.math.lemmas.voter-readings :as m18]
+            [rainbow.math.lemmas.wab-mean :as m19]))
 
 (def ^:private base
   (delay (let [loaded (checkpoint/load-checkpoint main/default-checkpoint)]
@@ -39,7 +39,9 @@
     set/infinite-nonempty #{logic/excluded-middle} set/infinite-nontrivial #{logic/excluded-middle}
     set/infinite-or-finite #{logic/excluded-middle} set/not-infinite-equivalence #{logic/excluded-middle}
     set/infinite-union-equivalence #{logic/excluded-middle}
-    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}})
+    set/finite-singleton-proposition-equality #{logic/proposition-extensionality}
+    logic/proof-irrelevance-from-proposition-extensionality #{logic/proposition-extensionality}
+    logic/prop-unit-equals-inhabited #{logic/proposition-extensionality}})
 
 (defn- rechecks [ns-sym]
   (let [{:keys [error theorems bundle?]} (main/verify-namespace @base ns-sym)
@@ -51,62 +53,62 @@
         (is (= :checked status))
         (is (= (set (map #(environment/resolve-id @env %) (classical name))) axioms))))))
 
-(deftest rechecks-0-reservoir-readings
-  (rechecks 'rainbow.math.lemmas.reservoir-readings))
-
-(deftest rechecks-1-rippl-readings
+(deftest rechecks-0-rippl-readings
   (rechecks 'rainbow.math.lemmas.rippl-readings))
 
-(deftest rechecks-2-salesq-readings
+(deftest rechecks-1-salesq-readings
   (rechecks 'rainbow.math.lemmas.salesq-readings))
 
-(deftest rechecks-3-sigtime-readings
+(deftest rechecks-2-sigtime-readings
   (rechecks 'rainbow.math.lemmas.sigtime-readings))
 
-(deftest rechecks-4-sir-readings
+(deftest rechecks-3-sir-readings
   (rechecks 'rainbow.math.lemmas.sir-readings))
 
-(deftest rechecks-5-slo-budget
+(deftest rechecks-4-slo-budget
   (rechecks 'rainbow.math.lemmas.slo-budget))
 
-(deftest rechecks-6-sproj-projection
+(deftest rechecks-5-sproj-projection
   (rechecks 'rainbow.math.lemmas.sproj-projection))
 
-(deftest rechecks-7-sspol-readings
+(deftest rechecks-6-sspol-readings
   (rechecks 'rainbow.math.lemmas.sspol-readings))
 
-(deftest rechecks-8-state-price
+(deftest rechecks-7-state-price
   (rechecks 'rainbow.math.lemmas.state-price))
 
-(deftest rechecks-9-stochastic-dominance
+(deftest rechecks-8-stochastic-dominance
   (rechecks 'rainbow.math.lemmas.stochastic-dominance))
 
-(deftest rechecks-10-stoploss-bounds
+(deftest rechecks-9-stoploss-bounds
   (rechecks 'rainbow.math.lemmas.stoploss-bounds))
 
-(deftest rechecks-11-subgrad-duality
+(deftest rechecks-10-subgrad-duality
   (rechecks 'rainbow.math.lemmas.subgrad-duality))
 
-(deftest rechecks-12-transport-dual
+(deftest rechecks-11-transport-dual
   (rechecks 'rainbow.math.lemmas.transport-dual))
 
-(deftest rechecks-13-trigg-bound
+(deftest rechecks-12-trigg-bound
   (rechecks 'rainbow.math.lemmas.trigg-bound))
 
-(deftest rechecks-14-twoline-readings
+(deftest rechecks-13-twoline-readings
   (rechecks 'rainbow.math.lemmas.twoline-readings))
 
-(deftest rechecks-15-ufl-gap
+(deftest rechecks-14-ufl-gap
   (rechecks 'rainbow.math.lemmas.ufl-gap))
 
-(deftest rechecks-16-unifpx-readings
+(deftest rechecks-15-unifpx-readings
   (rechecks 'rainbow.math.lemmas.unifpx-readings))
 
-(deftest rechecks-17-vertex-cover-approx
+(deftest rechecks-16-vertex-cover-approx
   (rechecks 'rainbow.math.lemmas.vertex-cover-approx))
 
-(deftest rechecks-18-vickrey-dsic
+(deftest rechecks-17-vickrey-dsic
   (rechecks 'rainbow.math.lemmas.vickrey-dsic))
 
-(deftest rechecks-19-voter-readings
+(deftest rechecks-18-voter-readings
   (rechecks 'rainbow.math.lemmas.voter-readings))
+
+(deftest rechecks-19-wab-mean
+  (rechecks 'rainbow.math.lemmas.wab-mean))

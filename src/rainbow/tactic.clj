@@ -2,7 +2,6 @@
   "Untrusted proof-state transformations. Success is always reconstructed by the kernel."
   (:refer-clojure :exclude [apply repeat])
   (:require [rainbow.environment :as environment]
-            [rainbow.kernel :as kernel]
             [rainbow.proof :as proof]
             [rainbow.term :as term]))
 
@@ -30,6 +29,18 @@
            (proof/fail-result state :exact :tactic/type-mismatch
                               {:term expression :kernel checked})))))))
 
+(defn- introduce [state goal [_ domain body mode] name event]
+  (let [id (proof/fresh-goal-id state)
+        local {:goal/name (or name (symbol (str "h" (:proof/next-id state))))
+               :goal/type domain
+               :goal/mode mode}]
+    (proof/progress state [:lam domain (proof/hole id) mode]
+                    [{:goal/id id
+                      :goal/context (into [local] (:goal/context goal))
+                      :goal/target body
+                      :goal/path (conj (:goal/path goal) 0)}]
+                    (merge {:event/tactic :intro :event/name (:goal/name local)} event))))
+
 (defn intro
   ([] (intro nil))
   ([name]
@@ -40,26 +51,11 @@
         (let [raw-target (:goal/target goal)
               target (if (= :pi (first raw-target))
                        raw-target
-                       (:term (kernel/normalize (:proof/environment state)
-                                                raw-target)))]
+                       (proof/normal (:proof/environment state) raw-target))]
           (if-not (= :pi (first target))
             (proof/fail-result state :intro :tactic/target-not-pi
                                {:target (:goal/target goal)})
-            (let [id (proof/fresh-goal-id state)
-                  domain (second target)
-                  body (nth target 2)
-                  mode (nth target 3)
-                  local {:goal/name (or name (symbol (str "h" (:proof/next-id state))))
-                         :goal/type domain
-                         :goal/mode mode}
-                  next-goal {:goal/id id
-                             :goal/context (into [local] (:goal/context goal))
-                             :goal/target body
-                             :goal/path (conj (:goal/path goal) 0)}]
-              (proof/progress state
-                              [:lam domain (proof/hole id) mode]
-                              [next-goal]
-                              {:event/tactic :intro :event/name (:goal/name local)})))))))))
+            (introduce state goal target name nil))))))))
 
 (defn intro-from
   "Introduces a binder from a supplied Pi view of the focused target.
@@ -80,30 +76,13 @@
             (proof/fail-result state :intro :tactic/target-not-pi
                                {:target pi-target})
 
-            (not (true? (kernel/definitionally-equal?
-                         environment raw-target pi-target)))
+            (not (proof/convertible? environment raw-target pi-target))
             (proof/fail-result state :intro
                                :tactic/focused-target-mismatch
                                {:target raw-target :focused-target pi-target})
 
             :else
-            (let [id (proof/fresh-goal-id state)
-                  domain (second pi-target)
-                  body (nth pi-target 2)
-                  mode (nth pi-target 3)
-                  local {:goal/name
-                         (or name (symbol (str "h" (:proof/next-id state))))
-                         :goal/type domain
-                         :goal/mode mode}
-                  next-goal {:goal/id id
-                             :goal/context (into [local] (:goal/context goal))
-                             :goal/target body
-                             :goal/path (conj (:goal/path goal) 0)}]
-              (proof/progress
-               state [:lam domain (proof/hole id) mode] [next-goal]
-               {:event/tactic :intro
-                :event/name (:goal/name local)
-                :event/focused-target pi-target})))))))))
+            (introduce state goal pi-target name {:event/focused-target pi-target}))))))))
 
 (defn assumption []
   (fn [state]
@@ -113,13 +92,13 @@
        (let [environment (:proof/environment state)
              match (first
                     (keep-indexed
-                     (fn [index _local]
+                     (fn [index local]
                        (let [candidate (term/bound index)
-                             checked (proof/check-in-context environment
-                                                             (:goal/context goal)
-                                                             candidate
-                                                             (:goal/target goal)
-                                                             (:proof/universes state))]
+                             checked (if (proof/distinct-normal-forms? environment (term/shift (:goal/type local) (inc index))
+                                                                       (:goal/target goal) 24)
+                                       {:status :rejected}   ; the kernel could only reject it
+                                       (proof/check-in-context environment (:goal/context goal) candidate
+                                                               (:goal/target goal) (:proof/universes state)))]
                          (when (= :checked (:status checked)) candidate)))
                      (:goal/context goal)))]
          (if match
@@ -128,12 +107,7 @@
                               {:target (:goal/target goal)
                                :context (mapv :goal/type (:goal/context goal))})))))))
 
-(defn application-spine [expression]
-  (loop [current expression
-         arguments []]
-    (if (= :app (first current))
-      (recur (second current) (into [(nth current 2)] arguments))
-      [current arguments])))
+(def application-spine proof/application-spine)
 
 (defn- apply-arguments [function arguments]
   (reduce term/application function arguments))
@@ -147,6 +121,54 @@
                (recur (term/instantiate (nth function 2) (nth current 2)))
                [:app function (nth current 2)]))
       current)))
+
+(defn unfold-head
+  "Beta and reducible-definition unfolding at the head (at most 16 steps), stopping at a head
+  constant in `protected`. Untrusted focusing; the kernel still checks every term."
+  [environment expression protected]
+  (loop [current (beta-head expression) remaining 16]
+    (let [[head arguments] (application-spine current)
+          declaration (when (= :const (first head)) (environment/declaration environment (second head)))]
+      (if (and (pos? remaining) declaration (not (contains? protected (second head)))
+               (= :definition (:rainbow/kind declaration)) (:rainbow/value declaration)
+               (contains? #{:reducible :semireducible} (:rainbow/transparency declaration)))
+        (let [unfolded (beta-head (apply-arguments (term/instantiate-universes
+                                                    (:rainbow/value declaration)
+                                                    (zipmap (:rainbow/universes declaration) (nth head 2)))
+                                                   arguments))]
+          (if (= current unfolded) current (recur unfolded (dec remaining))))
+        current))))
+
+(defn- quick-application-failure
+  "The failure apply's normalizing plan would reach for `type` against `target`, or nil if unknown:
+  no Pi suffix down to a non-Pi (conclusion mismatch) or a dependent Pi equals the target."
+  [environment type target]
+  (loop [current type]
+    (when (proof/distinct-normal-forms? environment current target 24)
+      (let [view (proof/rigid-view environment current)
+            body (when (= :pi (first view)) (try (term/shift (nth view 2) -1) (catch clojure.lang.ExceptionInfo _ nil)))]
+        (cond (not= :pi (first view)) :tactic/conclusion-mismatch
+              body (recur body)
+              (proof/rigidly-free? environment (nth view 2) 0 32) :tactic/dependent-apply-unsupported)))))
+
+(defn- equality-view
+  "[Eq-head [carrier left right]] of an equality type seen through beta, reducible definitions
+  and Eq's own Leibniz body, Pi (P : A -> Prop), P x -> P y (what normalizing Eq A x y gives)."
+  [environment context universes type equality-id]
+  (let [type (unfold-head environment type #{equality-id})
+        [head arguments] (application-spine type)
+        [_ motive body] type
+        [_ premise conclusion] body]
+    (if (and (= :const (first head)) (= equality-id (second head)) (= 3 (count arguments)))
+      [head arguments]
+      (when (and (= :pi (first type)) (= :pi (first motive) (first body))
+                 (= [:sort [:zero]] (nth motive 2)) (= :app (first premise) (first conclusion))
+                 (= [:bound 0] (second premise)) (= [:bound 1] (second conclusion)))
+        (let [sort (:type (proof/infer-in-context environment context (second motive) universes))]
+          (try (when (= :sort (first sort))
+                 [[:const equality-id [(second sort)]]
+                  [(second motive) (term/shift (nth premise 2) -1) (term/shift (nth conclusion 2) -2)]])
+               (catch clojure.lang.ExceptionInfo _ nil)))))))
 
 (defn reflexivity []
   (fn [state]
@@ -164,7 +186,7 @@
            (proof/fail-result state :reflexivity :tactic/target-not-equality
                               {:target (:goal/target goal)})
            (let [[carrier left right] arguments]
-             (if-not (true? (kernel/definitionally-equal? environment left right carrier))
+             (if-not (proof/convertible? environment left right carrier)
                (proof/fail-result state :reflexivity :tactic/sides-not-definitionally-equal
                                   {:left left :right right})
                ((exact (-> [:const reflexivity-id (nth head 2)]
@@ -199,6 +221,10 @@
     (walk expression 0)))
 
 (defn rewrite
+  "Rewrites the goal with h : Eq A l r (Leibniz equality: h P : P l -> P r). :forward, the
+  default, replaces occurrences of r in the goal by l (goal P r becomes P l); :backward replaces
+  l by r (the goal-side reading of Lean's rw [h]). A failure for want of an occurrence reports
+  whether the other direction has one."
   ([equality-proof] (rewrite equality-proof {:direction :forward}))
   ([equality-proof {:keys [direction] :or {direction :forward}}]
    (fn [state]
@@ -211,7 +237,8 @@
               inferred (proof/infer-in-context environment (:goal/context goal)
                                                equality-proof (:proof/universes state))
               [head arguments] (when (= :checked (:status inferred))
-                                 (application-spine (beta-head (:type inferred))))]
+                                 (equality-view environment (:goal/context goal) (:proof/universes state)
+                                                (:type inferred) equality-id))]
           (cond
             (not (contains? #{:forward :backward} direction))
             (proof/fail-result state :rewrite :tactic/invalid-rewrite-direction
@@ -226,7 +253,7 @@
             :else
             (let [[carrier left right]
                   (mapv (fn [argument]
-                          (:term (kernel/normalize environment argument)))
+                          (proof/normal environment argument))
                         arguments)
                   backward? (= :backward direction)
                   evidence (if backward?
@@ -249,7 +276,7 @@
                         (apply-arguments
                          target-head
                          (mapv (fn [argument]
-                                 (:term (kernel/normalize environment argument)))
+                                 (proof/normal environment argument))
                                target-arguments)))))
                   working-target (or normalized-target initial-target)
                   [new-target occurrence-count]
@@ -258,8 +285,9 @@
                     (replace-subterm working-target from to))]
               (if (zero? occurrence-count)
                 (proof/fail-result state :rewrite :tactic/no-rewrite-occurrence
-                                   {:direction direction :from from
-                                    :target working-target})
+                                   {:direction direction :from from :target working-target
+                                    :other-direction-occurs?
+                                    (pos? (second (replace-subterm working-target to from)))})
                 (let [id (proof/fresh-goal-id state)
                       shifted-target (term/shift working-target 1)
                       [motive-body motive-count]
@@ -296,7 +324,7 @@
       {:status :ok :domains domains :result current}
       (let [head (if (= :pi (first current))
                    current
-                   (:term (kernel/normalize environment current)))]
+                   (proof/normal environment current))]
         (if-not (= :pi (first head))
           {:status :rejected :type current :domains domains}
           (let [body (nth head 2)
@@ -326,7 +354,7 @@
              goal-type-result (proof/infer-in-context environment context
                                                        (:goal/target goal) universes)
              goal-sort (when (= :checked (:status goal-type-result))
-                         (:term (kernel/normalize environment (:type goal-type-result))))]
+                         (proof/normal environment (:type goal-type-result)))]
          (cond
            (not= :checked (:status expression-type-result))
            (proof/fail-result state :induction :tactic/cannot-infer-induction-expression
@@ -376,11 +404,11 @@
 (defn- independent-application-plan [environment type target]
   (loop [current type
          domains []]
-    (if (true? (kernel/definitionally-equal? environment current target))
+    (if (proof/convertible? environment current target)
       {:status :independent :domains domains :result current}
-      (let [normalized (:term (kernel/normalize environment current))]
+      (let [normalized (proof/normal environment current)]
         (cond
-          (true? (kernel/definitionally-equal? environment normalized target))
+          (proof/convertible? environment normalized target)
           {:status :independent :domains domains :result normalized}
 
           (= :pi (first normalized))
@@ -396,45 +424,110 @@
           :else
           {:status :independent :domains domains :result normalized})))))
 
-(defn apply [expression]
+(defn- match-binders
+  "First-order matching of `pattern`, under `open` binders still to instantiate, against `target`
+  in the same scope and under `depth` further binders. Extends `assignment` (outermost binder
+  index -> term in the goal's context) or returns nil."
+  [pattern target depth open assignment]
+  (let [tag (first pattern) index (second pattern)]
+    (cond
+      (nil? assignment) nil
+      (and (= :bound tag) (<= depth index) (< index (+ depth open)))
+      (let [value (try (term/shift target (- (+ depth open))) (catch clojure.lang.ExceptionInfo _ nil))
+            key (- open 1 (- index depth))]
+        (when (and value (= value (get assignment key value))) (assoc assignment key value)))
+      (and (#{:app :lam :pi :let} tag) (= tag (first target)))
+      (reduce (fn [acc position]
+                (if (vector? (nth pattern position))
+                  (match-binders (nth pattern position) (nth target position)
+                                 (if (and (not= :app tag) (= position (if (= :let tag) 3 2)))
+                                   (inc depth) depth)
+                                 open acc)
+                  (when (= (nth pattern position) (nth target position)) acc)))
+              assignment (range 1 (count pattern)))
+      :else (when (= pattern target) assignment))))
+
+(defn- dependent-application-plan
+  "Instantiates a lemma's binders by matching its conclusion against the target. A binder the
+  match leaves open becomes a subgoal when no later binder type and not the conclusion uses it.
+  Returns {:arguments (nil = subgoal) :domains :result} or nil."
+  [environment type target]
+  (let [;; Eq stays folded: matching through its Leibniz body would apply any equation anywhere
+        pi-view #(unfold-head environment % #{(environment/resolve-id environment 'equality/Eq)})
+        targets [target (pi-view target)]]
+    (loop [body type open 0]
+      (if-let [assignment (some #(match-binders body (term/shift % open) 0 open {}) targets)]
+        (loop [current type index 0 arguments [] domains []]
+          (if (= index open)
+            {:arguments arguments :domains domains :result current}
+            (let [[_ domain inner] (pi-view current)
+                  value (get assignment index)]
+              (when-let [next (if value
+                                (term/instantiate inner value)
+                                (try (term/shift inner -1) (catch clojure.lang.ExceptionInfo _ nil)))]
+                (recur next (inc index) (conj arguments value)
+                       (cond-> domains (nil? value) (conj domain)))))))
+        (let [view (pi-view body)]
+          (when (= :pi (first view)) (recur (nth view 2) (inc open))))))))
+
+(defn apply
+  "Applies a lemma, leaving its premises as subgoals. A lemma with dependent binders is
+  instantiated from the goal unless `:independent-only?` (the search's own candidates)."
+  ([expression] (apply expression {}))
+  ([expression {:keys [independent-only?]}]
   (fn [state]
     (focused
      state :apply
      (fn [goal]
        (let [environment (:proof/environment state)
              inferred (proof/infer-in-context environment (:goal/context goal) expression
-                                              (:proof/universes state))]
-         (if-not (= :checked (:status inferred))
+                                              (:proof/universes state))
+             ;; the search's own candidates fail fast where normalizing could only confirm a failure
+             quick (when (and independent-only? (= :checked (:status inferred)))
+                     (quick-application-failure environment (:type inferred) (:goal/target goal)))]
+         (cond
+           (not= :checked (:status inferred))
            (proof/fail-result state :apply :tactic/cannot-infer
                               {:term expression :kernel inferred})
+           quick (proof/fail-result state :apply quick {:candidate-result (:type inferred) :target (:goal/target goal)})
+           :else
            (let [{:keys [status domains result]}
                  (independent-application-plan
-                  environment (:type inferred) (:goal/target goal))]
+                  environment (:type inferred) (:goal/target goal))
+                 dependent (when (and (= :dependent status) (not independent-only?))
+                             (dependent-application-plan environment (:type inferred)
+                                                         (:goal/target goal)))
+                 [domains result] (if dependent
+                                    [(:domains dependent) (:result dependent)]
+                                    [(map first domains) result])]
              (cond
-               (= :dependent status)
+               (and (= :dependent status) (nil? dependent))
                (proof/fail-result state :apply :tactic/dependent-apply-unsupported
                                   {:type (:type inferred)})
 
-               (not (true? (kernel/definitionally-equal? environment result (:goal/target goal))))
+               (not (proof/convertible? environment result (:goal/target goal)))
                (proof/fail-result state :apply :tactic/conclusion-mismatch
                                   {:candidate-result result :target (:goal/target goal)})
 
                :else
                (let [start (:proof/next-id state)
                      ids (mapv #(str "g-" %) (range start (+ start (count domains))))
-                     goals (mapv (fn [id [domain _mode] index]
+                     goals (mapv (fn [id domain index]
                                    {:goal/id id
                                     :goal/context (:goal/context goal)
                                     :goal/target domain
                                     :goal/path (conj (:goal/path goal) index)})
                                  ids domains (range))
-                     replacement (reduce (fn [function id]
-                                           [:app function (proof/hole id)])
-                                         expression ids)]
+                     replacement (first (reduce (fn [[function ids] argument]
+                                                  (if argument
+                                                    [[:app function argument] ids]
+                                                    [[:app function (proof/hole (first ids))] (rest ids)]))
+                                                [expression ids]
+                                                (or (:arguments dependent) (clojure.core/repeat (count ids) nil))))]
                  (proof/progress state replacement goals
                                  {:event/tactic :apply
                                   :event/term expression
-                                  :event/subgoals (count goals)}))))))))))
+                                  :event/subgoals (count goals)})))))))))))
 
 (defn- replace-markers [template ids]
   (cond
@@ -586,8 +679,10 @@
                                               environment (:goal/context goal) expression
                                               (:proof/universes state))
                                     [head arguments] (when (= :checked (:status inferred))
-                                                       (application-spine
-                                                        (beta-head (:type inferred))))]
+                                                       (equality-view
+                                                        environment (:goal/context goal)
+                                                        (:proof/universes state)
+                                                        (:type inferred) equality-id))]
                                 {:expression expression :inferred inferred
                                  :head head :arguments arguments}))
                             equality-proofs)]
@@ -605,10 +700,8 @@
                     (fn [{:keys [proof right] :as accumulator}
                          {next-head :head [next-carrier next-left next-right] :arguments
                           next-proof :expression}]
-                      (if (and (true? (kernel/definitionally-equal?
-                                       environment carrier next-carrier nil))
-                               (true? (kernel/definitionally-equal?
-                                       environment right next-left carrier)))
+                      (if (and (proof/convertible? environment carrier next-carrier nil)
+                               (proof/convertible? environment right next-left carrier))
                         {:proof (-> [:const transitive-id (nth first-head 2)]
                                     (term/application carrier)
                                     (term/application left)

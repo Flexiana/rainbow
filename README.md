@@ -4,7 +4,7 @@
 
 **A theorem prover in Clojure that treats proofs as data.**
 
-Rainbow checks mathematics with a small dependent-type kernel — 1,548 lines you
+Rainbow checks mathematics with a small dependent-type kernel — 1,661 lines you
 can read in an afternoon — and stores everything it checks as plain, immutable,
 content-addressed EDN: terms, declarations, proofs, failures and their
 provenance. A proof is a value. You can store it, diff it, hash it, ship it and
@@ -23,7 +23,7 @@ lein verify rainbow.math.finite.rational-argmax
 ```
 
 ```
-checkpoint artifacts/ahof/d63-eligibility-traces/checkpoint.edn.gz replayed
+checkpoint artifacts/ahof/d63-eligibility-traces/checkpoint.edn.gz replayed: environment sha256:a41ba35a9f845aa04600620234dd1ccbb86969b09ffb14a44847da82ba4a5d5c names sha256:04959786090003bdfd133d7f4da521566de7ede77813ee1fa8aa3185284d193a
 OK    rainbow.math.finite.rational-argmax (15 theorems: 13 for all inputs, 0 definitional unfoldings, 2 worked instances)
        checked   instance  bool/false-not-true  axiom-free
        checked   instance  bool/true-not-false  axiom-free
@@ -43,7 +43,7 @@ Most "verified" claims fail in the same place: a theorem about a model, a
 program that allegedly implements the model, and nothing checking the link.
 Rainbow was built to be exact about that gap rather than to hide it.
 
-- **The trusted base is small and pinned.** Four files, 1,548 lines, and a
+- **The trusted base is small and pinned.** Four files, 1,661 lines, and a
   release test fails if they change length. Search, tactics, elaboration and
   checkpoint loading are all untrusted: they propose terms, the kernel decides.
   See [`doc/trusted-base.md`](doc/trusted-base.md).
@@ -78,11 +78,15 @@ lein reproduce <milestone> ...       # rebuild a checkpoint from source, compare
 lein verify --bundle [--reductions N] <file.edn> ...
                                      # re-check proofs made elsewhere (a proof bundle) with the kernel alone
 lein reproduce --all                 # every reproducible milestone
+lein explore <checkpoint-or-bundle> [out-dir]
+                                     # Proof Explorer: a static page of the proofs, their dependencies and axioms
+lein lp-view <instance.edn> <certificate.edn> [out-dir]
+                                     # check an LP optimality certificate and write the LP Certificate Viewer
 lein test                            # the whole suite (long; see below)
-scripts/run-suite-chunked.sh 40      # the suite in fresh-JVM chunks of 40 namespaces
+scripts/run-suite-chunked.sh 5       # the suite in fresh-JVM chunks of 5 namespaces
 ```
 
-The full suite is about 2,000 tests and 44,000 assertions and takes hours,
+The full suite is about 2,200 tests and 62,000 assertions and takes hours,
 because many tests replay large checkpoints through the kernel. Run a single
 namespace with `lein test rainbow.math.rational.nnrat.ring-test`.
 
@@ -125,7 +129,7 @@ of its content. [`doc/tour.md`](doc/tour.md) reads a module end to end;
 
 | | |
 |---|---|
-| `src/rainbow/{kernel,term,environment,canonical}.clj` | the trusted kernel, 1,548 lines |
+| `src/rainbow/{kernel,term,environment,canonical}.clj` | the trusted kernel, 1,661 lines |
 | `src/rainbow/math/` | foundations: nat, rationals, signed rationals, sums, finite types, sets, linear algebra, analysis |
 | `src/rainbow/algorithms/` | algorithm guarantees (`proofs/`) and the reference implementations they are about |
 | `src/rainbow/milestones/` | the drivers that built the corpus checkpoints, one per result |
