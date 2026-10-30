@@ -1,8 +1,7 @@
 (ns rainbow.math.rational.signed.lp-pointwise-bridge
-  "Experimental LP scaling-bridge proof PRODUCER, lifted out of
-  a diagnostic script into a reusable module (the pointwise-correspondence result).
+  "LP scaling-bridge proof producer built from a pointwise correspondence.
 
-  It replaces the experimental aggregate fold (`mapsum-corresponds` in
+  It replaces the aggregate fold (`mapsum-corresponds` in
   or/lp_certificate.clj) with a pointwise construction that avoids exposing the
   aggregate fold's repeated reductions to the kernel:
 

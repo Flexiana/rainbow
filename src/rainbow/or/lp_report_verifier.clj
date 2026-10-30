@@ -1,5 +1,5 @@
 (ns rainbow.or.lp-report-verifier
-  "Experimental independent replay boundary for LP numeric-report proofs.
+  "Independent replay boundary for LP numeric-report proofs.
   Supplied evidence contains proof VALUES only; expected types are reconstructed
   from the caller's instance/report, never taken from the proof producer.
   This verifies four report relations, not the LP executable or universal bound."

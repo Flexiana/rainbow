@@ -753,6 +753,136 @@
                               (get-in data [:result :error :error/category]))
      :data data}))
 
+;; ---- refusing malformed data before anything else ---------------------------
+;;
+;; The lookup tables read the LAST entry for any index past the end, and the
+;; statement only quantifies over the listed indices 0..n-1 and 0..m-1. So a
+;; plan with an extra entry is certified about its first n entries while the
+;; result, and anything written from it, names all of them; and a short vector
+;; silently repeats its last entry (or throws from `preflight`). Neither is a
+;; certificate of what was submitted. Every length and every entry is therefore
+;; checked against the instance before any encoding, estimate or kernel work.
+
+(def ^:private senses #{nil :maximize :minimize})
+
+(defn- refusal [category field message & {:as details}]
+  (merge {:status :rejected :error/category category :field field :message message}
+         details))
+
+(defn- entries-word [k] (if (= 1 k) "1 entry" (str k " entries")))
+
+(defn- length-refusal
+  "nil when `value` has `expected` entries, else a :lp-certificate/shape-mismatch
+  naming the field, what it should hold, and what it holds. An absent field reads
+  as empty, so it is refused exactly when entries are required."
+  [instance field expected per]
+  (let [value (get instance field)
+        actual (count value)]
+    (when-not (= expected actual)
+      (refusal :lp-certificate/shape-mismatch field
+               (str (pr-str field) " must have " (entries-word expected) " (" per "), but "
+                    (if (nil? value) "it is missing" (str "it has " actual))
+                    ". The certificate would otherwise be checked on a different vector than the one submitted.")
+               :expected expected :actual (if (nil? value) :missing actual)))))
+
+(defn- entry-refusal
+  "nil when every value is an exact rational, else a :lp-certificate/not-rational
+  naming the first entry that is not."
+  [path values]
+  (some (fn [[index value]]
+          (when-not (rational? value)
+            (let [at (conj path index)]
+              (refusal :lp-certificate/not-rational (first path)
+                       (str "Entry " (pr-str at) " is " (pr-str value)
+                            "; every coefficient must be an exact rational (an integer or a ratio like 3/2"
+                            (when (float? value) ", not a floating-point number") ").")
+                       :entry at :actual value))))
+        (map-indexed vector values)))
+
+(defn shape-problem
+  "nil when `instance` -- the instance merged with its certificate -- has the shape
+  `certify` and `bound` check, otherwise the `:rejected` result to return.
+
+  With m = (count :capacities) rows and n = (count :margins) columns: :matrix has m
+  rows of n entries, :plan n entries, :prices m entries, each of :equalities is
+  {:row <n entries> :value v} with one :equality-prices entry each, :sense is
+  absent, :maximize or :minimize, and every number is an exact rational. The
+  refusal names the field (:field), with :expected and :actual for a length, or the
+  offending :entry for a value. Costs no kernel work."
+  [instance]
+  (if-not (map? instance)
+    (refusal :lp-certificate/shape-mismatch :instance
+             (str "An LP instance is a map {:matrix :capacities :margins :plan :prices}, not "
+                  (pr-str (type instance)) "."))
+    (let [{:keys [matrix capacities margins sense equalities equality-prices]} instance
+          vector-fields [:matrix :capacities :margins :plan :prices :equalities :equality-prices]
+          m (count capacities)
+          n (count margins)]
+      (or
+       (some (fn [field]
+               (let [value (get instance field)]
+                 (when-not (or (nil? value) (sequential? value))
+                   (refusal :lp-certificate/shape-mismatch field
+                            (str (pr-str field) " must be a vector, not " (pr-str value) ".")
+                            :actual value))))
+             vector-fields)
+       (when-not (contains? senses sense)
+         (refusal :lp-certificate/unknown-sense :sense
+                  (str ":sense must be :maximize or :minimize (or absent, meaning :maximize), not "
+                       (pr-str sense) ".")
+                  :actual sense))
+       (when (zero? n)
+         (if (nil? margins)
+           (refusal :lp-certificate/shape-mismatch :margins
+                    ":margins is missing; it gives the objective coefficient of each column, so it also fixes the number of columns."
+                    :expected :at-least-one :actual :missing)
+           (refusal :lp-certificate/empty-instance :margins
+                    "An LP needs at least one column, but :margins is empty."
+                    :expected :at-least-one :actual 0)))
+       (when (and (zero? m) (empty? equalities))
+         (if (and (nil? capacities) (seq matrix))
+           (length-refusal instance :capacities (count matrix) "one per row of :matrix")
+           (refusal :lp-certificate/empty-instance :capacities
+                    "An LP needs at least one row, but :capacities is empty or missing and there are no :equalities."
+                    :expected :at-least-one :actual (if (nil? capacities) :missing 0))))
+       (length-refusal instance :matrix m "one row per entry of :capacities")
+       (some (fn [[i row]]
+               (cond (not (sequential? row))
+                     (refusal :lp-certificate/shape-mismatch :matrix
+                              (str "Row " i " of :matrix must be a vector, not " (pr-str row) ".")
+                              :entry [:matrix i] :actual row)
+                     (not= n (count row))
+                     (refusal :lp-certificate/shape-mismatch :matrix
+                              (str "Row " i " of :matrix must have " (entries-word n)
+                                   " (one per entry of :margins), but it has " (count row) ".")
+                              :entry [:matrix i] :expected n :actual (count row))))
+             (map-indexed vector matrix))
+       (length-refusal instance :plan n "one per column, as :margins")
+       (length-refusal instance :prices m "one per row, as :capacities")
+       (some (fn [[k equality]]
+               (cond (not (and (map? equality) (sequential? (:row equality)) (contains? equality :value)))
+                     (refusal :lp-certificate/shape-mismatch :equalities
+                              (str "Equality " k " must be {:row [..] :value v}, not " (pr-str equality) ".")
+                              :entry [:equalities k] :actual equality)
+                     (not= n (count (:row equality)))
+                     (refusal :lp-certificate/shape-mismatch :equalities
+                              (str "The :row of equality " k " must have " (entries-word n)
+                                   " (one per entry of :margins), but it has " (count (:row equality)) ".")
+                              :entry [:equalities k :row] :expected n :actual (count (:row equality)))))
+             (map-indexed vector equalities))
+       (length-refusal instance :equality-prices (count equalities) "one free price per equality")
+       (some (fn [[i row]] (entry-refusal [:matrix i] row)) (map-indexed vector matrix))
+       (some (fn [field] (entry-refusal [field] (get instance field)))
+             [:capacities :margins :plan :prices :equality-prices])
+       (some (fn [[k {:keys [row value]}]]
+               (or (entry-refusal [:equalities k :row] row)
+                   (when-not (rational? value)
+                     (refusal :lp-certificate/not-rational :equalities
+                              (str "The :value of equality " k " is " (pr-str value)
+                                   "; every coefficient must be an exact rational (an integer or a ratio like 3/2).")
+                              :entry [:equalities k :value] :actual value))))
+             (map-indexed vector equalities))))))
+
 (defn bound
   "Kernel-checks that no feasible plan scores above `capacities . prices`.
 
@@ -767,6 +897,9 @@
           reductions kernel/*reduction-budget*
           preflight? true
           integerize? false}}]
+   ;; before integerize or preflight read any entry: see shape-problem
+   (if-let [refusal (shape-problem instance)]
+     refusal
    (try
      (binding [kernel/*reduction-budget* reductions]
      ;; When asked to integerize, the KERNEL CHECKS THE SCALED INSTANCE -- a
@@ -806,7 +939,7 @@
                :audit/id (audit-identity checked verdicts)}
               numbers)))))
      (catch clojure.lang.ExceptionInfo exception
-       (construction-rejected exception)))))
+       (construction-rejected exception))))))
 
 (defn certify
   "Kernel-checks that `plan` is optimal for the instance, with `prices` as the
@@ -814,13 +947,19 @@
 
   The instance is `{:matrix [[..]] :capacities [..] :margins [..] :plan [..]
   :prices [..]}` over any Clojure rationals, negative included, for the program
-  `maximize margins . plan subject to matrix * plan <= capacities, plan >= 0`."
+  `maximize margins . plan subject to matrix * plan <= capacities, plan >= 0`.
+  Data of the wrong shape -- a plan or price vector of the wrong length, a ragged
+  matrix, an entry that is not an exact rational -- is refused before any other
+  work (see `shape-problem`)."
   ([checked-environment instance] (certify checked-environment instance nil))
   ([checked-environment instance
     {:keys [alias reductions preflight? proof table]
      :or {alias 'optimization/lp-instance-optimal
           reductions kernel/*reduction-budget*
           preflight? true}}]
+   ;; a plan or price vector of the wrong length is not a certificate of what was submitted
+   (if-let [refusal (shape-problem instance)]
+     refusal
    (try
      (binding [kernel/*reduction-budget* reductions
                *table-encoding* (or table :linear)]
@@ -855,4 +994,4 @@
                               (= :reflection proof) (conj 'rainbow.math.rational.signed.lp-certificate-reflect))
             :environment environment})))
      (catch clojure.lang.ExceptionInfo exception
-       (construction-rejected exception)))))
+       (construction-rejected exception))))))

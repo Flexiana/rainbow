@@ -1,6 +1,6 @@
 (ns rainbow.math.rational.signed.lp-witness-bridge
   "Original standard-form primal/dual witnesses and a reported universal bound.
-  Experimental proof producer, not a verifier or API success policy. Each spec
+  A proof producer, not a verifier or API success policy. Each spec
   must be checked against an independently reconstructed target. This uses the
   existing literal/standard-form interpretation; it does not prove host semantics."
   (:require [rainbow.module :as module]

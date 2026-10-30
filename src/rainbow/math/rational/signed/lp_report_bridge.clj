@@ -1,5 +1,5 @@
 (ns rainbow.math.rational.signed.lp-report-bridge
-  "Experimental producer binding supplied numeric reports to original LP sums.
+  "Proof producer that binds supplied numeric reports to original LP sums.
 
   All returned specs must check: the numeric inequality alone is insufficient.
   This is actual-plan bound evidence, not a universal feasible-candidate proof,

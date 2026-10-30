@@ -1,5 +1,5 @@
 (ns rainbow.or.lp-original-plan-verifier
-  "Experimental value-only replay for ORIGINAL LP plans and their reports.
+  "Value-only replay for ORIGINAL LP plans and their reports.
   No producer dependency: targets are rebuilt from the receiver's request.
   The checked environment, specification encoder and host/JVM remain trusted."
   (:require [rainbow.canonical :as canonical]

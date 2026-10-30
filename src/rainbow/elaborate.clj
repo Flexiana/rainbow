@@ -85,72 +85,119 @@
        :message (ex-message exception)})))
 
 (defn- core* [environment surface context]
-  (cond
-    (= 'Prop surface) (term/sort-term term/zero-level)
+  ;; Explicit work/value stacks keep surface depth off the JVM call stack.
+  ;; Children are visited left to right, preserving the first reported error.
+  (loop [work [[:visit surface context]] values []]
+    (if (empty? work)
+      (peek values)
+      (let [[operation a b c d] (peek work)
+            work (pop work)]
+        (case operation
+          :application
+          (let [start (- (count values) a)
+                children (subvec values start)]
+            (recur work (conj (subvec values 0 start)
+                              (reduce term/application (first children) (rest children)))))
 
-    (symbol? surface)
-    (if-some [index (variable-index context surface)]
-      (term/bound index)
-      (reject! :elaborate/unknown-name "Unknown term name"
-               {:name surface :context (vec (remove nil? context))}))
+          :binder
+          (let [body (peek values) values (pop values)
+                type (peek values) values (pop values)]
+            (recur work (conj values (a type body b))))
 
-    (vector? surface)
-    (case (first surface)
-      :sort (let [level (second surface)]
-              (when-not (and (= 2 (count surface)) (term/level? level))
-                (reject! :elaborate/invalid-sort "Malformed sort form" {:form surface}))
-              (term/sort-term level))
+          :let
+          (let [body (peek values) values (pop values)
+                value (peek values) values (pop values)
+                type (peek values) values (pop values)]
+            (recur work (conj values (term/let-term type value body))))
 
-      ;; a natural-number literal (the kernel types it as data/Nat)
-      :nat (let [[_ n] surface]
-             (when-not (and (= 2 (count surface)) (integer? n) (not (neg? n)))
-               (reject! :elaborate/invalid-literal "A literal is [:nat n] with n a natural number"
-                        {:form surface}))
-             [:nat n])
+          :bindings
+          (if-let [[name type mode] (first b)]
+            (recur (conj work [:binder a (or mode :explicit)]
+                              [:bindings a (next b) c (into [name] d)]
+                              [:visit type d]) values)
+            (recur (conj work [:visit c d]) values))
 
-      :const (let [[_ alias levels] surface
-                   id (if (string? alias) alias (environment/resolve-id environment alias))]
-               (when-not (and (= 3 (count surface)) id (vector? levels)
-                              (every? term/level? levels))
-                 (reject! :elaborate/unknown-constant "Unknown or malformed constant"
-                          {:form surface :alias alias}))
-               (term/constant id levels))
+          :arrow
+          (let [remaining (next a)
+                next-context (into [nil] b)]
+            (recur (conj work [:binder term/pi-term :explicit]
+                              (if (= 1 (count remaining))
+                                [:visit (first remaining) next-context]
+                                [:arrow remaining next-context])
+                              [:visit (first a) b]) values))
 
-      :app (let [[_ function & arguments] surface]
-             (when (empty? arguments)
-               (reject! :elaborate/application-arity
-                        "Application needs at least one argument" {:form surface}))
-             (reduce term/application
-                     (core* environment function context)
-                     (map #(core* environment % context) arguments)))
+          :visit
+          (let [surface a context b]
+            (cond
+              (= 'Prop surface)
+              (recur work (conj values (term/sort-term term/zero-level)))
 
-      :-> (elaborate-arrow core* environment (rest surface) context)
+              (symbol? surface)
+              (if-some [index (variable-index context surface)]
+                (recur work (conj values (term/bound index)))
+                (reject! :elaborate/unknown-name "Unknown term name"
+                         {:name surface :context (vec (remove nil? context))}))
 
-      :forall (let [[_ bindings body] surface]
-                (when-not (and (= 3 (count surface)) (vector? bindings)
-                               (every? valid-binder? bindings))
-                  (reject! :elaborate/invalid-forall "Malformed forall form" {:form surface}))
-                (elaborate-binders core* environment term/pi-term bindings body context))
+              (vector? surface)
+              (case (first surface)
+                :sort
+                (let [level (second surface)]
+                  (when-not (and (= 2 (count surface)) (term/level? level))
+                    (reject! :elaborate/invalid-sort "Malformed sort form" {:form surface}))
+                  (recur work (conj values (term/sort-term level))))
 
-      :fn (let [[_ bindings body] surface]
-            (when-not (and (= 3 (count surface)) (vector? bindings)
-                           (every? valid-binder? bindings))
-              (reject! :elaborate/invalid-lambda "Malformed lambda form" {:form surface}))
-            (elaborate-binders core* environment term/lambda-term bindings body context))
+                :nat
+                (let [[_ n] surface]
+                  (when-not (and (= 2 (count surface)) (integer? n) (not (neg? n)))
+                    (reject! :elaborate/invalid-literal "A literal is [:nat n] with n a natural number"
+                             {:form surface}))
+                  (recur work (conj values [:nat n])))
 
-      :let (let [[_ name type-surface value body] surface]
-             (when-not (and (= 5 (count surface)) (symbol? name))
-               (reject! :elaborate/invalid-let "Malformed let form" {:form surface}))
-             (term/let-term (core* environment type-surface context)
-                            (core* environment value context)
-                            (core* environment body (into [name] context))))
+                :const
+                (let [[_ alias levels] surface
+                      id (if (string? alias) alias (environment/resolve-id environment alias))]
+                  (when-not (and (= 3 (count surface)) id (vector? levels)
+                                 (every? term/level? levels))
+                    (reject! :elaborate/unknown-constant "Unknown or malformed constant"
+                             {:form surface :alias alias}))
+                  (recur work (conj values (term/constant id levels))))
 
-      (reject! :elaborate/unsupported-form "Unsupported explicit term form"
-               {:form surface}))
+                :app
+                (let [children (subvec surface 1)]
+                  (when (< (count children) 2)
+                    (reject! :elaborate/application-arity
+                             "Application needs at least one argument" {:form surface}))
+                  (recur (into (conj work [:application (count children)])
+                               (map #(vector :visit % context) (rseq children))) values))
 
-    :else
-    (reject! :elaborate/unsupported-form "Unsupported explicit term value"
-             {:form surface})))
+                :->
+                (let [arguments (rest surface)]
+                  (when (< (count arguments) 2)
+                    (reject! :elaborate/arrow-arity "An arrow needs at least a domain and codomain"
+                             {:arguments arguments}))
+                  (recur (conj work [:arrow arguments context]) values))
+
+                (:forall :fn)
+                (let [[kind bindings body] surface]
+                  (when-not (and (= 3 (count surface)) (vector? bindings)
+                                 (every? valid-binder? bindings))
+                    (if (= :forall kind)
+                      (reject! :elaborate/invalid-forall "Malformed forall form" {:form surface})
+                      (reject! :elaborate/invalid-lambda "Malformed lambda form" {:form surface})))
+                  (recur (conj work [:bindings (if (= :forall kind) term/pi-term term/lambda-term)
+                                    bindings body context]) values))
+
+                :let
+                (let [[_ name type value body] surface]
+                  (when-not (and (= 5 (count surface)) (symbol? name))
+                    (reject! :elaborate/invalid-let "Malformed let form" {:form surface}))
+                  (recur (conj work [:let] [:visit body (into [name] context)]
+                                    [:visit value context] [:visit type context]) values))
+
+                (reject! :elaborate/unsupported-form "Unsupported explicit term form" {:form surface}))
+
+              :else
+              (reject! :elaborate/unsupported-form "Unsupported explicit term value" {:form surface}))))))))
 
 (defn core-expression [environment surface]
   (try

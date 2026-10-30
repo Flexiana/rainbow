@@ -716,8 +716,8 @@ This file is generated from the source tree; do not edit it by hand.
 | [`rainbow.math.rational.signed.lp-objective-negate`](../src/rainbow/math/rational/signed/lp_objective_negate.clj) | Generic finite-sum negation and formal LP minimization sense transport. |
 | [`rainbow.math.rational.signed.lp-original-bound-bridge`](../src/rainbow/math/rational/signed/lp_original_bound_bridge.clj) | Universal original-problem bounds, including original equality constraints. |
 | [`rainbow.math.rational.signed.lp-plan-report-bridge`](../src/rainbow/math/rational/signed/lp_plan_report_bridge.clj) | Original submitted-plan/report evidence and optional tight-bound optimality. |
-| [`rainbow.math.rational.signed.lp-pointwise-bridge`](../src/rainbow/math/rational/signed/lp_pointwise_bridge.clj) | Experimental LP scaling-bridge proof PRODUCER, lifted out of a diagnostic script into a reusable module (the pointwise-correspondence result). |
-| [`rainbow.math.rational.signed.lp-report-bridge`](../src/rainbow/math/rational/signed/lp_report_bridge.clj) | Experimental producer binding supplied numeric reports to original LP sums. |
+| [`rainbow.math.rational.signed.lp-pointwise-bridge`](../src/rainbow/math/rational/signed/lp_pointwise_bridge.clj) | LP scaling-bridge proof producer built from a pointwise correspondence. |
+| [`rainbow.math.rational.signed.lp-report-bridge`](../src/rainbow/math/rational/signed/lp_report_bridge.clj) | Proof producer that binds supplied numeric reports to original LP sums. |
 | [`rainbow.math.rational.signed.lp-scaling-bound`](../src/rainbow/math/rational/signed/lp_scaling_bound.clj) | Transport a bound between formal D^2/D-scaled objectives to original sums. |
 | [`rainbow.math.rational.signed.lp-scaling-feasibility`](../src/rainbow/math/rational/signed/lp_scaling_feasibility.clj) | Forward feasibility scaling and universal-bound transport on listed indices. |
 | [`rainbow.math.rational.signed.lp-witness-bridge`](../src/rainbow/math/rational/signed/lp_witness_bridge.clj) | Original standard-form primal/dual witnesses and a reported universal bound. |

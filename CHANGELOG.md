@@ -3,6 +3,43 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.1] - 2026-10-30
+
+A fix to what the LP certificate checker certifies, error messages for `lein lp-view`, and a
+stack fix in the elaborator. Please upgrade if you check LP certificates.
+
+### Fixed
+- **`certify` checks the shape of what it certifies.** The lookup tables behind the LP
+  certificate read the last entry for any index past the end, and the checked statement covers
+  only the instance's own rows and columns. So a plan or price vector with an extra entry (for
+  example the plan `[3 0 7]` for a two-column instance) was certified about its first entries,
+  while the result and the `lein lp-view` page named all of them; a short vector repeated its last
+  entry. `certify` and `bound` now refuse such data before any other work, with
+  `:lp-certificate/shape-mismatch` naming the field, its expected and actual length. Entries must
+  be exact rationals (`:lp-certificate/not-rational`; floating-point numbers were silently
+  rationalized before), and `:sense` must be absent, `:maximize` or `:minimize`
+  (`:lp-certificate/unknown-sense`; a misspelt sense was silently treated as maximize).
+  Certificates of the right shape are certified exactly as before.
+- `lein lp-view` prints one `FAIL lp-view ...` line saying what to check, and exits 1, for a
+  missing or unreadable file, data that is not an instance or certificate, a shape refusal, or a
+  missing `--checkpoint`, instead of a raw exception.
+- The elaborator turns deeply nested terms (thousands of applications or binders) into kernel
+  terms without overflowing the call stack; the translation is unchanged.
+- Docstrings of five LP modules describe what each produces or checks, without a maturity
+  label.
+
+### Verified
+- Generated from internal 6806b8a5. Every store id is the SHA-256 of its declaration (6,309 of
+  6,309; Pro 6,323 of 6,323), the same declarations as 1.5.0.
+- `lein reproduce --all` in this repository: 53 of 53 rebuilt checkpoints match their recorded
+  content ids. The four milestones that need the Mathlib catalog were not rebuilt.
+- In this repository, the 96 test namespaces that load the changed code passed: 416 tests, 3,868
+  assertions, 0 failures, 0 errors.
+- Internally, the elaborator change passed the full suite (2,333 namespaces, 6,065 tests, 391,166
+  assertions, 0 failures), and the LP change passed the 206 test namespaces that load it (716
+  tests, 7,218 assertions, 0 failures).
+- No kernel change: the trusted base stays at 1,661 lines.
+
 ## [1.5.0] - 2026-10-29
 
 Proof search is much faster and gains a simp-like rewriting engine. The kernel adds a lazy

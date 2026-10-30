@@ -15,6 +15,7 @@
   names the comparison that failed. Negative controls (the same checks with a number off by one)
   must be refused, or nothing is written."
   (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [rainbow.checkpoint :as checkpoint]
             [rainbow.elaborate :as elaborate]
             [rainbow.kernel :as kernel]
@@ -82,11 +83,31 @@
                 :activity-off-by-one (confirm env (f/app (row-activity x) [:nat 0]) (inc (dot (matrix 0) plan)))
                 :capacity-exceeded (decide env (#'lp/signed-literal (inc (rationalize (capacities 0)))) (f/app b [:nat 0]))}}))
 
+(defn- as-vectors
+  "The data with every vector a Clojure vector, so that the steps can index it (EDN may hold a
+  list). A vector is returned as itself, so the data certify sees, and its audit id, are unchanged."
+  [data]
+  (cond-> (reduce (fn [d k] (if (sequential? (get d k)) (update d k vec) d))
+                  data [:capacities :margins :plan :prices :equality-prices])
+    (sequential? (:matrix data)) (update :matrix #(mapv vec %))
+    (sequential? (:equalities data)) (update :equalities #(mapv (fn [e] (update e :row vec)) %))))
+
+(defn checked-data
+  "What certify is given: the instance's LP fields with the certificate's. Throws, naming the field,
+  when the shape is wrong (rainbow.or.lp-certificate/shape-problem): a plan or price vector of the
+  wrong length or an entry that is not an exact rational is refused before anything is checked or
+  written, never shown as certified."
+  [instance certificate]
+  (let [checked (merge (select-keys instance [:matrix :capacities :margins :sense :equalities])
+                       (select-keys certificate [:plan :prices :equality-prices]))]
+    (when-let [problem (lp/shape-problem checked)]
+      (throw (ex-info (:message problem) (assoc (dissoc problem :status) :lp-view/refused :shape))))
+    (as-vectors checked)))
+
 (defn example
   "The viewer's data for one instance and certificate: certify's verdict and the step-by-step check."
   [env instance certificate]
-  (let [checked (merge (select-keys instance [:matrix :capacities :margins :sense :equalities])
-                       (select-keys certificate [:plan :prices :equality-prices]))
+  (let [checked (checked-data instance certificate)
         standard (#'lp/standard-form checked)
         t0 (System/nanoTime)
         result (lp/certify env checked {:alias 'optimization/lp-view-certificate})
@@ -121,15 +142,85 @@
                              :axioms (mapv str (kernel/axioms env 'optimization/signed-lp-optimality-certificate-on))}}
      :examples [e]}))
 
+(def ^:private usage
+  "usage: lein lp-view <instance.edn> <certificate.edn> [out-dir] [--checkpoint path] [--offline]")
+
+(defn- failure
+  "An ex-info carrying the FAIL line lp-view prints: what failed, why, and what to check."
+  [what why check]
+  (ex-info why {:lp-view/fail {:what what :why why :check check}}))
+
+(defn- read-map
+  "The EDN map in the file at path, or a failure naming the file."
+  [role path]
+  (let [what (str role " " path) file (io/file path)]
+    (when-not (.exists file)
+      (throw (failure what "no such file" (str "Check the path of the " role " file."))))
+    (when-not (.isFile file)
+      (throw (failure what "not a file" (str "Name the " role " EDN file, not a directory."))))
+    (let [value (try (edn/read-string (slurp file))
+                     (catch Exception e
+                       (throw (failure what (str "not readable EDN: " (or (.getMessage e) (.getName (class e))))
+                                       "Check that the file is complete EDN, with every bracket closed."))))]
+      (when-not (map? value)
+        (throw (failure what (str "not an EDN map but " (if (nil? value) "an empty file" (pr-str (type value))))
+                        (if (= "instance" role)
+                          "The instance is a map {:matrix [[..]] :capacities [..] :margins [..]}."
+                          "The certificate is a map {:plan [..] :prices [..]}."))))
+      value)))
+
+(defn- load-environment [path]
+  (try (environment path)
+       (catch Exception e
+         (throw (failure (str "--checkpoint " path) (or (.getMessage e) (.getName (class e)))
+                         (str "Check that --checkpoint names a kernel checkpoint (.edn.gz) that exists; "
+                              "without the flag lp-view uses " default-checkpoint ", run from the Rainbow directory."))))))
+
+(defn run
+  "lein lp-view: reads the files, checks the certificate, writes the page; returns the exit code (0
+  certified, 1 refused or failed, 2 usage). A file that is missing or not EDN, data of the wrong
+  shape and a checkpoint that does not replay each print one FAIL line saying what to check, and
+  nothing is written."
+  [args]
+  (let [[[instance-path certificate-path out] opts] (view/parse-args args #{"--offline"})]
+    (if-not certificate-path
+      (do (println usage) 2)
+      (try
+        (when (and (contains? opts :checkpoint) (not (string? (:checkpoint opts))))
+          (throw (failure "--checkpoint" "no path given" "Write --checkpoint <path to checkpoint.edn.gz>, or leave the flag out.")))
+        (let [out (or out "lp-view")
+              instance (read-map "instance" instance-path)
+              certificate (read-map "certificate" certificate-path)
+              _ (try (checked-data instance certificate)
+                     (catch clojure.lang.ExceptionInfo e
+                       (throw (failure (str instance-path " " certificate-path)
+                                       (str (.getMessage e) " (" (:error/category (ex-data e)) ")")
+                                       (str "Check that :plan has one entry per column (:margins), :prices one per row "
+                                            "(:capacities), each :matrix row one per column, and that every number is "
+                                            "an exact rational such as 3 or 3/2.")))))
+              env (load-environment (:checkpoint opts default-checkpoint))
+              data (try (view-data env instance certificate)
+                        (catch Exception e
+                          (throw (failure (str instance-path " " certificate-path) (or (.getMessage e) (.getName (class e)))
+                                          "Nothing was written; check the instance and certificate files."))))
+              {:keys [status objective kernel-category]} (:certify (first (:examples data)))]
+          (try (view/write-page! out "scripts/lp-view.html" "lp-view.json" data (:offline opts))
+               (catch Exception e
+                 (throw (failure (str "-> " out) (or (.getMessage e) (.getName (class e)))
+                                 "Check that the output directory is writable, and run lp-view from the Rainbow directory (it reads scripts/lp-view.html)."))))
+          (println "wrote" (str out "/index.html") "and lp-view.json; certify:" (name status) (or objective kernel-category ""))
+          (if (= :certified status) 0 1))
+        (catch clojure.lang.ExceptionInfo e
+          (if-let [{:keys [what why check]} (:lp-view/fail (ex-data e))]
+            (println "FAIL lp-view" what "--" why "--" check)
+            (println "FAIL lp-view --" (.getMessage e) "-- Check the instance, certificate and --checkpoint arguments."))
+          1)
+        (catch Exception e
+          (println "FAIL lp-view --" (or (.getMessage e) (.getName (class e)))
+                   "-- Check the instance, certificate and --checkpoint arguments.")
+          1)))))
+
 (defn -main [& args]
-  (let [[[instance certificate out] opts] (view/parse-args args #{"--offline"})]
-    (when-not certificate
-      (println "usage: lein lp-view <instance.edn> <certificate.edn> [out-dir] [--checkpoint path] [--offline]")
-      (System/exit 2))
-    (let [out (or out "lp-view") read #(edn/read-string (slurp %))
-          data (view-data (environment (:checkpoint opts default-checkpoint)) (read instance) (read certificate))
-          {:keys [status objective kernel-category]} (:certify (first (:examples data)))]
-      (view/write-page! out "scripts/lp-view.html" "lp-view.json" data (:offline opts))
-      (println "wrote" (str out "/index.html") "and lp-view.json; certify:" (name status) (or objective kernel-category ""))
-      (shutdown-agents)
-      (System/exit (if (= :certified status) 0 1)))))
+  (let [code (run args)]
+    (shutdown-agents)
+    (System/exit code)))
