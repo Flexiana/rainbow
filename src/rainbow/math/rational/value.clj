@@ -14,6 +14,7 @@
   algorithm proof (cooling factors, learning rates, importance ratios, ...)
   should be stated with `nnrat/equivalent` and proven the same way, then carried
   by `nnrat/multiply-respects-equivalence` / `nnrat/add-respects-equivalence`."
+  (:refer-clojure :exclude [numerator denominator])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

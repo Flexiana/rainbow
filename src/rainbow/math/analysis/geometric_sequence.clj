@@ -19,6 +19,7 @@
   theorem convergence/converges-to.
 
   Requires nnrat/multiply, nnrat/half, nnrat/at-most, and nnrat/half-le-self."
+  (:refer-clojure :exclude [numerator])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

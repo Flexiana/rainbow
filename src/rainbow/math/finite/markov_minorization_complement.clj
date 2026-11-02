@@ -1,6 +1,7 @@
 (ns rainbow.math.finite.markov-minorization-complement
   "Exact complementary-mass bounds, without a raw-denominator approximation.
   A listed normalized row bounds the shared total before taking its complement."
+  (:refer-clojure :exclude [complement])
   (:require [rainbow.module :as module]
             [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]

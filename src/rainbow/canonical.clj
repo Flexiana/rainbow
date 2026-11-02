@@ -5,6 +5,23 @@
 
 (declare encode)
 
+(defn- unpaired-surrogate?
+  "True when s is not well-formed UTF-16. sha256 hashes UTF-8 bytes, and Java's encoder replaces
+  an unpaired surrogate with \"?\", so two different strings would hash alike."
+  [^String s]
+  (let [n (.length s)]
+    (loop [i 0]
+      (if (< i n)
+        (let [ch (.charAt s i)]
+          (cond
+            (Character/isHighSurrogate ch)
+            (if (and (< (inc i) n) (Character/isLowSurrogate (.charAt s (inc i))))
+              (recur (+ i 2))
+              true)
+            (Character/isLowSurrogate ch) true
+            :else (recur (inc i))))
+        false))))
+
 (defn- write!
   "Appends value's encoding to out; encode is its string."
   [^StringBuilder out value]
@@ -12,7 +29,11 @@
     (nil? value) (.append out "n;")
     (true? value) (.append out "b1;")
     (false? value) (.append out "b0;")
-    (string? value) (-> out (.append "s") (.append (count value)) (.append ":") (.append ^String value))
+    (string? value) (if (unpaired-surrogate? value)
+                      (throw (ex-info "Unpaired UTF-16 surrogate in canonical serialization"
+                                      {:error/category :canonical/unsupported-value
+                                       :value value}))
+                      (-> out (.append "s") (.append (count value)) (.append ":") (.append ^String value)))
     (keyword? value) (do (.append out "k") (write! out (namespace value)) (write! out (name value)))
     (symbol? value) (do (.append out "y") (write! out (namespace value)) (write! out (name value)))
     (integer? value) (-> out (.append "i") (.append (str value)) (.append ";"))

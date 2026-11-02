@@ -29,6 +29,7 @@
   geometric/seq-denominator, nat/power, nat/at-most-power-two,
   nat/le-multiply-succ, nnrat/at-most-from-cross, and the equality transport
   lemmas."
+  (:refer-clojure :exclude [denominator numerator])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

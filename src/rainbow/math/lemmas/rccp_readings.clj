@@ -1,6 +1,7 @@
 (ns rainbow.math.lemmas.rccp-readings
   "General lemmas: rccp readings. The mathematical facts the corresponding checks rest on,
   each checked by the kernel."
+  (:refer-clojure :exclude [disj])
   (:require [rainbow.math.lemmas.ncyc-infeasible :as pdep6]
             [rainbow.math.lemmas.cpm-makespan :as pdep5]
             [rainbow.math.lemmas.mmck-unique :as pdep4]

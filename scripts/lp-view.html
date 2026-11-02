@@ -240,6 +240,9 @@ ul.lines li .who { font-family: var(--font-body); font-size: var(--step--1); col
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function v(name) { var m = /^([a-z]+)(\d+)$/.exec(name); return m ? '<var class="v">' + m[1] + "<sub>" + m[2] + "</sub></var>" : '<var class="v">' + esc(name) + "</var>"; }
 
+  // coefficient times variable: written together for a one-letter name (2x1), with a dot for a
+  // longer one, which would otherwise read as one word (2·chairs, not 2chairs)
+  function times(mag, name) { return mag + (mag && !/^[A-Za-z]\d*$/.test(name) ? "\u00b7" : "") + v(name); }
   // a linear form from exact coefficients, skipping zeros
   function linform(coeffs, vars) {
     var out = "", first = true;
@@ -247,8 +250,8 @@ ul.lines li .who { font-family: var(--font-body); font-size: var(--step--1); col
       if (isZero(c)) return;
       var p = parts(c);
       var mag = p.d ? fmt(p.n + "/" + p.d) : (p.n === "1" ? "" : p.n);
-      if (first) out += (p.neg ? "−" : "") + mag + v(vars[j]);
-      else out += (p.neg ? " − " : " + ") + mag + v(vars[j]);
+      if (first) out += (p.neg ? "−" : "") + times(mag, vars[j]);
+      else out += (p.neg ? " − " : " + ") + times(mag, vars[j]);
       first = false;
     });
     return first ? "0" : out;
@@ -398,8 +401,10 @@ ul.lines li .who { font-family: var(--font-body); font-size: var(--step--1); col
       ? '<tr><td class="kw">maximize</td><td class="lhs" colspan="3" style="text-align:left">' + linform(e.instance.margins, vars) + '</td><td class="label">' + esc(e["objective-label"]) + "</td></tr>"
       : '<tr><td class="kw">find</td><td class="lhs" colspan="3" style="text-align:left">' + vars.map(v).join(", ") + '</td><td class="label">any plan at all</td></tr>';
     var nn = '<tr><td class="kw"></td><td class="lhs" colspan="3" style="text-align:left">' + vars.map(v).join(", ") + " ≥ 0</td><td></td></tr>";
-    var legend = e.variables.map(function (x) { return v(x.name) + " = " + esc(x.label); }).join("; ");
-    return '<div class="program"><table><tbody>' + head + rows + nn + '</tbody></table></div><p class="muted" style="font-size:var(--step--1)">' + legend + ". Constraints are shown in the form the checker reads, <span class=\"data\">A x ≤ b</span>; a “at least” row is negated." + (e.instance.note ? " " + esc(e.instance.note) : "") + "</p>";
+    // only the variables the instance file describes; an instance without labels gets no legend
+    var legend = e.variables.filter(function (x) { return x.label && String(x.label).trim(); })
+      .map(function (x) { return v(x.name) + " = " + esc(x.label); }).join("; ");
+    return '<div class="program"><table><tbody>' + head + rows + nn + '</tbody></table></div><p class="muted" style="font-size:var(--step--1)">' + (legend ? legend + ". " : "") + "Constraints are shown in the form the checker reads, <span class=\"data\">A x ≤ b</span>; an “at least” row is negated." + (e.instance.note ? " " + esc(e.instance.note) : "") + "</p>";
   }
 
   // ---- optimality view -------------------------------------------------------------------------

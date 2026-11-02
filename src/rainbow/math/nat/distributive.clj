@@ -21,6 +21,7 @@
   den(seq d0 N) = den(d0) * 2^N, the last analytic ingredient of the general
   forall-epsilon convergence modulus, and fills a fundamental gap in the nat
   semiring."
+  (:refer-clojure :exclude [assoc])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

@@ -1,6 +1,7 @@
 (ns rainbow.math.lemmas.ufl-gap
   "General lemmas: ufl gap. The mathematical facts the corresponding checks rest on,
   each checked by the kernel."
+  (:refer-clojure :exclude [reduced])
   (:require [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum mul le eqv refl sym trans below]]

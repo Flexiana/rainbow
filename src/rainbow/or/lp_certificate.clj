@@ -71,7 +71,9 @@
   (let [exact (rationalize value)]
     (if (ratio? exact)
       [(numerator exact) (denominator exact)]
-      [(long exact) 1])))
+      [(if (<= Long/MIN_VALUE exact Long/MAX_VALUE)
+         (long exact)
+         (bigint exact)) 1])))
 
 (defn- signed-literal
   "An exact signed rational from any Clojure rational, negative included. A
@@ -80,7 +82,7 @@
   (let [[n d] (rational-parts value)]
     (app (function/const* 'signed/make [])
          (nnrat-literal (max n 0) d)
-         (nnrat-literal (max (- n) 0) d))))
+         (nnrat-literal (max (-' n) 0) d))))
 
 ;; ---- encoding vectors as functions on nat indices ---------------------------
 
@@ -392,26 +394,23 @@
 (defn- denominator-of [value] (second (rational-parts value)))
 
 (defn integer-scale
-  "The lcm of every denominator in the instance; 1 when the data is integral.
+  "The exact lcm of every denominator; 1 when the data is integral.
 
-  Returns a plain integer deliberately. Computing it through `biginteger` yields
-  a BigInt, and a BigInt coefficient is numerically equal to the Long it came
-  from but SERIALIZES DIFFERENTLY -- which silently changes the content id, and
-  so silently broke the property that scaling integral data leaves its identity
-  alone."
+  Returns a Long when the scale fits, preserving existing small-scale serialized
+  identities, and a BigInt otherwise. Large exact denominators must not overflow
+  preflight or integerization."
   [{:keys [matrix capacities margins plan prices equalities equality-prices]}]
-  (long
-   (reduce (fn [acc value]
-             (let [d (denominator-of value)]
-               (/ (* acc d) (.gcd (biginteger acc) (biginteger d)))))
-           1
-           ;; equality rows/values and free prices carry denominators too; omitting
-           ;; them leaves D too small to clear a fractional equality, so the
-           ;; "integerized" instance is not actually integral -- see integerize.
-           (concat (apply concat matrix) capacities margins plan prices
-                   (mapcat :row equalities)
-                   (map :value equalities)
-                   equality-prices))))
+  (let [scale
+        (reduce (fn [acc value]
+                  (let [d (denominator-of value)]
+                    (quot (*' acc d) (.gcd (biginteger acc) (biginteger d)))))
+                1
+                ;; Equalities and free prices carry denominators too.
+                (concat (apply concat matrix) capacities margins plan prices
+                        (mapcat :row equalities)
+                        (map :value equalities)
+                        equality-prices))]
+    (if (<= scale Long/MAX_VALUE) (long scale) (bigint scale))))
 
 (defn integerize
   "Rescale to integer data, returning the instance and the scale used.
@@ -420,8 +419,8 @@
   already-integral instance produces the same proof term and the same audit id."
   [instance]
   (let [d (integer-scale instance)
-        dd (* d d)
-        by (fn [k] (partial mapv (fn [v] (* (rationalize v) k))))]
+        dd (*' d d)
+        by (fn [k] (partial mapv (fn [v] (*' (rationalize v) k))))]
     (if (= 1 d)
       ;; not merely "multiplies by one" -- returns the very same value, so the
       ;; proof term and audit id are identical rather than merely equivalent
@@ -440,7 +439,7 @@
          ;; by d, :value by dd, and :equality-prices by d, identically.
          (seq (:equalities instance))
          (update :equalities
-                 (partial mapv #(-> % (update :row (by d)) (update :value (fn [v] (* (rationalize v) dd))))))
+                 (partial mapv #(-> % (update :row (by d)) (update :value (fn [v] (*' (rationalize v) dd))))))
          (seq (:equality-prices instance))
          (update :equality-prices (by d)))
        d])))

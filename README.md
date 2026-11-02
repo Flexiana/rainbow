@@ -4,7 +4,7 @@
 
 **A theorem prover in Clojure that treats proofs as data.**
 
-Rainbow checks mathematics with a small dependent-type kernel — 1,661 lines you
+Rainbow checks mathematics with a small dependent-type kernel — 1,706 lines you
 can read in an afternoon — and stores everything it checks as plain, immutable,
 content-addressed EDN: terms, declarations, proofs, failures and their
 provenance. A proof is a value. You can store it, diff it, hash it, ship it and
@@ -43,7 +43,7 @@ Most "verified" claims fail in the same place: a theorem about a model, a
 program that allegedly implements the model, and nothing checking the link.
 Rainbow was built to be exact about that gap rather than to hide it.
 
-- **The trusted base is small and pinned.** Four files, 1,661 lines, and a
+- **The trusted base is small and pinned.** Four files, 1,706 lines, and a
   release test fails if they change length. Search, tactics, elaboration and
   checkpoint loading are all untrusted: they propose terms, the kernel decides.
   See [`doc/trusted-base.md`](doc/trusted-base.md).
@@ -85,6 +85,10 @@ lein lp-view <instance.edn> <certificate.edn> [out-dir]
 lein test                            # the whole suite (long; see below)
 scripts/run-suite-chunked.sh 5       # the suite in fresh-JVM chunks of 5 namespaces
 ```
+
+To try `verify --bundle` on proofs of your own, make a bundle with
+`rainbow.main/proof-bundle`; [`doc/bundles.md`](doc/bundles.md#making-a-bundle)
+has a worked example to run.
 
 The full suite is about 2,200 tests and 62,000 assertions and takes hours,
 because many tests replay large checkpoints through the kernel. Run a single
@@ -129,7 +133,7 @@ of its content. [`doc/tour.md`](doc/tour.md) reads a module end to end;
 
 | | |
 |---|---|
-| `src/rainbow/{kernel,term,environment,canonical}.clj` | the trusted kernel, 1,661 lines |
+| `src/rainbow/{kernel,term,environment,canonical}.clj` | the trusted kernel, 1,706 lines |
 | `src/rainbow/math/` | foundations: nat, rationals, signed rationals, sums, finite types, sets, linear algebra, analysis |
 | `src/rainbow/algorithms/` | algorithm guarantees (`proofs/`) and the reference implementations they are about |
 | `src/rainbow/milestones/` | the drivers that built the corpus checkpoints, one per result |

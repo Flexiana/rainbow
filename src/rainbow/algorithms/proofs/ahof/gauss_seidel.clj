@@ -22,6 +22,7 @@
   lemmas proved en route that fill genuine corpus gaps (a subtract-then-
   add recovery law and reciprocal-scale cancellation); those two are
   general enough to promote to a core signed module later."
+  (:refer-clojure :exclude [denominator numerator])
   (:require [rainbow.module :as module]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]

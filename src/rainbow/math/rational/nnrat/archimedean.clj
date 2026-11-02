@@ -13,6 +13,7 @@
 
   Native and axiom-free; chains nnrat-order-equivalence, nat at-most
   cancellation, and the nat-ring proof-term generator on the D63 checkpoint."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

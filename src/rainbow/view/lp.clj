@@ -16,6 +16,7 @@
   must be refused, or nothing is written."
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [rainbow.checkpoint :as checkpoint]
             [rainbow.elaborate :as elaborate]
             [rainbow.kernel :as kernel]
@@ -104,6 +105,24 @@
       (throw (ex-info (:message problem) (assoc (dissoc problem :status) :lp-view/refused :shape))))
     (as-vectors checked)))
 
+(defn page-variables
+  "The page's text for the n columns: one {:name :label} of strings per column. The instance file's
+  :variables are taken in order (a missing :name is x<j>, a missing :label is empty); a column they
+  do not describe is x<j> with an empty label. The page lists only the labels that are not empty,
+  so an instance without labels shows no legend."
+  [given n]
+  (let [given (if (sequential? given) (vec given) [])]
+    (vec (for [j (range n) :let [v (get given j)]]
+           {:name (str (or (when (map? v) (:name v)) (str "x" (inc j))))
+            :label (str (or (when (map? v) (:label v)) ""))}))))
+
+(defn page-constraints
+  "The page's text for the m rows, one string per row: the instance file's :constraints in order,
+  then \"Row <i>\" for the rows they do not describe."
+  [given m]
+  (let [given (if (sequential? given) (vec given) [])]
+    (vec (for [i (range m)] (if (< i (count given)) (str (given i)) (str "Row " (inc i)))))))
+
 (defn example
   "The viewer's data for one instance and certificate: certify's verdict and the step-by-step check."
   [env instance certificate]
@@ -116,8 +135,8 @@
     {:id "certificate" :kind :optimality
      :title (:title instance "LP certificate") :story (:story instance "") :source (:source instance "Supplied by the user; not checked.")
      :objective-label (:objective-label instance "objective")
-     :variables (or (:variables instance) (vec (for [j (range n)] {:name (str "x" (inc j)) :label ""})))
-     :constraints (vec (concat (:constraints instance) (for [i (range (count (:constraints instance)) m)] (str "Row " (inc i)))))
+     :variables (page-variables (:variables instance) n)
+     :constraints (page-constraints (:constraints instance) m)
      :instance {:matrix (mapv #(mapv q %) (:matrix standard)) :capacities (mapv q (:capacities standard)) :margins (mapv q (:margins standard))
                 :plan (mapv q (:plan standard)) :prices (mapv q (:prices standard)) :sense :maximize
                 :note (when (not= standard checked)
@@ -176,18 +195,40 @@
                          (str "Check that --checkpoint names a kernel checkpoint (.edn.gz) that exists; "
                               "without the flag lp-view uses " default-checkpoint ", run from the Rainbow directory."))))))
 
+(defn usage-problem
+  "What is wrong with an lp-view command line, or nil: more than three positional arguments, an
+  unknown option, --checkpoint without a path or given twice (B-20261031-2: an unknown option was
+  ignored, so a misspelt --checkpoint certified against the default checkpoint)."
+  [args]
+  (let [[pos] (view/parse-args args #{"--offline"})]
+    (or (when (> (count pos) 3)
+          (str "more than an instance, a certificate and an output directory: " (string/join " " pos)))
+        (loop [[a & more] args seen #{}]
+          (cond (nil? a) nil
+                (= "--offline" a) (recur more seen)
+                (= "--checkpoint" a)
+                (cond (or (nil? (first more)) (string/starts-with? (first more) "-"))
+                      (str "--checkpoint needs a path -- Write --checkpoint <path to checkpoint.edn.gz>, or leave the flag out to use "
+                           default-checkpoint ".")
+                      (seen a) "--checkpoint given twice"
+                      :else (recur (rest more) (conj seen a)))
+                (string/starts-with? a "-") (str "unknown option " a " (the options are --checkpoint <path> and --offline)")
+                :else (recur more seen))))))
+
 (defn run
   "lein lp-view: reads the files, checks the certificate, writes the page; returns the exit code (0
-  certified, 1 refused or failed, 2 usage). A file that is missing or not EDN, data of the wrong
-  shape and a checkpoint that does not replay each print one FAIL line saying what to check, and
-  nothing is written."
+  certified, 1 refused or failed, 2 usage). A usage error (no certificate named, an extra argument,
+  an unknown option, --checkpoint without a path) prints what is wrong and the usage line, and checks
+  nothing. A file that is missing or not EDN, data of the wrong shape and a checkpoint that does not
+  replay each print one FAIL line saying what to check, and nothing is written."
   [args]
-  (let [[[instance-path certificate-path out] opts] (view/parse-args args #{"--offline"})]
-    (if-not certificate-path
-      (do (println usage) 2)
+  (let [[[instance-path certificate-path out] opts] (view/parse-args args #{"--offline"})
+        problem (usage-problem args)]
+    (cond
+      problem (do (println (str "lp-view: " problem)) (println usage) 2)
+      (not certificate-path) (do (println usage) 2)
+      :else
       (try
-        (when (and (contains? opts :checkpoint) (not (string? (:checkpoint opts))))
-          (throw (failure "--checkpoint" "no path given" "Write --checkpoint <path to checkpoint.edn.gz>, or leave the flag out.")))
         (let [out (or out "lp-view")
               instance (read-map "instance" instance-path)
               certificate (read-map "certificate" certificate-path)

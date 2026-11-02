@@ -27,6 +27,7 @@
   retain a zero coefficient; the unconditional denotation law still holds.
 
   Native and axiom-free."
+  (:refer-clojure :exclude [reify])
   (:require [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.math.logic.function :as function]

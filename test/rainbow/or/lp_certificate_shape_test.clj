@@ -3,7 +3,8 @@
   shape -- a plan or price vector of the wrong length, a ragged matrix, an entry that is not an exact
   rational -- before any other work, naming the field; and `lein lp-view` turns every bad input of the
   2026-10-30 nightly E2E (D31-D39) into one FAIL line and exit 1, never a raw exception and never a
-  page that calls a malformed certificate certified."
+  page that calls a malformed certificate certified. A usage error (an unknown option, --checkpoint
+  without a path) exits 2 and checks nothing (B-20261031-2)."
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]
@@ -150,8 +151,7 @@
            ["empty certificate file" [instance-text ""] "not an EDN map"]
            ["certificate that is not a map" [instance-text "[3 0]"] "not an EDN map"]
            ["checkpoint that does not exist (D39)" [instance-text "{:plan [3 0] :prices [0 2]}" "--checkpoint" "artifacts/no/such/checkpoint.edn.gz"]
-            "--checkpoint artifacts/no/such/checkpoint.edn.gz"]
-           ["--checkpoint without a path" [instance-text "{:plan [3 0] :prices [0 2]}" "--checkpoint"] "no path given"]]]
+            "--checkpoint artifacts/no/such/checkpoint.edn.gz"]]]
     (testing label
       (let [[code output written?] (apply lp-view instance-text certificate-text flags)
             lines (remove string/blank? (string/split-lines output))]
@@ -173,3 +173,29 @@
   (let [[code output] (lp-view instance-text nil)]
     (is (= 1 code))
     (is (string/includes? output "FAIL lp-view certificate"))))
+
+(deftest lp-view-usage-errors-exit-2-and-check-nothing
+  ;; B-20261031-2 (E2E D64, D67, D70): a misspelt --checkpoint was ignored and the certificate was
+  ;; certified against the default checkpoint, exit 0; --checkpoint without a path exited 1
+  (let [certificate "{:plan [3 0] :prices [0 2]}"]
+    (doseq [[flags problem]
+            [[["--chekpoint" "artifacts/no/such/checkpoint.edn.gz"] "lp-view: unknown option --chekpoint"]
+             [["--ofline"] "lp-view: unknown option --ofline"]
+             [["--checkpoint"] "lp-view: --checkpoint needs a path"]
+             [["--checkpoint" "--offline"] "lp-view: --checkpoint needs a path"]
+             [["--checkpoint" "a.edn.gz" "--checkpoint" "b.edn.gz"] "lp-view: --checkpoint given twice"]
+             [["extra"] "lp-view: more than an instance, a certificate and an output directory"]]]
+      (testing (pr-str flags)
+        (let [[code output written?] (apply lp-view instance-text certificate flags)]
+          (is (= 2 code) output)
+          (is (string/includes? output problem) output)
+          (is (re-find #"(?m)^usage: lein lp-view " output) output)
+          (is (not (re-find #"FAIL|certify:|Exception" output)) output)
+          (is (not written?) "nothing is written")))))
+  (testing "a missing value names what to write"
+    (let [[_ output] (lp-view instance-text "{:plan [3 0] :prices [0 2]}" "--checkpoint")]
+      (is (string/includes? output "Write --checkpoint <path to checkpoint.edn.gz>, or leave the flag out to use artifacts/ahof/d63-eligibility-traces/checkpoint.edn.gz") output)))
+  (testing "no certificate named is still the bare usage line"
+    (let [code (atom nil) output (with-out-str (reset! code (lp-view/run ["instance.edn"])))]
+      (is (= 2 @code))
+      (is (re-find #"^usage: lein lp-view " output) output))))

@@ -219,10 +219,11 @@
     (is (false? (:ok? (main/check-bundle (bundle) "bad"))))))
 
 (deftest bundle-command-needs-at-least-one-path
+  ;; a usage error: exit 2 (main/exit-code), not the 1 of a failed check
   (doseq [args [[] ["--reductions" "1000"]]]
     (let [result (atom nil)]
       (with-out-str (reset! result (#'main/verify-bundles-main args)))
-      (is (false? @result)))))
+      (is (= :usage @result)))))
 
 (deftest bundle-command-reports-every-file-after-read-errors
   ;; real files: bundles are read as bytes (binary or EDN), so this exercises the actual reader

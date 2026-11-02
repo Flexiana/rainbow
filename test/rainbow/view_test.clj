@@ -139,6 +139,20 @@
         (is (not (re-find #"fonts\.googleapis|cdnjs|cdn\.jsdelivr" html)))
         (is (string/includes? html (subs (slurp "scripts/cytoscape-3.28.1.min.js") 0 200)))))))
 
+;; ---------------------------------------------------------------- the graph library's options (B-20261030-5)
+
+(deftest the-explorer-page-sets-no-cytoscape-option-that-warns
+  ;; cytoscape 3.28 logs a console warning on load for a custom wheelSensitivity and for the
+  ;; deprecated `width: label` style; a generated page must load with an empty console
+  (let [html (slurp "scripts/proof-explorer.html")
+        graph (subs html (string/index-of html "cytoscape({") (string/index-of html "// ------------------------------------------------------------ tooltip"))]
+    (testing "no custom wheel sensitivity"
+      (is (not (string/includes? html "wheelSensitivity"))))
+    (testing "no `label` value for width or height; a node is sized by measuring its label"
+      (is (not (re-find #"[\"']?(width|height)[\"']?\s*:\s*[\"']label[\"']" html)))
+      (is (string/includes? graph "\"width\": labelWidth"))
+      (is (string/includes? graph "measureText(n.data(\"label\"))")))))
+
 ;; ---------------------------------------------------------------- a proof bundle on the default checkpoint
 
 (def ^:private default-checkpoint "artifacts/ahof/d63-eligibility-traces/checkpoint.edn.gz")
@@ -177,3 +191,67 @@
     (testing "a bundle whose base does not reproduce its environment id is refused"
       (let [wrong (assoc-in bundle [:base :environment-id] "sha256:0")]
         (is (thrown-with-msg? clojure.lang.ExceptionInfo #"environment id" (view/explore! (write wrong) dir {})))))))
+
+;; ---------------------------------------------------------------- lein explore: refusals and usage errors (B-20261030-1)
+
+(defn- run-explore
+  "[exit code, printed text] of lein explore with args."
+  [& args]
+  (let [code (atom nil) text (with-out-str (reset! code (view/run args)))] [@code text]))
+
+(defn- actionable-failure?
+  "One FAIL explore line naming `what`, with a reason and something to check, and no raw exception."
+  [text what]
+  (and (re-find #"(?m)^FAIL explore .+ -- .+ -- .*\b(Check|Name|Use)\b" text)
+       (string/includes? text what)
+       (not (re-find #"Execution error|Full report at|Exception|\.java:\d+" text))))
+
+(deftest explore-refuses-wrong-inputs-with-one-actionable-line
+  (let [dir (tmp-dir "refusals") _ (.mkdirs (io/file dir))
+        file (fn [name content] (let [f (io/file dir name)] (spit f content) (str f)))
+        out (str (io/file dir "page"))
+        missing (str (io/file dir "does-not-exist.edn"))
+        truncated (file "truncated.edn" "{:rainbow.bundle/schema-version 1 :base {:checkpoint \"artifacts/x")
+        not-a-bundle (file "not-a-bundle.edn" "{:hello \"not a bundle\"}")
+        future-schema (file "future.edn" "{:rainbow.bundle/schema-version 99}")
+        no-base (file "no-base.edn" (pr-str {:rainbow.bundle/schema-version 1 :base {:checkpoint "artifacts/no/such/checkpoint.edn.gz" :modules []}
+                                             :claims {} :declarations []}))
+        checkpoint-file (file "small.edn.gz" "")]
+    (testing "the E2E inputs (D23-D28): each is one FAIL line, exit 1, and nothing is written"
+      (doseq [[args what why] [[[missing out] missing #"no such file"]
+                               [[truncated out] truncated #"not readable: EOF while reading"]
+                               [[not-a-bundle out] not-a-bundle #"neither a proof bundle .* nor a checkpoint"]
+                               [[future-schema out] future-schema #"schema 99"]
+                               [[no-base out] "the bundle's base checkpoint artifacts/no/such/checkpoint.edn.gz" #"could not be read"]
+                               [["artifacts/no/such/checkpoint.edn.gz" out] "artifacts/no/such/checkpoint.edn.gz" #"no such file"]
+                               [[dir out] dir #"is a directory"]]]
+        (let [[code text] (apply run-explore args)]
+          (is (= 1 code) text)
+          (is (actionable-failure? text what) text)
+          (is (re-find why text) text)
+          (is (not (re-find #"checkpoint did not replay" text)) text)
+          (is (not (.exists (io/file out))) "no page is written"))))
+    (testing "an unknown --roots name, an unknown or non-proof --modules namespace, a missing --lean file"
+      (with-redefs [checkpoint/load-checkpoint (constantly {:status :replayed :environment (direct-term-corpus/build-environment)})]
+        (doseq [[args what why] [[[checkpoint-file out "--roots" "no.such/theorem"] "--roots no.such/theorem" #"no declaration named no.such/theorem"]
+                                 [[checkpoint-file out "--modules" "rainbow.no.such.module"] "module rainbow.no.such.module" #"could not be loaded"]
+                                 [[checkpoint-file out "--modules" "rainbow.render"] "module rainbow.render" #"not a proof module"]
+                                 [[checkpoint-file out "--lean" missing] (str "--lean " missing) #"no such file"]
+                                 [[checkpoint-file out "--loop" truncated] (str "--loop " truncated) #"not readable EDN"]]]
+          (let [[code text] (apply run-explore args)]
+            (is (= 1 code) text)
+            (is (actionable-failure? text what) text)
+            (is (re-find why text) text)
+            (is (not (.exists (io/file out))) "no page is written")))
+        (testing "and the same checkpoint with a known root is written, exit 0"
+          (let [[code text] (run-explore checkpoint-file out "--roots" (str (:name (first direct-term-corpus/proofs))))]
+            (is (= 0 code) text)
+            (is (.exists (io/file out "index.html")))))))))
+
+(deftest explore-usage-errors-exit-2
+  (doseq [args [[] ["--offline"] ["b.edn" "out" "extra"] ["b.edn" "--roots"] ["b.edn" "--roots" "--offline"]
+                ["b.edn" "--root" "x"] ["b.edn" "--tree-cap" "abc"] ["b.edn" "--tree-cap" "0"]]]
+    (let [[code text] (apply run-explore args)]
+      (is (= 2 code) (pr-str args))
+      (is (string/includes? text "usage: lein explore") (pr-str args))
+      (is (not (re-find #"FAIL|Exception" text)) (pr-str args)))))

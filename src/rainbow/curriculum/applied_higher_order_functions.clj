@@ -24,10 +24,17 @@
     :expected-count 64
     :path "catalog/03_validation_algorithms.md"}])
 
+(defn- lower-case-root
+  "clojure.string/lower-case in Locale/ROOT. Plain lower-case follows the JVM's default locale,
+  so under a Turkish locale \"I\" became a dotless \"\u0131\"
+  and catalog names such as \"Iteration\" lost their letters or their dependency cone (B-20261030-15)."
+  [s]
+  (.toLowerCase (str s) java.util.Locale/ROOT))
+
 (defn- pattern-keyword [value]
   (-> value
       string/trim
-      string/lower-case
+      lower-case-root
       (string/replace #"[^a-z0-9]+" "-")
       (string/replace #"(^-|-$)" "")
       keyword))
@@ -89,7 +96,7 @@
      :algorithms algorithms}))
 
 (defn- dependency-cone [{:ahof/keys [name patterns]}]
-  (let [label (string/lower-case name)
+  (let [label (lower-case-root name)
         pattern-set (set patterns)]
     (cond
       (re-find #"particle swarm|genetic|evolution|population|firefly|cuckoo|cma-es"

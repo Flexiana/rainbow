@@ -26,7 +26,12 @@
 
   reproduce: rebuild a milestone's checkpoint from source (its own `run`, from its
   recorded input checkpoint), write nothing, and compare the rebuilt checkpoint's
-  content id with the recorded one's."
+  content id with the recorded one's.
+
+  Exit codes, the same for every command: 0 when everything checked; 1 when a check
+  failed or an input was refused (a FAIL line says what to check); 2 on a usage error
+  (a missing argument, an option without its value, an unknown command), which prints
+  the usage line and checks nothing."
   (:require [clojure.edn :as edn]
             [clojure.string :as string]
             [rainbow.bundle.binary :as binary]
@@ -37,6 +42,20 @@
             [rainbow.environment :as environment]
             [rainbow.kernel :as kernel]
             [rainbow.persistence :as persistence]))
+
+(defn- fmt
+  "format in Locale/ROOT: the same digits and separators (1,234,567 bytes and 10.8 s) whatever the
+  JVM's default locale is, as the documentation shows them."
+  [pattern & args]
+  (String/format java.util.Locale/ROOT pattern (to-array args)))
+
+(defn- usage!
+  "Prints a usage error (what is wrong, when known, then the usage line) and returns :usage, which
+  run turns into exit code 2."
+  [problem usage-line]
+  (when problem (println problem))
+  (println usage-line)
+  :usage)
 
 (def default-checkpoint
   "A late checkpoint of the open corpus; every module in the public tree installs on it."
@@ -84,7 +103,8 @@
     (let [extend (ns-resolve ns-sym 'extend-environment)
           ids-fn (or (ns-resolve ns-sym 'theorem-ids) (ns-resolve ns-sym 'definition-ids))]
       (cond
-        (nil? extend) {:namespace ns-sym :error "no extend-environment (not a proof module)"}
+        (nil? extend) {:namespace ns-sym :error (str "no extend-environment (not a proof module) -- Name a proof module, "
+                                                     "such as rainbow.math.finite.rational-argmax.")}
         :else
         (let [env (extend base)]
           (when-not (and (map? env)
@@ -113,9 +133,14 @@
                                           (proof-is-reflexivity? env (:rainbow/value d)) :unfolding
                                           :else :for-all))}))}))))
     (catch Throwable t
-      {:namespace ns-sym
-       :error (str (.getMessage t) " "
-                   (pr-str (-> t ex-data :result :error (select-keys [:alias :error/category]))))})))
+      (let [data (-> t ex-data :result :error (select-keys [:alias :error/category]))]
+        {:namespace ns-sym
+         :error (str (or (.getMessage t) (.getName (class t)))
+                     (when (seq data) (str " " (pr-str data)))
+                     (if (and (instance? java.io.FileNotFoundException t) (re-find #"Could not locate" (str (.getMessage t))))
+                       (str " -- Check the namespace name (such as rainbow.math.finite.rational-argmax), and run from"
+                            " the Rainbow directory so that its source file is on the classpath.")
+                       " -- The module did not install; fix the error above or name another module."))}))))
 
 (defn- ok? [result]
   (and (not (:error result))
@@ -133,7 +158,7 @@
                           (get c :unfolding 0) " definitional unfoldings, "
                           (get c :instance 0) " worked instances)"))))
         (doseq [{:keys [name status axioms scope]} theorems]
-          (println (format "       %-9s %-9s %s%s" (clojure.core/name status) (clojure.core/name scope) name
+          (println (fmt "       %-9s %-9s %s%s" (clojure.core/name status) (clojure.core/name scope) name
                            (if (seq axioms) (str "  axioms: " (pr-str (sort axioms))) "  axiom-free")))))))
 
 (declare verify-namespace-main verify-bundles-main)
@@ -151,21 +176,39 @@
               " Check that the checkpoint path exists and the file is readable and complete."
               " Use a checkpoint compatible with this version and inspect the replay category above.")))
 
+(def ^:private verify-usage "usage: lein verify [--checkpoint path] <namespace> ...")
+
+(defn- option? [arg] (string/starts-with? arg "-"))
+
+(defn- verify-namespace-args
+  "{:checkpoint path :namespaces [..]} of lein verify's arguments, or {:problem ..} for a usage error:
+  --checkpoint without a path or given twice, --bundle after the first argument, or any other
+  option (B-20261031-1: a misspelt --checkpoint was read as a namespace name)."
+  [args]
+  (loop [[a & more] args cp nil nss []]
+    (cond
+      (nil? a) {:checkpoint (or cp default-checkpoint) :namespaces nss}
+      (= "--checkpoint" a) (cond (or (nil? (first more)) (option? (first more))) {:problem "verify: --checkpoint needs a path"}
+                                 cp {:problem "verify: --checkpoint given twice"}
+                                 :else (recur (rest more) (first more) nss))
+      (= "--bundle" a) {:problem "verify: --bundle must be the first argument"}
+      (option? a) {:problem (str "verify: unknown option " a " (the options are --checkpoint <path>, and --bundle as the first argument)")}
+      :else (recur more cp (conj nss a)))))
+
 (defn- verify-namespace-main [args]
-  (let [[cp nss] (if (= "--checkpoint" (first args))
-                   [(second args) (drop 2 args)]
-                   [default-checkpoint args])]
-    (when (empty? nss)
-      (println "usage: lein verify [--checkpoint path] <namespace> ...")
-      (System/exit 2))
-    (let [loaded (checkpoint/load-checkpoint cp)]
-      (if-not (= :replayed (:status loaded))
-        (do (println "FAIL" (checkpoint-failure-message cp loaded)) false)
-        (do
-          (println "checkpoint" cp "replayed: environment" (:environment/id loaded) "names" (:names/id loaded))
-          (let [results (mapv #(verify-namespace (:environment loaded) (symbol %)) nss)]
-            (run! print-result results)
-            (every? ok? results)))))))
+  (let [{cp :checkpoint nss :namespaces problem :problem} (verify-namespace-args args)]
+    (cond
+      problem (usage! problem verify-usage)
+      (empty? nss) (usage! nil verify-usage)
+      :else
+      (let [loaded (checkpoint/load-checkpoint cp)]
+        (if-not (= :replayed (:status loaded))
+          (do (println "FAIL" (checkpoint-failure-message cp loaded)) false)
+          (do
+            (println "checkpoint" cp "replayed: environment" (:environment/id loaded) "names" (:names/id loaded))
+            (let [results (mapv #(verify-namespace (:environment loaded) (symbol %)) nss)]
+              (run! print-result results)
+              (every? ok? results))))))))
 
 ;; ---------------------------------------------------------------- proof bundles
 
@@ -352,36 +395,79 @@
       (binary/unpack data)
       (edn/read-string (String. ^bytes data "UTF-8")))))
 
+(defn- read-bundle-file
+  "read-bundle, with a missing, unreadable or incomplete file refused by a message that says what to
+  check."
+  [path]
+  (let [f (java.io.File. ^String path)]
+    (cond (not (.exists f)) (throw (ex-info "no such file -- Check the path of the bundle file." {}))
+          (.isDirectory f) (throw (ex-info "is a directory, not a bundle file -- Name the bundle file." {})))
+    (try (read-bundle path)
+         (catch Exception e
+           (throw (ex-info (str "not readable as a proof bundle: " (or (.getMessage e) (.getName (class e)))
+                                " -- Check that the file is complete (a copy cut short ends in the middle of a form)"
+                                " and is a proof bundle: EDN, or the binary file share-bundle --binary writes.")
+                           {}))))))
+
+(def ^:private verify-bundle-usage "usage: lein verify --bundle [--reductions N] <bundle> ...")
+
+(defn- reductions-option
+  "[reductions paths] of verify --bundle's arguments; throws a usage error when --reductions is not
+  followed by a positive whole number."
+  [args]
+  (if (= "--reductions" (first args))
+    (let [value (second args) n (some-> value parse-long)]
+      (when-not (and n (pos? n))
+        (let [problem (str "verify --bundle: --reductions needs a positive whole number" (when value (str ", not " value)))]
+          (throw (ex-info problem {:usage verify-bundle-usage :problem problem}))))
+      [n (drop 2 args)])
+    [nil args]))
+
 (defn- verify-bundles-main [args]
   ;; mapv, not for: every bundle is checked and reported even after one fails
   (try
-    (let [[reductions paths] (if (= "--reductions" (first args))
-                               [(Long/parseLong (second args)) (drop 2 args)]
-                               [nil args])]
+    (let [[reductions paths] (reductions-option args)]
       (when (empty? paths)
-        (throw (ex-info "usage: lein verify --bundle [--reductions N] <bundle> ..." {})))
+        (throw (ex-info "no bundle named" {:usage verify-bundle-usage :problem nil})))
+      (when-let [o (first (filter option? paths))]
+        (let [problem (if (= "--reductions" o)
+                        "verify --bundle: --reductions must come before the bundle files"
+                        (str "verify --bundle: unknown option " o " (the option is --reductions N, before the bundle files)"))]
+          (throw (ex-info problem {:usage verify-bundle-usage :problem problem}))))
       (every? true?
               (mapv (fn [path]
                       (let [started (System/nanoTime)
                             {:keys [ok? error claims names]}
-                            (try (check-bundle (read-bundle path) reductions)
+                            (try (check-bundle (read-bundle-file path) reductions)
                                  (catch Throwable t {:ok? false :error (.getMessage t)}))]
                         (println (if ok? "OK   " "FAIL ") path (if error (str "-- " error) "")
-                                 (format "(%.1f s)" (/ (- (System/nanoTime) started) 1e9)))
+                                 (fmt "(%.1f s)" (/ (- (System/nanoTime) started) 1e9)))
                         (when (= :not-pinned names)
                           (println "       names not pinned: the bundle records no names id (made before 1.4.4)"))
                         (doseq [[alias {:keys [status axioms problems]}] claims]
-                          (println (format "       %-9s %s%s%s" (some-> status name) alias
+                          (println (fmt "       %-9s %s%s%s" (some-> status name) alias
                                            (if (seq axioms) (str "  axioms: " (pr-str (sort axioms))) "  axiom-free")
                                            (if (seq problems) (str "  -- " (string/join "; " problems)) ""))))
                         (flush)
                         (boolean ok?)))
                     paths)))
     (catch Throwable t
-      (println "FAIL --" (.getMessage t))
-      false)))
+      (if-let [usage (:usage (ex-data t))]
+        (usage! (:problem (ex-data t)) usage)
+        (do (println "FAIL --" (.getMessage t)) false)))))
 
 ;; ---------------------------------------------------------------- share-bundle, show
+
+(def ^:private share-bundle-usage "usage: lein share-bundle [--binary|--plain] in out")
+
+(defn- same-file?
+  "True when out names the file in names: the same path by any spelling, a symbolic link to it, or
+  a hard link to it."
+  [in out]
+  (let [i (java.io.File. ^String in) o (java.io.File. ^String out)]
+    (or (= (.getCanonicalPath i) (.getCanonicalPath o))
+        (and (.exists i) (.exists o)
+             (java.nio.file.Files/isSameFile (.toPath i) (.toPath o))))))
 
 (defn- share-bundle-main
   "lein share-bundle in out writes the shared encoding of a bundle as EDN; --binary
@@ -392,17 +478,27 @@
                         "--plain" [:plain (rest args)]
                         "--binary" [:binary (rest args)]
                         [:shared args])]
-    (if-not (and in out)
-      (do (println "usage: lein share-bundle [--binary|--plain] in out") false)
+    (cond
+      (not (and in out (= 2 (count (if (#{"--plain" "--binary"} (first args)) (rest args) args)))
+                (not-any? #(string/starts-with? % "--") [in out])))
+      (usage! (when (seq args) (str "share-bundle: expected an input and an output file, got: " (string/join " " args)))
+              share-bundle-usage)
+      ;; B-20261101-1: writing over the input replaced it, and its size was then read from the output
+      (same-file? in out)
+      (usage! (str "share-bundle: the output " out " is the input file " in
+                   " -- Name a different output file; share-bundle never writes over its input.")
+              share-bundle-usage)
+      :else
       (try
-        (let [bundle (read-bundle in)
+        (let [in-bytes (.length (java.io.File. ^String in))
+              bundle (read-bundle in)
               as-shared (if (shared/shared? bundle) bundle (shared/encode bundle))]
           (case mode
             :plain (write-bundle! out (if (shared/shared? bundle) (shared/decode bundle) bundle))
             :shared (write-bundle! out as-shared)
             :binary (java.nio.file.Files/write (.toPath (java.io.File. ^String out)) (binary/pack as-shared)
                                                ^"[Ljava.nio.file.OpenOption;" (make-array java.nio.file.OpenOption 0)))
-          (println (format "%s (%,d bytes) -> %s (%,d bytes)" in (.length (java.io.File. ^String in))
+          (println (fmt "%s (%,d bytes) -> %s (%,d bytes)" in in-bytes
                            out (.length (java.io.File. ^String out))))
           true)
         (catch Exception e
@@ -414,22 +510,36 @@
   "lein show alias [module namespace ...] prints the statement of a declaration for
   humans: a view of the term the kernel checks, not the term itself."
   [args]
-  (let [[alias & modules] args]
-    (if-not alias
-      (do (println "usage: lein show some/theorem [module namespace ...]") false)
+  (let [[alias & modules] args
+        show-usage "usage: lein show some/theorem [module namespace ...]"]
+    (cond
+      (not alias) (usage! nil show-usage)
+      (some option? args) (usage! (str "show: unknown option " (first (filter option? args))
+                                       " (show takes a declaration name, then the module namespaces that install it)")
+                                  show-usage)
+      :else
       (try
         (let [loaded (checkpoint/load-checkpoint default-checkpoint)
               env (reduce (fn [env m]
                             (let [s (symbol m)]
                               (require s)
-                              ((ns-resolve s 'extend-environment) env)))
+                              (if-let [extend (ns-resolve s 'extend-environment)]
+                                (extend env)
+                                ;; B-20261031-3: calling the missing var printed a NullPointerException message
+                                (throw (ex-info (str m " is not a proof module (it defines no extend-environment)")
+                                                {:show/check (str "Name the module that installs the declaration, such as"
+                                                                  " rainbow.math.finite.rational-argmax.")})))))
                           (:environment loaded) modules)]
           (if-not (environment/resolve-id env (symbol alias))
-            (do (println "unknown declaration" alias "-- name the module that installs it") false)
+            (do (println "FAIL show" alias "-- unknown declaration"
+                         (if (seq modules) (str "(not in the default checkpoint or " (string/join ", " modules) ")") "in the default checkpoint")
+                         "-- Check the name, and name the module that installs it: lein show some/theorem rainbow.math.finite.rational-argmax")
+                false)
             (do (render/print-statement env (symbol alias)) true)))
         (catch Exception e
-          (println "FAIL show" alias "--" (.getMessage e)
-                   "-- Check the module names and that their source files are available on the classpath.")
+          (println "FAIL show" alias "--" (.getMessage e) "--"
+                   (or (:show/check (ex-data e))
+                       "Check the module names and that their source files are available on the classpath."))
           false)))))
 
 ;; ---------------------------------------------------------------- reproduce
@@ -453,7 +563,8 @@
           missing (first (remove #(.exists (java.io.File. (str %))) args))]
       (cond
         (not (and run (seq args) (every? some? args) recorded-path))
-        {:namespace ns-sym :error "not a reproducible milestone (needs run, a default-<arg> for each of its arguments, checkpoint-path)"}
+        {:namespace ns-sym :error (str "not a reproducible milestone (needs run, a default-<arg> for each of its arguments, checkpoint-path)"
+                                       " -- Name a milestone namespace, such as rainbow.milestones.ahof-bisection, or run lein reproduce --all.")}
         missing
         {:namespace ns-sym :needs missing}
         :else
@@ -473,7 +584,12 @@
                         (= claimed-id rebuilt-id)
                         (= rebuilt-id (:checkpoint/id recorded)))})))
     (catch Throwable t
-      {:namespace ns-sym :error (str (.getMessage t))})))
+      {:namespace ns-sym
+       :error (str (or (.getMessage t) (.getName (class t)))
+                   (if (and (instance? java.io.FileNotFoundException t) (re-find #"Could not locate" (str (.getMessage t))))
+                     (str " -- Check the namespace name (such as rainbow.milestones.ahof-bisection; lein reproduce --all rebuilds"
+                          " every milestone), and run from the Rainbow directory so that its source file is on the classpath.")
+                     " -- The milestone did not rebuild; fix the error above or name another milestone."))})))
 
 (defn reproducible-milestones
   "Every namespace under src/rainbow/milestones that has the reproducible shape (found by reading the
@@ -490,34 +606,57 @@
        sort
        (mapv symbol)))
 
+(def ^:private reproduce-usage "usage: lein reproduce <milestone-namespace> ... | lein reproduce --all")
+
 (defn- reproduce-main [args]
-  (let [nss (if (= ["--all"] (vec args)) (reproducible-milestones) (map symbol args))]
-    (when (empty? nss)
-      (println "usage: lein reproduce <milestone-namespace> ... | lein reproduce --all")
-      (System/exit 2))
-    (let [results (mapv (fn [n] (let [r (reproduce-milestone n)]
-                                  (cond
-                                    (:error r) (println "FAIL " n "--" (:error r))
-                                    (:needs r) (println "NEEDS" n "--" (:needs r) "not found (scripts/export-mathlib-catalog.sh makes the Mathlib catalog)")
-                                    :else (println (if (:match? r) "SAME " "DIFF ") n
-                                                   (str "recorded " (:recorded-id r) " (" (name (:recorded-status r)) ")"
-                                                        (when-not (:match? r) (str ", rebuilt " (:rebuilt-id r))))))
-                                  (flush)
-                                  r))
-                        nss)
-          needs (count (filter :needs results))]
-      (println (count (filter :match? results)) "of" (- (count results) needs) "rebuilt checkpoints match their recorded content id"
-               (if (pos? needs) (str "(" needs " not rebuilt: an input file is missing)") ""))
-      (every? #(or (:match? %) (:needs %)) results))))
+  (let [all? (= ["--all"] (vec args))
+        option (first (filter option? args))
+        nss (delay (if all? (reproducible-milestones) (map symbol args)))]
+    (cond
+      (and (not all?) (some #{"--all"} args))
+      (usage! "reproduce: --all rebuilds every milestone; give either --all or milestone namespaces" reproduce-usage)
+      ;; B-20261031-1: an unknown option was read as a namespace name
+      (and (not all?) option)
+      (usage! (str "reproduce: unknown option " option " (the one option is --all, alone)") reproduce-usage)
+      ;; no arguments, or --all where no milestone is found (not run from the Rainbow directory)
+      (empty? @nss) (usage! nil reproduce-usage)
+      :else
+      (let [results (mapv (fn [n] (let [r (reproduce-milestone n)]
+                                    (cond
+                                      (:error r) (println "FAIL " n "--" (:error r))
+                                      (:needs r) (println "NEEDS" n "--" (:needs r) "not found (scripts/export-mathlib-catalog.sh makes the Mathlib catalog)")
+                                      :else (println (if (:match? r) "SAME " "DIFF ") n
+                                                     (str "recorded " (:recorded-id r) " (" (name (:recorded-status r)) ")"
+                                                          (when-not (:match? r) (str ", rebuilt " (:rebuilt-id r))))))
+                                    (flush)
+                                    r))
+                          @nss)
+            needs (count (filter :needs results))]
+        (println (count (filter :match? results)) "of" (- (count results) needs) "rebuilt checkpoints match their recorded content id"
+                 (if (pos? needs) (str "(" needs " not rebuilt: an input file is missing)") ""))
+        (every? #(or (:match? %) (:needs %)) results)))))
+
+(defn exit-code
+  "The exit code of a command's result: 0 when everything checked (true), 2 on a usage error
+  (:usage), 1 otherwise (a failed check or a refused input)."
+  [result]
+  (cond (= :usage result) 2 (true? result) 0 :else 1))
+
+(defn run
+  "lein verify ... | lein reproduce ... | lein share-bundle ... | lein show ... (the first argument
+  names the command); returns the exit code (see exit-code)."
+  [[command & args]]
+  (exit-code (case command
+               "verify" (verify-main args)
+               "reproduce" (reproduce-main args)
+               "share-bundle" (share-bundle-main args)
+               "show" (show-main args)
+               (usage! (when command (str "unknown command: " command))
+                       "usage: lein verify ... | lein reproduce ... | lein share-bundle ... | lein show ..."))))
 
 (defn -main
-  "lein verify ... | lein reproduce ... (the first argument names the command)."
-  [& [command & args]]
-  (let [ok (case command
-             "verify" (verify-main args)
-             "reproduce" (reproduce-main args)
-             "share-bundle" (share-bundle-main args)
-             "show" (show-main args)
-             (do (println "usage: lein verify ... | lein reproduce ... | lein share-bundle ... | lein show ...") (System/exit 2)))]
+  "Runs the command named by the first argument and exits with its exit code."
+  [& args]
+  (let [code (run args)]
     (shutdown-agents)
-    (System/exit (if ok 0 1))))
+    (System/exit code)))

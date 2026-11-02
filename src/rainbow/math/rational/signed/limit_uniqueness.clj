@@ -12,6 +12,7 @@
 
   Native, axiom-free, and built on the D63 signed convergence/order and nnrat
   Archimedean toolkits."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]

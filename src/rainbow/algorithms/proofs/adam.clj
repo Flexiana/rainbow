@@ -18,6 +18,7 @@
   Scope (measured by the kernel): this module has 2 worked instances (statements about specific values) and 1 definitional unfoldings (true by unfolding a definition).
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.adam`
   prints this classification."
+  (:refer-clojure :exclude [denominator numerator])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

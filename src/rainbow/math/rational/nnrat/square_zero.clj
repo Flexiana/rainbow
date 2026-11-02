@@ -3,6 +3,7 @@
   unfolds to a nat equality (num a)*(den zero) = 0 with den zero = succ zero, so it is (num a)*1;
   strip the *1 (multiply-one-right), apply nat/square-zero-implies-zero to (num m)^2, then rebuild
   m ~ 0 by substituting num m = 0."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]

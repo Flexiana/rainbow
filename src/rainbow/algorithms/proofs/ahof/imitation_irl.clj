@@ -11,6 +11,7 @@
   a decidable order on expert-vs-(alternative+margin) with soundness; max-entropy is a
   normalized weight (divide); structure search reuses nnrat-minmax max.
   Native and axiom-free; chains nnrat-convex on d63."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

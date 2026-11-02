@@ -20,6 +20,7 @@
   the base level -- the gateway to nnrat additive at-most cancellation (step 3) and
   signed order transitivity (step 4).  Native and axiom-free; chains
   rainbow.math.nat.at-most-cancellation (-> nat-ring) on d63."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

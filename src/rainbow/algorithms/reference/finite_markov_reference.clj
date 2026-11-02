@@ -2,7 +2,8 @@
   "Pure exact-rational reference operations for finite row kernels.
 
   This is an executable reference for certificate generation, not a proof of
-  arbitrary Clojure implementations.  Formal guarantees live in the proof modules under rainbow.math and rainbow.algorithms.proofs.")
+  arbitrary Clojure implementations.  Formal guarantees live in the proof modules under rainbow.math and rainbow.algorithms.proofs."
+  (:refer-clojure :exclude [iterate]))
 
 (defn row-sum [row] (reduce + row))
 

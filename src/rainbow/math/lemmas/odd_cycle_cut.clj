@@ -1,6 +1,7 @@
 (ns rainbow.math.lemmas.odd-cycle-cut
   "General lemmas: odd cycle cut. The mathematical facts the corresponding checks rest on,
   each checked by the kernel."
+  (:refer-clojure :exclude [disj])
   (:require [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.proposition :as proposition]

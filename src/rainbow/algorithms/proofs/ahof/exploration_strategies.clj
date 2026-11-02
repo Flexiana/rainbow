@@ -10,6 +10,7 @@
 
   Greedy exploitation reuses rainbow.math.rational.nnrat.minmax (max dominates both arms).
   Native and axiom-free; chains nnrat-minmax on the d63 base."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

@@ -5,15 +5,15 @@ This file lists that code. Everything not on this list is checked BY it: the
 mathematics, the tactics that build proofs, the proof search -- a bug anywhere
 else produces a rejected proof, never an accepted false one.
 
-## The kernel: 1,661 lines
+## The kernel: 1,706 lines
 
 | file | lines | role |
 |---|---|---|
-| `src/rainbow/kernel.clj` | 1248 | type checking, definitional equality, reduction, natural-number literals and the six native nat operations, inductive types and recursors, universe levels |
+| `src/rainbow/kernel.clj` | 1272 | type checking, definitional equality, reduction, natural-number literals and the six native nat operations, inductive types and recursors, universe levels; refuses a content id that already names different content |
 | `src/rainbow/term.clj` | 320 | the term language: binders, substitution (skipping subterms with nothing to change), de Bruijn indices, universe-level equivalence |
 | `src/rainbow/environment.clj` | 48 | declarations stored by content id; name resolution |
-| `src/rainbow/canonical.clj` | 45 | canonical encoding and the content hash that names every declaration |
-| **total** | **1661** | |
+| `src/rainbow/canonical.clj` | 66 | canonical encoding and the content hash that names every declaration; refuses strings that are not well-formed UTF-16 |
+| **total** | **1706** | |
 
 The size is pinned: a release test (`v1_release_test`) fails if these four files
 change length, so growth in the trusted base is always a visible, deliberate
@@ -29,6 +29,9 @@ and recursors carry the axioms their types mention.
 1.5.0 grew it to 1,661 lines with lazy conversion in type checking: `check*` first compares types
 by head reduction, congruence on equal heads and one-at-a-time unfolding, and falls back to the
 unchanged full-normalisation comparison when that fails.
+1.5.2 grew it to 1,706 lines to make content ids name one declaration each (see the CHANGELOG):
+the canonical encoding refuses strings that are not well-formed UTF-16, and adding a declaration or
+an inductive type whose content id already names different content is refused.
 
 The nested inductive-binder identity repair changes content IDs for affected
 blocks. Earlier kernels could conflate distinct field types and accept an

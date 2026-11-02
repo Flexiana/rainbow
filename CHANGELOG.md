@@ -3,6 +3,76 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.2] - 2026-11-02
+
+A kernel fix: two different declarations could share one content id, and with the opt-in
+proof-irrelevance profile this let the kernel accept a proof of falsity. Also two fixes to the LP
+certificate checker for very large numbers, results that no longer depend on the JVM's locale, and
+clearer command-line errors. Please upgrade. The trusted base grows from 1,661 to 1,706 lines.
+
+### Security
+- **Two different declarations could get the same content id (B-20261030-16).** A content id is
+  the SHA-256 of the UTF-8 bytes of a declaration's canonical encoding, and Java encodes an
+  unpaired UTF-16 surrogate (for example a universe parameter named `"\uD800"`) as `?`. So a
+  declaration with a universe parameter named `"\uD800"` and the same declaration with one named
+  `"?"` were different but had one id. `add-declaration` then replaced the stored declaration under
+  that id, while declarations already checked against the first one stayed in the environment. With
+  the opt-in proof-irrelevance axiom, which is consistent on its own, a proof of falsity built this
+  way was accepted. The canonical encoding now refuses strings that are not well-formed UTF-16
+  (`:canonical/unsupported-value`), and `add-declaration` and `add-inductive-block` refuse an id
+  that already names different content (`:kernel/content-id-collision`). Every content id is
+  unchanged: no declaration in this repository uses such a name, and the default checkpoint replays
+  to the same 2,197 declaration ids and 12 block ids.
+
+### Who is affected
+- Whether a term built from well-formed names type-checks: not affected.
+- An environment, checkpoint or bundle that contains a name with an unpaired surrogate (crafted
+  input; Rainbow's own tools produce none): verify it with 1.5.2, which refuses it. Without the
+  proof-irrelevance profile no proof of falsity from this defect is known, but the kernel could
+  judge a term against a declaration other than the one it had been checked with.
+
+### Changed
+- **Every command exits 2 on a usage error and 1 on a failed check** (B-20261028-5). An unknown
+  option is now a usage error for `lein verify`, `lein reproduce`, `lein show` and `lein lp-view`
+  (B-20261031-1, B-20261031-2). Before, `verify` and `reproduce` read it as a namespace name, and
+  `lp-view` ignored it, so a misspelt `--checkpoint` certified against the default checkpoint.
+  `lp-view --checkpoint` without a path is a usage error too.
+- `lein share-bundle` refuses an output path that is its input (also through a link), instead of
+  overwriting the input (B-20261101-1).
+
+### Fixed
+- **LP certificates with very large numbers.** `certify` with `:preflight? true` threw on an
+  instance whose combined denominator exceeds 2^63; the integer scale is now exact beyond `Long`,
+  and stays a `Long` below it, so the content ids of existing certificates are unchanged
+  (B-20261027-1). A coefficient of -2^63 threw an integer overflow; it is now encoded exactly
+  (B-20261028-10).
+- **Results no longer depend on the JVM's default locale.** Audit rows, CLI numbers, generated
+  names and lower-casing used the default locale, so under a Turkish or Arabic locale names failed
+  to match and numbers changed digits; the decoder's `:source-sha` could have 63 hex digits
+  instead of 64. All now use `Locale/ROOT` (B-20261028-7, B-20261030-10, B-20261030-13,
+  B-20261030-14, B-20261030-15).
+- `lein explore` prints one `FAIL` line for a missing file or bad input instead of a raw exception
+  (B-20261030-1); Proof Explorer pages load without console warnings (B-20261030-5); the LP
+  Certificate Viewer no longer shows an empty legend or runs a coefficient into a variable name
+  (B-20261030-4, B-20261030-6).
+- Clearer errors: `lein verify` for common mistakes (B-20261028-4), `lein reproduce` and
+  `lein show` refusals say what to check (B-20261030-11, B-20261030-12), and `lein show` on a
+  namespace that is not a proof module says so instead of a NullPointerException (B-20261031-3).
+- No `WARNING ... already refers to` lines in command output (B-20261028-6, B-20261030-9).
+- Docs: how to make a proof bundle, with a worked example (B-20261028-8); CONTRIBUTING runs the
+  suite five namespaces per JVM (B-20261031-4).
+
+### Verified
+- Generated from internal 675dd2a6. Every store id is the SHA-256 of its declaration (6,309 of
+  6,309; Pro 6,323 of 6,323), the same declarations as 1.5.1, and no content id changed.
+- `lein reproduce --all` in this repository: 53 of 53 rebuilt checkpoints match their recorded
+  content ids. The four milestones that need the Mathlib catalog were not rebuilt.
+- The full suite of this repository, five namespaces per JVM: 1,029 namespaces, 2,262 tests,
+  62,861 assertions, 0 failures, 0 errors. Pro: 1,332 namespaces, 4,190 tests, 331,263
+  assertions, 0 failures, 0 errors.
+- Internally, the kernel fix passed the full suite (2,331 namespaces, 6,106 tests, 0 failures).
+- The trusted base grows from 1,661 to 1,706 lines; the CI line-count check pins 1,706.
+
 ## [1.5.1] - 2026-10-30
 
 A fix to what the LP certificate checker certifies, error messages for `lein lp-view`, and a

@@ -16,7 +16,7 @@ privately to the maintainers first (see the contact address on
 ## Changing code
 
 - **The kernel** (`kernel.clj`, `term.clj`, `environment.clj`, `canonical.clj`)
-  is pinned at 1,661 lines by a release test. A change there needs a stated
+  is pinned at 1,706 lines by a release test. A change there needs a stated
   reason and a review of what it adds to the trusted base.
 - **A new theorem** goes in a module under `src/rainbow/math/` or
   `src/rainbow/algorithms/proofs/` with `theorem-specs`, `deps`, `install`,
@@ -34,9 +34,10 @@ privately to the maintainers first (see the contact address on
 
 ## Running the tests
 
-`lein test <namespace>` for one namespace; `scripts/run-suite-chunked.sh 40` for
-the whole suite in fresh JVMs (it takes hours; many tests replay large
-checkpoints through the kernel).
+`lein test <namespace>` for one namespace; `scripts/run-suite-chunked.sh 5` for
+the whole suite in fresh JVMs of five namespaces each (it takes hours; many tests
+replay large checkpoints through the kernel). Keep the chunks at five: twenty
+proof environments in one JVM have exhausted a 5 GB heap.
 
 ## License
 

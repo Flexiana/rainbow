@@ -13,6 +13,7 @@
   p1=p2=1 -> (5-2)*1 - 1*1 = 2, by signed cross-product reflexivity.
   Chains signed-multiply; native and axiom-free on D63. A proved native
   module; formal ledger crediting is the separate catalog follow-up."
+  (:refer-clojure :exclude [denominator numerator])
   (:require [rainbow.module :as module]
             [rainbow.environment :as environment]
             [rainbow.math.logic.function :as function]

@@ -1,5 +1,6 @@
 (ns rainbow.algorithms.reference.confidence-interval
-  "Executable confidence interval, matching the proved Rainbow containment.")
+  "Executable confidence interval, matching the proved Rainbow containment."
+  (:refer-clojure :exclude [contains?]))
 
 (defn contains? [value lower upper]
   (and (<= lower value) (<= value upper)))

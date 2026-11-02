@@ -11,6 +11,7 @@
   nearest reuses min (dominated by both candidates); the pheromone dynamics is an
   add/multiply composition with a worked instance.
   Native and axiom-free; chains nnrat-minmax on d63."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

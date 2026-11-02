@@ -11,6 +11,7 @@
   Selection/optimism/priority reuse nnrat-minmax; the certainty-equivalence value and
   the replay Bellman target reuse nnrat/wsum2 and nnrat add/multiply.
   Native and axiom-free; chains nnrat-convex (-> wsum2, minmax) on d63."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

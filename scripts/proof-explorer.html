@@ -247,7 +247,7 @@ ul.tree li { margin: 2px 0 }
     $("#depth").disabled = !hiddenDeps && !(levels === Infinity && all > closure(current, 2).length);
     $("#depth").dataset.next = hiddenDeps ? nextLevels : 2;
     if (!cy) {
-      cy = cytoscape({container: $("#cy"), wheelSensitivity: 0.25, minZoom: 0.15, maxZoom: 3, boxSelectionEnabled: false});
+      cy = cytoscape({container: $("#cy"), minZoom: 0.15, maxZoom: 3, boxSelectionEnabled: false});
       cy.on("tap", "node", e => go(e.target.id()));
       cy.on("mouseover", "node", e => showTip(byId[e.target.id()], e.originalEvent));
       cy.on("mousemove", "node", e => moveTip(e.originalEvent));
@@ -260,12 +260,18 @@ ul.tree li { margin: 2px 0 }
     cy.layout({name: "dagre", rankDir: ids.length > 16 ? "LR" : "TB", nodeSep: 18, rankSep: 46, padding: 24, animate: false}).run();
     cy.fit(undefined, 30);
   }
+  // a node's box is as wide as its label; cytoscape deprecates `width: label`, so measure the text in the node's font
+  const measure = document.createElement("canvas").getContext("2d");
+  function labelWidth(n) {
+    measure.font = (n.data("focus") ? "600 11px" : "10px") + " 'IBM Plex Mono', monospace";
+    return Math.ceil(measure.measureText(n.data("label")).width);
+  }
   function graphStyle() {
     const fill = {free: css("--free-soft"), uses: css("--uses-soft"), axiom: css("--axiom-soft")};
     const edge = {free: css("--free"), uses: css("--uses"), axiom: css("--axiom")};
     return [
       {selector: "node", style: {"shape": "round-rectangle", "label": "data(label)", "font-family": "IBM Plex Mono, monospace", "font-size": 10,
-        "color": css("--fg"), "text-valign": "center", "text-halign": "center", "width": "label", "height": 22, "padding": "7px",
+        "color": css("--fg"), "text-valign": "center", "text-halign": "center", "width": labelWidth, "height": 22, "padding": "7px",
         "background-color": n => fill[n.data("st")], "border-width": 1.5, "border-color": n => edge[n.data("st")]}},
       {selector: "node[kind = 'definition']", style: {"background-color": css("--surface"), "border-color": css("--def"), "border-style": "solid"}},
       {selector: "node[kind = 'inductive'], node[kind = 'constructor'], node[kind = 'recursor']", style: {"background-color": css("--surface"), "border-color": css("--ind"), "border-style": "dashed"}},

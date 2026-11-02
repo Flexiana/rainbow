@@ -40,7 +40,10 @@
 ;; max (succ u) u = succ u and the groupings of a three-way max are equal.
 ;; 1.5.0: 1548 -> 1661, lazy conversion in kernel.clj check* (kernel-lazy-defeq, +113;
 ;; Jiri approved 2026-10-26).
-(def trusted-base-lines 1661)
+;; 1.5.2: 1661 -> 1706 (Jiri approved 2026-11-01), content-id collisions refused
+;; (B-20261030-16): canonical.clj rejects unpaired surrogates (+21), kernel.clj refuses an id that
+;; already names different content in add-declaration and add-inductive-block (+24).
+(def trusted-base-lines 1706)
 
 (def trusted-paths
   ["src/rainbow/canonical.clj" "src/rainbow/term.clj"

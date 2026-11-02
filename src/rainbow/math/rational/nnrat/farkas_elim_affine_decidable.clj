@@ -14,6 +14,7 @@
   the dual once t exceeds the optimum. So this is the constructive
   Farkas alternative for affine-row systems, the certificate half of
   strong duality. Native proof data, axiom-free."
+  (:refer-clojure :exclude [reduced])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

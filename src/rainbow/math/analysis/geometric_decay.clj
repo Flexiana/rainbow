@@ -14,6 +14,7 @@
 
   The full convergence theorem (the limit is the unique fixed point) is built on
   top of this with a rational convergence modulus."
+  (:refer-clojure :exclude [denominator numerator])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

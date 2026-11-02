@@ -3,6 +3,7 @@
   signed no-zero-divisors: nnrat/positive p reduces to strict-below 0 (numerator p), and
   numerator(k*k) is defeq numerator k * numerator k, so this is exactly nat/multiply-positive
   on the numerator."
+  (:refer-clojure :exclude [numerator])
   (:require [rainbow.module :as module]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]

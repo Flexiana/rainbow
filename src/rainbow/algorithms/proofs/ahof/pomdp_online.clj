@@ -11,6 +11,7 @@
   Reuses nnrat-minmax (monotone backup, bracket via transitivity) and nnrat/wsum2 +
   convex-at-most-max (interpolation / expectation).
   Native and axiom-free; chains nnrat-convex on d63."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

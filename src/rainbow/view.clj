@@ -4,7 +4,11 @@
   values), for a checkpoint or a proof bundle and a set of root theorems.
 
       lein explore <checkpoint.edn.gz | bundle.edn> [out-dir] [--roots a,b] [--modules ns,..]
-                   [--lean results.edn] [--loop proofs.edn] [--loop-report report.edn] [--offline]
+                   [--lean results.edn] [--loop proofs.edn] [--loop-report report.edn] [--tree-cap n] [--offline]
+
+  Exit code 0 when the page is written and every claim checks, 1 when a claim does not match its
+  record or an input is refused (one `FAIL explore <what> -- <why> -- <what to check>` line, and
+  nothing is written), 2 on a usage error.
 
   Nothing here is trusted. Every declaration shown was added by the kernel (checkpoint replay,
   module install, bundle replay or kernel/add-declaration of a loop proof); every statement is
@@ -75,17 +79,53 @@
 
 ;; ---------------------------------------------------------------- what to show
 
-(defn- refuse! [message] (throw (ex-info message {:error/category :view/refused})))
+(defn- refuse!
+  "Throws a refusal that lein explore prints as one line, `FAIL explore <what> -- <why> -- <check>`:
+  why is the message; what failed defaults to the source file; check says what to do next."
+  ([why] (refuse! why nil nil))
+  ([why what check]
+   (throw (ex-info why (cond-> {:error/category :view/refused}
+                         what (assoc :explore/what what)
+                         check (assoc :explore/check check))))))
+
+(defn- reason
+  "A throwable's message, with its cause's when that says more (a compile error wraps the real one)."
+  [^Throwable e]
+  (let [m (or (.getMessage e) (.getName (class e)))
+        c (some-> (.getCause e) .getMessage)]
+    (if (and c (not (string/includes? m c))) (str m ": " c) m)))
 
 (defn install-modules
-  "Installs each module (a namespace with extend-environment) in order, as bundles record them."
+  "Installs each module (a namespace with extend-environment) in order, as bundles record them.
+  Refuses, naming the module, when it cannot be loaded or is not a proof module."
   [env modules]
-  (reduce (fn [env m] (let [s (symbol (str m))] (require s) ((ns-resolve s 'extend-environment) env))) env modules))
+  (reduce (fn [env m]
+            (let [s (symbol (str m)) what (str "module " m)]
+              (try (require s)
+                   (catch Exception e
+                     (refuse! (str "could not be loaded: " (reason e)) what
+                              (str "Check the namespace name (such as rainbow.math.finite.rational-argmax, not a file "
+                                   "path), and run explore from the Rainbow directory so that its source is on the classpath."))))
+              (if-let [extend (ns-resolve s 'extend-environment)]
+                (extend env)
+                (refuse! "not a proof module: it defines no extend-environment" what
+                         "Name the proof module that installs the declarations, as lein verify takes it."))))
+          env modules))
 
-(defn- replayed [path]
-  (let [r (checkpoint/load-checkpoint path)]
-    (when-not (= :replayed (:status r)) (refuse! (str "checkpoint did not replay: " path " " (:message r))))
-    (:environment r)))
+(defn- replayed
+  "The environment of the checkpoint at path, replayed by the kernel; refuses with the replay's reason."
+  ([path] (replayed path (str "checkpoint " path)))
+  ([path what]
+   (let [r (checkpoint/load-checkpoint path)]
+     (when-not (= :replayed (:status r))
+       (let [category (:error/category r)]
+         (if (and (keyword? category) (= "checkpoint-read-failed" (name category)))
+           (refuse! (str "could not be read: " (:message r)) what
+                    (str "Check that the checkpoint exists and is complete; checkpoint paths such as artifacts/... are "
+                         "relative to the Rainbow directory, so run explore from there."))
+           (refuse! (str "did not replay (" (pr-str (or category (:status r))) ")" (some->> (:message r) (str ": "))) what
+                    "Use a checkpoint written by this version of Rainbow; lein verify --checkpoint <path> <module> shows the same replay."))))
+     (:environment r))))
 
 (defn- read-file [path]
   (let [data (java.nio.file.Files/readAllBytes (.toPath (io/file path)))
@@ -94,21 +134,50 @@
       (unpack data)
       (edn/read-string {:default tagged-literal} (String. ^bytes data "UTF-8")))))
 
+(def ^:private bundle-schemas "The proof bundle schema versions explore replays." #{1 2 3})
+
+(def ^:private source-check
+  (str "explore takes a checkpoint (.edn.gz) or a proof bundle (.edn, or the binary file share-bundle --binary "
+       "writes); lein verify --bundle <file> checks a bundle on its own."))
+
+(defn- read-source
+  "The value in a source file that is not gzipped (a bundle, or a plain checkpoint); refuses, naming
+  the file, when it is missing, a directory or not readable."
+  [path]
+  (let [f (io/file (str path))]
+    (cond (not (.exists f)) (refuse! "no such file" (str path) (str "Check the path. " source-check))
+          (.isDirectory f) (refuse! "is a directory, not a file" (str path) (str "Name the file. " source-check)))
+    (when-not (string/ends-with? (str path) ".gz")
+      (try (read-file path)
+           (catch Exception e
+             (refuse! (str "not readable: " (reason e)) (str path)
+                      (str "Check that the file is complete (a copy cut short ends in the middle of a form). " source-check)))))))
+
 (defn- replay-bundle
   "The bundle's base (checkpoint and modules, to the recorded environment and names ids), then every
   entry through kernel/add-declaration or kernel/add-inductive-block. Refuses on any mismatch."
   [bundle]
-  (let [bundle (if (= 3 (:rainbow.bundle/schema-version bundle)) ((requiring-resolve 'rainbow.bundle.shared/decode) bundle) bundle)
+  (let [bundle (if (= 3 (:rainbow.bundle/schema-version bundle))
+                 (try ((requiring-resolve 'rainbow.bundle.shared/decode) bundle)
+                      (catch Exception e
+                        (refuse! (str "the shared encoding could not be decoded: " (reason e)) nil
+                                 "Check that the bundle is complete; lein verify --bundle <file> reports the same.")))
+                 bundle)
         {:keys [checkpoint modules environment-id names-id]} (:base bundle)
-        base (install-modules (replayed checkpoint) modules)]
-    (when-not (= environment-id (environment/environment-id base)) (refuse! "the bundle's base modules did not reproduce its environment id"))
-    (when (and names-id (not= names-id (persistence/names-id base))) (refuse! "the bundle's base names do not match its names id"))
+        base (install-modules (replayed checkpoint (str "the bundle's base checkpoint " checkpoint)) modules)
+        verify "lein verify --bundle <file> checks the bundle and says which part does not match."]
+    (when-not (= environment-id (environment/environment-id base))
+      (refuse! "the bundle's base modules did not reproduce its environment id" nil
+               (str "The bundle was made on other versions of its base modules. " verify)))
+    (when (and names-id (not= names-id (persistence/names-id base)))
+      (refuse! "the bundle's base names do not match its names id" nil (str "The bundle was made on other base names. " verify)))
     (binding [kernel/*reduction-budget* (max kernel/*reduction-budget* (get-in bundle [:check :reductions] 0))]
       {:base-env base :checkpoint checkpoint :modules modules
        :env (reduce (fn [env {:entry/keys [kind value]}]
                       (let [r (if (= :inductive-block kind) (kernel/add-inductive-block env value) (kernel/add-declaration env value))]
                         (if (= :accepted (:status r)) (:environment r)
-                            (refuse! (str "the kernel rejected bundle entry " (or (:rainbow/id value) (:rainbow/aliases value)))))))
+                            (refuse! (str "the kernel rejected bundle entry " (or (:rainbow/id value) (:rainbow/aliases value)))
+                                     nil (str "The bundle does not check. " verify)))))
                     base (or (:entries bundle) (for [d (:declarations bundle)] {:entry/kind :declaration :entry/value d})))
        :claims (:claims bundle)})))
 
@@ -124,16 +193,31 @@
                                                      :rainbow/dependencies (into (term/constants type) (term/constants proof))
                                                      :rainbow/provenance {:origin :native :producer :proving-loop}
                                                      :rainbow/schema-version 1})]
-                  (if (= :accepted (:status r)) (:environment r) (refuse! (str "the kernel rejected loop proof " alias))))))
+                  (if (= :accepted (:status r)) (:environment r)
+                      (refuse! (str "the kernel rejected loop proof " alias) "--loop"
+                               "Check that the --loop file is the proving loop's record for this checkpoint and modules.")))))
           env entries))
 
 (defn load-source
-  "{:env :base-env :source :claims} for a checkpoint path (with modules installed) or a proof bundle."
+  "{:env :base-env :source :claims} for a checkpoint path (with modules installed) or a proof bundle.
+  A file that is missing or unreadable, or holds neither a bundle nor a checkpoint, is refused."
   [path {:keys [modules loop]}]
-  (let [value (when-not (string/ends-with? (str path) ".gz") (read-file path))
-        r (if (and (map? value) (:rainbow.bundle/schema-version value))
-            (assoc (replay-bundle value) :kind "bundle")
-            (let [base (replayed path)] {:kind "checkpoint" :checkpoint path :modules modules :base-env base :env (install-modules base modules)}))]
+  (let [value (read-source path)
+        gz? (string/ends-with? (str path) ".gz")
+        r (cond (and (map? value) (contains? value :rainbow.bundle/schema-version))
+                (let [v (:rainbow.bundle/schema-version value)]
+                  (when-not (bundle-schemas v)
+                    (refuse! (str "a proof bundle of schema " (pr-str v) ", which this version does not read (it reads "
+                                  (string/join ", " (sort bundle-schemas)) ")")
+                             (str path) "Use the Rainbow release that wrote the bundle, or a newer one."))
+                  (assoc (replay-bundle value) :kind "bundle"))
+                (or gz? (and (map? value) (or (contains? value :rainbow.checkpoint/schema-version)
+                                              (contains? value :rainbow.checkpoint/id))))
+                (let [base (replayed path)] {:kind "checkpoint" :checkpoint path :modules modules :base-env base :env (install-modules base modules)})
+                :else
+                (refuse! (str "neither a proof bundle (no :rainbow.bundle/schema-version) nor a checkpoint (no :rainbow.checkpoint/id), but "
+                              (cond (nil? value) "an empty file" (map? value) "a map without either key" :else (str "a " (.getSimpleName (class value)))))
+                         (str path) (str "Check that this is the file you meant: " source-check)))]
     (assoc r :env (install-loop-proofs (:env r) loop)
            :source {:kind (:kind r) :path (str path) :checkpoint (str (:checkpoint r)) :modules (mapv str (:modules r))})))
 
@@ -368,30 +452,93 @@
           :else (recur more (conj pos a) opts))))
 
 (defn- csv [s] (when s (remove string/blank? (string/split s #","))))
-(defn- read-edn [path] (when path (edn/read-string {:default tagged-literal} (slurp path))))
+
+(defn- read-edn
+  "The EDN value in the file named by option flag (--lean, --loop, --loop-report), nil without the
+  flag; refuses, naming the flag and file, when the file is missing or not readable EDN."
+  [flag path]
+  (when path
+    (let [what (str "--" (name flag) " " path) f (io/file path)]
+      (when-not (.isFile f)
+        (refuse! (if (.exists f) "is a directory, not a file" "no such file") what (str "Check the path of the --" (name flag) " file.")))
+      (try (edn/read-string {:default tagged-literal} (slurp f))
+           (catch Exception e
+             (refuse! (str "not readable EDN: " (reason e)) what
+                      (str "Check that the --" (name flag) " file is complete EDN, with every bracket closed.")))))))
 
 (defn explore!
-  "Loads `path` (checkpoint or bundle) and writes the Proof Explorer to out-dir. Returns the data."
+  "Loads `path` (checkpoint or bundle) and writes the Proof Explorer to out-dir. Returns the data.
+  Throws an ex-info with :error/category :view/refused when an input is wrong (see run)."
   [path out-dir {:keys [roots modules lean loop loop-report offline tree-cap]}]
-  (let [loop (read-edn loop)
+  (let [loop (read-edn :loop loop)
+        lean (read-edn :lean lean)
+        loop-report (read-edn :loop-report loop-report)
         {:keys [env base-env source claims]} (load-source path {:modules (csv modules) :loop loop})
-        lean (read-edn lean)
-        roots (if roots (for [a (csv roots)] (or (environment/resolve-id env (symbol a)) (refuse! (str "no declaration named " a))))
-                  (keep #(environment/resolve-id env %) (keys claims)))
-        data (explorer-data env {:roots roots :lean (if (map? lean) (:results lean) lean) :loop loop :loop-report (read-edn loop-report)
+        roots (if roots
+                (for [a (csv roots)]
+                  (or (environment/resolve-id env (symbol a))
+                      (refuse! (str "no declaration named " a) (str "--roots " a)
+                               (str "Check the name (lein show <name> <module> prints a declaration); a declaration that "
+                                    "a proof module adds needs that module in --modules."))))
+                (keep #(environment/resolve-id env %) (keys claims)))
+        roots (doall roots)
+        data (explorer-data env {:roots roots :lean (if (map? lean) (:results lean) lean) :loop loop :loop-report loop-report
                                  :source source :base-env base-env :claims claims :tree-cap (if tree-cap (parse-long tree-cap) 600)})]
-    (write-page! out-dir "scripts/proof-explorer.html" "data.json" data offline)
+    (try (write-page! out-dir "scripts/proof-explorer.html" "data.json" data offline)
+         (catch Exception e
+           (refuse! (reason e) (str "-> " out-dir)
+                    "Check that the output directory is writable, and run explore from the Rainbow directory (it reads scripts/proof-explorer.html).")))
     data))
 
-(defn -main [& args]
+(def ^:private usage
+  "usage: lein explore <checkpoint.edn.gz | bundle.edn> [out-dir] [--roots a,b] [--modules ns,..] [--lean f] [--loop f] [--loop-report f] [--tree-cap n] [--offline]")
+
+(def ^:private value-flags #{:roots :modules :lean :loop :loop-report :tree-cap})
+
+(defn usage-problem
+  "What is wrong with an explore command line, or nil: no source named, more than two positional
+  arguments, an unknown option, an option without its value, or a --tree-cap that is not a positive
+  whole number."
+  [args]
+  (let [[pos opts] (parse-args args #{"--offline"})]
+    (cond (empty? pos) "name a checkpoint or proof bundle"
+          (> (count pos) 2) (str "more than a source and an output directory: " (string/join " " pos))
+          :else (or (some (fn [[k v]]
+                            (cond (not (or (value-flags k) (= :offline k))) (str "unknown option --" (name k))
+                                  (and (value-flags k) (or (not (string? v)) (string/starts-with? v "--")))
+                                  (str "--" (name k) " needs a value")))
+                          opts)
+                    (when-let [c (:tree-cap opts)]
+                      (when-not (some-> (parse-long c) pos?) (str "--tree-cap needs a positive whole number, not " c)))))))
+
+(defn run
+  "lein explore: writes the Proof Explorer; returns the exit code (0 written and every claim checked,
+  1 a claim does not match its record or an input is refused, 2 a usage error). Every refusal (a
+  missing or unreadable file, a file that is neither a bundle nor a checkpoint, a checkpoint that does
+  not replay, an unknown root or module) prints one `FAIL explore <what> -- <why> -- <what to check>`
+  line, and no page is written."
+  [args]
   (let [[[path out] opts] (parse-args args #{"--offline"})]
-    (when-not path
-      (println "usage: lein explore <checkpoint.edn.gz | bundle.edn> [out-dir] [--roots a,b] [--modules ns,..] [--lean f] [--loop f] [--loop-report f] [--offline]")
-      (System/exit 2))
-    (let [out (or out "explorer") data (explore! path out opts) ex (filter :examples (:nodes data))]
-      (println "wrote" (str out "/index.html") "and data.json:" (count (:nodes data)) "declarations," (count (:roots data)) "roots,"
-               (count ex) "with kernel-computed examples," (count (filter :lean (:nodes data))) "Lean badges,"
-               (count (filter :how (:nodes data))) "loop badges")
-      (doseq [cl (:claims data)] (println "claim" (:alias cl) (if (:ok cl) "checked" "DOES NOT MATCH ITS RECORD")))
-      (shutdown-agents)
-      (System/exit (if (every? :ok (:claims data)) 0 1)))))
+    (if-let [problem (usage-problem args)]
+      (do (when path (println (str "explore: " problem))) (println usage) 2)
+      (try
+        (let [out (or out "explorer") data (explore! path out opts) ex (filter :examples (:nodes data))]
+          (println "wrote" (str out "/index.html") "and data.json:" (count (:nodes data)) "declarations," (count (:roots data)) "roots,"
+                   (count ex) "with kernel-computed examples," (count (filter :lean (:nodes data))) "Lean badges,"
+                   (count (filter :how (:nodes data))) "loop badges")
+          (doseq [cl (:claims data)] (println "claim" (:alias cl) (if (:ok cl) "checked" "DOES NOT MATCH ITS RECORD")))
+          (if (every? :ok (:claims data)) 0 1))
+        (catch clojure.lang.ExceptionInfo e
+          (let [{:explore/keys [what check] :as d} (ex-data e)]
+            (if (= :view/refused (:error/category d))
+              (println "FAIL explore" (or what path) "--" (.getMessage e) "--" (or check source-check))
+              (println "FAIL explore" path "--" (reason e) "-- Check the source file and the options; lein verify --bundle <file> checks a bundle on its own.")))
+          1)
+        (catch Throwable e
+          (println "FAIL explore" path "--" (reason e) "-- Check the source file and the options; lein verify --bundle <file> checks a bundle on its own.")
+          1)))))
+
+(defn -main [& args]
+  (let [code (run args)]
+    (shutdown-agents)
+    (System/exit code)))

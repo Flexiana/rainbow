@@ -17,6 +17,7 @@
   nat/multiply-distributes-add, nat/multiply-zero-right, nat/multiply-one-right
   (d63 + nat-add-order + half-monotone + geometric-sequence + nat-power +
   nat-distributive)."
+  (:refer-clojure :exclude [denominator])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

@@ -11,6 +11,7 @@
   interval bounds -- the universal guarantee behind the AHoF interval/reachability/box
   membership rows (V40, V41, V33, V34, V59, ...), which the catalog only exercised on
   worked instances. Native and axiom-free; chains rainbow.math.logic.boolean-and."
+  (:refer-clojure :exclude [contains?])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

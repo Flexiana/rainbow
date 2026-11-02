@@ -1,6 +1,7 @@
 (ns rainbow.algorithms.reference.lis
   "Executable longest increasing subsequence (patience sorting), matching the
-  proved extend decision.")
+  proved extend decision."
+  (:refer-clojure :exclude [extends?]))
 
 (defn extends? [tail element] (<= tail element))
 

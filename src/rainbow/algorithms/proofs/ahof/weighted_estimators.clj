@@ -12,6 +12,7 @@
   MIS reuses nnrat/wsum2 and inherits the convex bound (estimate <= max proposal when
   balance weights sum to one).  The rest are add/multiply compositions with worked
   instances.  Native and axiom-free; chains nnrat-convex (-> wsum2, minmax) on d63."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

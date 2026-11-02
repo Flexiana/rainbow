@@ -5,6 +5,103 @@ base: which checkpoint and modules to start from, every new declaration with its
 term, and the claims (aliases, content ids, axiom closures). `lein verify --bundle`
 replays it through the kernel alone.
 
+## Making a bundle
+
+There is no `lein` command that makes a bundle; you make one with two library
+calls, `rainbow.main/proof-bundle` and `rainbow.main/write-bundle!`, from a REPL
+(`lein repl`) or from a script. The bundle holds every declaration that is in your
+environment and not in the base, so the steps are: replay the base, install your
+proofs on it, name the theorems you claim.
+
+This example bundles the eight theorems of the proof module
+`rainbow.math.rational.nnrat.identities` on top of the default checkpoint. Save it
+as `make-bundle.clj` in the repository root:
+
+```clojure
+(require '[rainbow.main :as main]
+         '[rainbow.checkpoint :as checkpoint]
+         '[rainbow.math.rational.nnrat.identities :as identities])
+
+(let [loaded (checkpoint/load-checkpoint main/default-checkpoint)
+      _ (assert (= :replayed (:status loaded)) (pr-str (:status loaded)))
+      base (:environment loaded)                    ; the checkpoint, replayed by the kernel
+      env (identities/extend-environment base)      ; the base with the module's proofs installed
+      bundle (main/proof-bundle {:checkpoint main/default-checkpoint
+                                 :modules []
+                                 :base-env base
+                                 :env env
+                                 :claims (keys (identities/theorem-ids env))
+                                 :meta {:made-by "me"}})]
+  (main/write-bundle! "identities.edn" bundle)
+  (println "wrote identities.edn:" (count (:declarations bundle)) "declarations,"
+           (count (:claims bundle)) "claims"))
+
+(shutdown-agents)
+```
+
+and run it (the same forms, without `(shutdown-agents)`, work typed into `lein repl`):
+
+```sh
+lein run -m clojure.main make-bundle.clj
+```
+
+```
+wrote identities.edn: 8 declarations, 8 claims
+```
+
+The keys of `proof-bundle`:
+
+| key | what it is |
+|---|---|
+| `:checkpoint` | the checkpoint the base starts from, as a path in this repository; it is recorded in the bundle and replayed by whoever checks it |
+| `:modules` | proof modules installed on the checkpoint before your proofs, by namespace name; they become part of the base, not of the bundle |
+| `:base-env` | the environment the checkpoint and `:modules` give; `verify --bundle` rebuilds it and must reach the same environment id |
+| `:env` | the base with your declarations installed; everything in it that is not in `:base-env` goes into the bundle |
+| `:claims` | the aliases you claim; each is recorded with its content id and its axiom closure |
+| `:meta` | anything you like (who made it, how); not checked |
+| `:reductions` | optional: the kernel reduction budget to record, if your proofs needed a larger one than the default |
+
+For your own proofs, write them as a proof module ([modules.md](modules.md)) and
+call its `extend-environment` in place of the one above. `:claims` takes any list
+of aliases, such as `'[nnrat/add-zero-right]`; every declaration that is new in
+`:env` goes into the bundle, claimed or not. To bundle proofs on top of other
+modules, install those on the checkpoint first, pass the result as `:base-env` and
+their names as `:modules`.
+
+Check the bundle with the kernel alone, and convert it to the shared encoding
+described below (the output is from v1.5.1; the times vary):
+
+```sh
+lein verify --bundle identities.edn
+lein share-bundle identities.edn identities-shared.edn
+lein verify --bundle identities-shared.edn
+```
+
+```
+$ lein verify --bundle identities.edn
+OK    identities.edn  (5.3 s)
+       checked   nnrat/add-zero-left  axiom-free
+       checked   nnrat/add-zero-right  axiom-free
+       checked   nnrat/divide-one-right  axiom-free
+       checked   nnrat/multiply-one-left  axiom-free
+       checked   nnrat/multiply-one-right  axiom-free
+       checked   nnrat/multiply-zero-left  axiom-free
+       checked   nnrat/multiply-zero-right  axiom-free
+       checked   nnrat/reciprocal-one  axiom-free
+$ lein share-bundle identities.edn identities-shared.edn
+identities.edn (57,660 bytes) -> identities-shared.edn (11,037 bytes)
+$ lein verify --bundle identities-shared.edn
+OK    identities-shared.edn  (5.2 s)
+       checked   nnrat/add-zero-left  axiom-free
+       checked   nnrat/add-zero-right  axiom-free
+       checked   nnrat/divide-one-right  axiom-free
+       checked   nnrat/multiply-one-left  axiom-free
+       checked   nnrat/multiply-one-right  axiom-free
+       checked   nnrat/multiply-zero-left  axiom-free
+       checked   nnrat/multiply-zero-right  axiom-free
+       checked   nnrat/reciprocal-one  axiom-free
+```
+
 ## Two encodings of the same declarations
 
 | | plain (schema 1, 2) | shared (schema 3) |

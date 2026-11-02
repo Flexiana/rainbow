@@ -11,6 +11,7 @@
   worked-instance idiom of the 222 catalog. Native and axiom-free on D63;
   a proved native module at module level, not a formally credited ledger
   row (that pipeline is a separate follow-up per the catalog workflow)."
+  (:refer-clojure :exclude [denominator numerator])
   (:require [rainbow.module :as module]
             [rainbow.algorithms.proofs.counterfactual-objective-laws :as scale-sign]
             [rainbow.math.logic.function :as function]

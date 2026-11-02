@@ -1,6 +1,7 @@
 (ns rainbow.math.lemmas.pcmax-lower-bound
   "General lemmas: pcmax lower bound. The mathematical facts the corresponding checks rest on,
   each checked by the kernel."
+  (:refer-clojure :exclude [load])
   (:require [rainbow.math.logic.function :as f]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.sums.value-algebra :as s :refer [nat signed family call at sum mul le eqv refl sym trans below]]

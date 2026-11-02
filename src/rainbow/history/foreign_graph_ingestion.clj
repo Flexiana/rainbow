@@ -9,8 +9,11 @@
 (def declaration-count 1024)
 (def external-name "Foreign.Foundation.external")
 
-(defn- declaration-name [index]
-  (format "BulkFixture.Declaration.%04d" index))
+(defn- declaration-name
+  "The fixture's name for declaration index, with ASCII digits whatever the JVM's default locale
+  (an Arabic locale gave Arabic-Indic digits through format, so other names and ids)."
+  [index]
+  (String/format java.util.Locale/ROOT "BulkFixture.Declaration.%04d" (to-array [index])))
 
 (defn bulk-fixture []
   {:foreign/schema-version 1

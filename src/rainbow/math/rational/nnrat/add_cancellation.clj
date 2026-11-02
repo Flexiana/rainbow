@@ -17,6 +17,7 @@
 
   Native and axiom-free; chains rainbow.math.rational.nnrat.order-equivalence (-> nat cancellation,
   nat-ring) on d63."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]

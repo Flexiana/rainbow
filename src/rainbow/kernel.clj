@@ -749,6 +749,15 @@
                              (when (:rainbow/value base) (term-level-requirements environment (:rainbow/value base))))
           checked (cond-> checked (seq requirements) (assoc :rainbow/level-requirements requirements))
           existing (environment/declaration environment computed-id)
+          ;; An id names one declaration. Equal ids with different content mean the content id is not
+          ;; injective on this input (B-20261030-16); refuse instead of replacing what other
+          ;; declarations were checked against.
+          _ (when (and existing
+                       (not= (environment/semantic-declaration existing)
+                             (environment/semantic-declaration checked)))
+              (reject! :kernel/content-id-collision
+                       "A different declaration already has this content ID"
+                       {:id computed-id}))
           aliases (into (or (:rainbow/aliases existing) #{}) (:rainbow/aliases checked))
           checked (assoc checked :rainbow/aliases aliases)
           alias-conflict (some (fn [alias]
@@ -1172,7 +1181,22 @@
               (reject! :kernel/forged-inductive-block-id
                        "Supplied block ID does not match its normalized descriptor"
                        {:supplied supplied-id :computed block-id}))
+          ;; As in add-declaration (B-20261030-16): an id that already names other content is a
+          ;; collision; refuse it rather than replace what was checked against it. The same
+          ;; normalized block re-added (fresh aliases, renamed universes or binders) is accepted.
+          existing-block (environment/block environment block-id)
+          _ (when (and existing-block
+                       (not= (:block/semantic existing-block) (semantic-block-spec spec)))
+              (reject! :kernel/content-id-collision
+                       "A different inductive block already has this content ID"
+                       {:id block-id}))
           {:keys [members] :as generated} (block-members spec block-id)
+          _ (when-not existing-block
+              (doseq [member members]
+                (when (environment/declaration environment (:rainbow/id member))
+                  (reject! :kernel/content-id-collision
+                           "A declaration already has this new inductive member's content ID"
+                           {:id (:rainbow/id member)}))))
           aliases (mapcat :rainbow/aliases members)
           conflict (some (fn [alias]
                            (when-let [old (environment/resolve-id environment alias)]

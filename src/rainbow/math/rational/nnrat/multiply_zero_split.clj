@@ -3,6 +3,7 @@
   (num x)*1 = 0, and num(m1*m2) = (num m1)*(num m2), so the hypothesis strips to (num m1)*(num m2) = 0;
   nat/multiply-zero-split splits it, and each nat disjunct is rebuilt into an nnrat equivalence by the
   same substitution nnrat/square-zero uses. Generalizes nnrat/square-zero to distinct factors."
+  (:refer-clojure :exclude [num])
   (:require [rainbow.module :as module]
             [rainbow.math.logic.function :as function]
             [rainbow.math.milestone-support :as support]

@@ -21,6 +21,7 @@
   Scope (measured by the kernel): this module has 4 worked instances (statements about specific values).
   None of its theorems is a guarantee about the algorithm for all inputs; `lein verify rainbow.algorithms.proofs.ahof.confidence-interval`
   prints this classification."
+  (:refer-clojure :exclude [contains?])
   (:require [rainbow.module :as module]
             [rainbow.math.milestone-support :as support]
             [rainbow.math.logic.function :as function]))

@@ -29,7 +29,7 @@
     (is (= :none (:audited-machinery-cap compactness)) "machinery is reported, not capped (Jiri, 2026-10-27)")
     (is (pos? (:proof-corpus-lines compactness)))
     (is (= :none (:proof-corpus-cap compactness)))
-    (is (= 1661 (:trusted-base-lines compactness)))
+    (is (= 1706 (:trusted-base-lines compactness)))
     (testing "the split is exhaustive, so nothing escapes both buckets"
       (is (= (:production-source-lines compactness)
              (+ (:audited-machinery-lines compactness)
