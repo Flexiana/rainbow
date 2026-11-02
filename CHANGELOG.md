@@ -3,6 +3,46 @@
 All notable changes to Rainbow's open core. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.3] - 2026-11-02
+
+A fix to the LP certificate checker, which threw on valid certificates with numbers beyond a Java
+`long`, and corrections to three statements in the documentation, one of them about axioms. No
+kernel change; the trusted base stays at 1,706 lines.
+
+### Fixed
+- **`certify`, `bound` and `lein lp-view` threw on numbers beyond a Java `long`
+  (B-20261102-1).** The 1.5.2 entry for B-20261028-10 said a coefficient of -2^63 "is now encoded
+  exactly". That was true of the literal encoding only. The cost estimate `certify` runs first by
+  default, the rewrites for `:minimize` and equality rows, and the objective and dual values still
+  used overflow-checked arithmetic. So a -2^63 coefficient, or whole numbers whose products pass
+  2^63, made `certify` throw `ArithmeticException: long overflow` and `lein lp-view` print it as a
+  FAIL. That arithmetic is now exact, and a result for data that fits in a `long` is unchanged.
+
+### Documentation
+- **Which theorems use axioms (W45 review).** The README, `doc/claims.md` and
+  `doc/trusted-base.md` said that all but eight of the corpus's theorems are axiom-free, the
+  eight being in `set_boundary.clj` and `set_union.clj`. More theorems use axioms, for example
+  the two in `math/logic/proof_irrelevance.clj` and the four that
+  `test/rainbow/math/finite/powerset_test.clj` checks, and their tests have always asserted those
+  axioms; only the sentence was wrong. `lein verify` was right
+  throughout: it prints each theorem's own axioms.
+- `doc/trusted-base.md` said a tampered checkpoint does not replay. A checkpoint whose
+  declarations were altered does not; one edited to change what a name refers to can, as the
+  1.4.4 entry (A1) says. The sentence now says both.
+- `doc/tour.md` gave `kernel.clj` as 1,248 lines, the 1.5.0 figure; it is 1,272.
+
+### Verified
+- Generated from internal cc21172f. Every store id is the SHA-256 of its declaration (6,309 of
+  6,309; Pro 6,323 of 6,323), the same declarations as 1.5.2.
+- `lein reproduce --all` in this repository: 53 of 53 rebuilt checkpoints match their recorded
+  content ids. The four milestones that need the Mathlib catalog were not rebuilt.
+- In this repository, the 30 test namespaces that load the LP certificate checker or read the
+  changed documentation passed: 143 tests, 1,746 assertions, 0 failures, 0 errors. In Pro, the 173
+  that load the checker passed: 556 tests, 5,361 assertions, 0 failures, 0 errors.
+- Internally, the 201 test namespaces that load the checker passed: 694 tests, 7,077 assertions,
+  0 failures. The new test `rainbow.or.lp-min-long-test` fails with 6 errors on the 1.5.2 checker.
+- No kernel change: the trusted base stays at 1,706 lines.
+
 ## [1.5.2] - 2026-11-02
 
 A kernel fix: two different declarations could share one content id, and with the opt-in

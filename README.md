@@ -56,9 +56,10 @@ Rainbow was built to be exact about that gap rather than to hide it.
   hashes. Nothing in a report is a remembered number.
 - **No hidden axioms.** A logical principle enters only as an explicit axiom
   declaration, and the kernel computes each theorem's axiom profile. The
-  corpus's tests assert each covered theorem's profile: empty for all but eight
-  theorems in `set_boundary.clj` and `set_union.clj`, which use classical axioms
-  and are named with them.
+  corpus's tests assert each covered theorem's profile. Most are empty; the
+  theorems that use an axiom, such as the classical ones in `set_boundary.clj`
+  and `set_union.clj` and those in `math/logic/proof_irrelevance.clj` and
+  `math/finite/powerset.clj`, are tested with their axioms.
 - **No inflated statements.** `lein verify` classifies every theorem, using the
   kernel's type inference, as holding for all inputs, as a definitional unfolding
   (it quantifies over data but holds by reflexivity) or as a worked instance, and

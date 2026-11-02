@@ -6,7 +6,7 @@ from the repository root.
 
 ## 1. The kernel — what you have to trust
 
-`src/rainbow/kernel.clj` (1,248 lines), with `term.clj`, `environment.clj` and
+`src/rainbow/kernel.clj` (1,272 lines), with `term.clj`, `environment.clj` and
 `canonical.clj`: 1,706 lines in all. The functions that matter:
 
 | function | what it does |

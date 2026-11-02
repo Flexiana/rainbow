@@ -56,13 +56,17 @@ The kernel itself runs on, and so trusts:
 - **Elaboration** (`rainbow.elaborate`): it turns surface syntax into terms; the
   kernel checks the result.
 - **Checkpoints**: a checkpoint is a list of declarations, and loading one
-  re-checks every declaration. A tampered checkpoint does not replay.
+  re-checks every declaration, so a checkpoint whose declarations were altered
+  does not replay. Its names are not checked the same way: a checkpoint edited to
+  change what a name refers to can still replay, and only the printed names id
+  shows the change (CHANGELOG 1.4.4, A1).
 - **Axioms** are not hidden. A logical principle (for example a classical one)
   enters only as an explicit axiom declaration (`rainbow.math.profile`), and
   every theorem's axiom profile -- the axioms it transitively depends on -- is
   computed by the kernel (`kernel/axioms`). `lein verify` prints it per theorem,
-  and the tests assert each covered theorem's profile: empty, except eight named
-  classical theorems in `set_boundary.clj` and `set_union.clj`.
+  and the tests assert each covered theorem's profile. Most are empty; those that
+  are not (classical, proof-irrelevance and extensionality theorems) are named with
+  their axioms.
 
 ## Beyond Level 3
 

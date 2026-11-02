@@ -79,10 +79,12 @@ theorem states them. The module docstrings say which, and `lein verify` shows it
 ## Axioms
 
 Separately from scope, `lein verify` prints each theorem's axioms: the axioms it
-depends on, computed by the kernel. All but eight of the corpus's theorems report
-`axiom-free`; those eight, in `math/finite/set_boundary.clj` and `set_union.clj`,
-depend on `logic/excluded-middle` or `logic/proposition-extensionality`, and the
-coverage tests name them with their axioms. The default checkpoint store also
+depends on, computed by the kernel. Most of the corpus's theorems report
+`axiom-free`. Those that use an axiom, such as the classical theorems in
+`math/finite/set_boundary.clj` and `set_union.clj` (`logic/excluded-middle`,
+`logic/proposition-extensionality`), the two in `math/logic/proof_irrelevance.clj`
+and the powerset, subtype and finite-set theorems in `math/finite` and
+`math/logic`, are named with their axioms in their tests. The default checkpoint store also
 holds re-proofs of Mathlib statements, some of which use axioms; `lein verify`
 prints each theorem's own profile. See
 [`trusted-base.md`](trusted-base.md) for what the kernel itself relies on.

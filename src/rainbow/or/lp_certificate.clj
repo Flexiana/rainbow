@@ -233,7 +233,7 @@
                               rows)}))
 
 (defn- objective-value [{:keys [margins plan]}]
-  (reduce + 0 (map * (map rationalize margins) (map rationalize plan))))
+  (reduce +' 0 (map *' (map rationalize margins) (map rationalize plan))))
 
 ;; ---- problem sense ----------------------------------------------------------
 ;;
@@ -262,11 +262,11 @@
                         {:error/category :lp-certificate/equality-price-mismatch
                          :equalities (count equalities)
                          :equality-prices (count equality-prices)})))
-      (let [rows (mapcat (fn [{:keys [row]}] [(vec row) (mapv - row)]) equalities)
-            values (mapcat (fn [{:keys [value]}] [value (- value)]) equalities)
+      (let [rows (mapcat (fn [{:keys [row]}] [(vec row) (mapv -' row)]) equalities)
+            values (mapcat (fn [{:keys [value]}] [value (-' value)]) equalities)
             split (mapcat (fn [price]
                             (let [p (rationalize price)]
-                              [(max p 0) (max (- p) 0)]))
+                              [(max p 0) (max (-' p) 0)]))
                           equality-prices)]
         (-> instance
             (assoc :matrix (into (vec matrix) rows)
@@ -279,7 +279,7 @@
   [instance]
   (let [expanded (expand-equalities instance)]
     (if (minimizing? expanded)
-      (update expanded :margins #(mapv - %))
+      (update expanded :margins #(mapv -' %))
       expanded)))
 
 ;; ---- predicting cost before paying it ---------------------------------------
@@ -308,15 +308,15 @@
   worked instances in the test suite. Deliberately an OVER-estimate."
   2400)
 
-(defn- q-add [[n1 d1] [n2 d2]] [(+ (* n1 d2) (* n2 d1)) (* d1 d2)])
-(defn- q-mul [[n1 d1] [n2 d2]] [(* n1 n2) (* d1 d2)])
+(defn- q-add [[n1 d1] [n2 d2]] [(+' (*' n1 d2) (*' n2 d1)) (*' d1 d2)])
+(defn- q-mul [[n1 d1] [n2 d2]] [(*' n1 n2) (*' d1 d2)])
 (defn- g-add [[p1 n1] [p2 n2]] [(q-add p1 p2) (q-add n1 n2)])
 (defn- g-mul [[p1 n1] [p2 n2]]
   [(q-add (q-mul p1 p2) (q-mul n1 n2)) (q-add (q-mul p1 n2) (q-mul n1 p2))])
 
 (defn- g-of [value]
   (let [[n d] (rational-parts value)]
-    (if (neg? n) [[0 d] [(- n) d]] [[n d] [0 d]])))
+    (if (neg? n) [[0 d] [(-' n) d]] [[n d] [0 d]])))
 
 (def ^:private g-zero [[0 1] [0 1]])
 (defn- g-sum [xs] (reduce g-add g-zero xs))
@@ -326,7 +326,7 @@
   [[pa na] [pb nb]]
   (let [[ln ld] (q-add pa nb)
         [rn rd] (q-add pb na)]
-    (max (* ln rd) (* rn ld))))
+    (max (*' ln rd) (*' rn ld))))
 
 (defn preflight
   "Estimate the most expensive single normalization the certificate will need.
@@ -356,7 +356,7 @@
                             (g-sum (for [i (range rows)] (g-mul (nth b i) (nth y i)))))])
          worst (apply max magnitudes)
          terms (max rows cols)
-         estimate (* cost-per-unit-magnitude terms worst)]
+         estimate (*' cost-per-unit-magnitude terms worst)]
      {:worst-magnitude worst
       :terms terms
       :estimated-reductions estimate
@@ -370,7 +370,7 @@
       ;; fractional ones estimate 235x, 5662x and 10^10x over -- with two orders
       ;; of magnitude of headroom on each side.
       :verdict (cond (< estimate budget) :fits
-                     (< estimate (* refusal-margin budget)) :marginal
+                     (< estimate (*' refusal-margin budget)) :marginal
                      :else :over-budget)})))
 
 ;; ---- removing denominators before they multiply -----------------------------
@@ -449,10 +449,10 @@
   problem the proved quantity is a LOWER bound: no feasible plan costs less."
   [instance achieved proved]
   (if (minimizing? instance)
-    {:achieved (- achieved) :bound (- proved) :direction :lower
-     :gap (- achieved proved)}
+    {:achieved (-' achieved) :bound (-' proved) :direction :lower
+     :gap (-' achieved proved)}
     {:achieved achieved :bound proved :direction :upper
-     :gap (- proved achieved)}))
+     :gap (-' proved achieved)}))
 
 (defn certificate-spec
   "The proof data asserting that no feasible plan beats `plan`.
@@ -693,7 +693,7 @@
      :value transported}))
 
 (defn- dual-value [{:keys [capacities prices]}]
-  (reduce + 0 (map * (map rationalize capacities) (map rationalize prices))))
+  (reduce +' 0 (map *' (map rationalize capacities) (map rationalize prices))))
 
 (defn- audit-identity
   "A content-addressed identity for the whole check: the exact instance, the
